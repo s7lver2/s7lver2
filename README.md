@@ -1,5 +1,5 @@
 ## 🌐 Socials:
-[![Discord](https://img.shields.io/badge/Discord-%237289DA.svg?logo=discord&logoColor=white)](https://discord.gg/https://discord.gg/CFs7tmhR) [![Instagram](https://img.shields.io/badge/Instagram-%23E4405F.svg?logo=Instagram&logoColor=white)](https://instagram.com/aguita_frexa) [![YouTube](https://img.shields.io/badge/YouTube-%23FF0000.svg?logo=YouTube&logoColor=white)](https://youtube.com/@@アグイタちゃん) 
+[![Discord](https://img.shields.io/badge/Discord-%237289DA.svg?logo=discord&logoColor=white)](https://discord.gg/https://discord.gg/CFs7tmhR) [![Instagram](https://img.shields.io/badge/Instagram-%23E4405F.svg?logo=Instagram&logoColor=white)](https://www.instagram.com/ims7lver?igsh=MWlvamRvOG05bWk4OA==) [![YouTube](https://img.shields.io/badge/YouTube-%23FF0000.svg?logo=YouTube&logoColor=white)](https://youtube.com/@@アグイタちゃん) 
 
 <img width="1478" height="105" alt="1000038307" src="https://github.com/user-attachments/assets/3732c32c-ceb8-4666-9a5b-5025a905e0f4" />
 Hewo! I'm s7lver -w-, a smol hacker and tux lover. I love doing cool projects and sometimes learn new stuff. Feel free to talk to me!
