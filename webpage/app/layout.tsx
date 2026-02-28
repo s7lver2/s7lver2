@@ -13,8 +13,8 @@ const sora = Sora({
 });
 
 export const metadata: Metadata = {
-  title: "s7lver2 - Developer Portfolio",
-  description: "Portfolio de proyectos y tecnologías",
+  title: "s7lver - Developer Portfolio",
+  description: "S7lver Personal Portfolio",
 };
 
 export default function RootLayout({

@@ -5,7 +5,7 @@ import {
   FaEnvelope, FaReact, FaNodeJs, FaPython, FaDocker, FaGitAlt, FaExternalLinkAlt
 } from 'react-icons/fa';
 import {
-  SiTypescript, SiNextdotjs, SiTailwindcss, SiGo, SiLinux
+  SiTypescript, SiNextdotjs, SiGo, SiLinux, SiRust
 } from 'react-icons/si';
 
 // ── Nuevas constantes para las frases ────────────────────────────────
@@ -110,8 +110,7 @@ export default function Home() {
   const technologies = [
     { icon: <SiTypescript />, name: 'TypeScript' },
     { icon: <SiNextdotjs />, name: 'Next.js' },
-    { icon: <FaReact />, name: 'React' },
-    { icon: <SiTailwindcss />, name: 'Tailwind' },
+    { icon: <SiRust />, name: 'Rust' },
     { icon: <SiGo />, name: 'Go' },
     { icon: <FaNodeJs />, name: 'Node.js' },
     { icon: <FaPython />, name: 'Python' },
@@ -123,24 +122,31 @@ export default function Home() {
   const projects = [
     {
       title: 'file-meet',
-      description: 'CLI tool written in Go for easier file transferHerramienta between systems. Allows users to safely send and receive files.',
+      description: 'CLI tool written in Go for easier file transfers between systems. Allows users to safely send and receive files.',
       tech: ['Go', 'CLI', 'Networking'],
       link: 'https://github.com/s7lver2/file-meet',
-      status: 'En desarrollo'
+      status: 'Done'
     },
     {
       title: 'ZephyrOS',
-      description: 'Arch based Operative system,designed for productivity and training with a custom kernel.',
+      description: 'Arch based Operative system,designed for old computers and servers with a custom kernel.',
       tech: ['Linux', 'Arch', 'QML', 'Shell'],
       link: 'https://github.com/s7lver2/ZephyrOS',
-      status: 'Experimental'
+      status: 'Stable but with updates on way'
     },
     {
       title: 'CodeDotJS',
-      description: 'Revolutionary framework for Code.org than extends their capabilities with javascript and go for strong developments.',
-      tech: ['JavaScript', 'Go', 'Framework'],
-      link: 'https://github.com/s7lver2/CodeDotJS',
+      description: 'Revolutionary framework for Code.org than extends their capabilities with javascript for strong developments.',
+      tech: ['JavaScript',  'Framework'],
+      link: 'https://CodeDotjs.vercel.app',
       status: 'Beta'
+    },
+    {
+      title: 'tsuki',
+      description: 'Code transpiler for build projects for arduino. Custom implementations, IDE, cli, more than 5 languages and native library compability',
+      tech: ['Rust',  'Go', 'Ruby', 'Python'],
+      link: 'https://github.com/s7lver2/tsuki',
+      status: 'In Development'
     }
   ];
 
@@ -168,8 +174,9 @@ export default function Home() {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="text-xl font-bold group cursor-pointer">
-              <span className="text-white group-hover:text-gradient transition-all duration-300">s7lver</span>
-              <span className="text-white group-hover:text-gradient transition-all duration-300">2</span>
+              <span className="text-white group-hover:text-gradient transition-all duration-300">s</span>
+              <span className="text-purple group-hover:text-gradient transition-all duration-300">7</span>
+              <span className="text-white group-hover:text-gradient transition-all duration-300">lver</span>
             </div>
             
             <div className="hidden md:flex items-center space-x-8">
@@ -258,7 +265,7 @@ export default function Home() {
                 <h2 className="text-4xl md:text-5xl font-bold mb-4 font-[family-name:var(--font-display)]">
                   My projects
                 </h2>
-                <p className="text-gray-500">I do them when i get bored of playing or so</p>
+                <p className="text-gray-500">Here's My Best Projects</p>
               </div>
 
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -308,7 +315,7 @@ export default function Home() {
                 <h2 className="text-4xl md:text-5xl font-bold mb-4 font-[family-name:var(--font-display)]">
                   Meet me
                 </h2>
-                <p className="text-gray-500">Find me on my cave!</p>
+                <p className="text-gray-500">Find me!</p>
               </div>
 
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-16">
@@ -338,7 +345,7 @@ export default function Home() {
               {/* Contact card */}
               <div className="card-accent p-8 backdrop-blur-xl max-w-2xl mx-auto text-center">
                 <blockquote className="text-xl md:text-2xl text-gray-300 italic mb-6">
-                  "Fuuuck why I got 230 errors on build, it were 0 in dev"
+                  "Are you interested in a more serious talk? Email me"
                 </blockquote>
                 <div className="flex items-center justify-center gap-3 text-gray-400">
                   <FaEnvelope className="text-lg" />
