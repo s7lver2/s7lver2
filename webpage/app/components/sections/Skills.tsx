@@ -1,83 +1,137 @@
 'use client';
-import { FaSkull, FaFlag, FaNetworkWired } from 'react-icons/fa';
+import { useState } from 'react';
+import dynamic from 'next/dynamic';
+import {
+  RadarChart, Radar, PolarGrid, PolarAngleAxis,
+  ResponsiveContainer, PolarRadiusAxis,
+} from 'recharts';
+import SkillsPlanet from '../planets/SkillsPlanet';
 
-const cybersecSkills = [
-  {
-    category: 'Pentesting / Red Team',
-    icon: <FaSkull />,
-    colorClass: 'text-red-400',
-    accentColor: 'rgb(248 113 113)',
-    glowClass:   'hover:shadow-red-500/10',
-    skills: ['Burp Suite', 'SQLMap', 'Hydra', 'Hashcat', 'Mimikatz', 'Impacket', 'Wfuzz', 'CrackMapExec', 'Evil-WinRM'],
-  },
-  {
-    category: 'CTF & Exploitation',
-    icon: <FaFlag />,
-    colorClass: 'text-yellow-400',
-    accentColor: 'rgb(250 204 21)',
-    glowClass:   'hover:shadow-yellow-500/10',
-    skills: ['Buffer Overflow', 'Rev Engineering', 'Web Exploitation', 'Cryptography', 'Steganography', 'OSINT', 'Ghidra', 'Pivoting', 'Active Directory', 'Path Traversals', 'pwntools'],
-  },
-  {
-    category: 'Networking & Recon',
-    icon: <FaNetworkWired />,
-    colorClass: 'text-cyan-400',
-    accentColor: 'rgb(34 211 238)',
-    glowClass:   'hover:shadow-cyan-500/10',
-    skills: ['Nmap', 'Wireshark', 'Netcat', 'Gobuster', 'Subfinder', 'Amass', 'tcpdump', 'Masscan', 'Responder', 'Enum4linux'],
-  },
+
+const SKILLS = [
+  { subject: 'Pentesting',     value: 85, color: '#f87171', tools: ['Burp Suite', 'SQLMap', 'Hydra', 'Hashcat', 'Mimikatz', 'Impacket', 'Evil-WinRM'] },
+  { subject: 'CTF / Exploit',  value: 80, color: '#facc15', tools: ['Buffer Overflow', 'Rev Engineering', 'Cryptography', 'Steganography', 'pwntools', 'Ghidra'] },
+  { subject: 'Networking',     value: 75, color: '#22d3ee', tools: ['Nmap', 'Wireshark', 'Netcat', 'tcpdump', 'Masscan', 'Responder'] },
+  { subject: 'Web Exploit',    value: 88, color: '#a78bfa', tools: ['Path Traversals', 'SSRF', 'XSS', 'SQLi', 'LFI/RFI', 'Wfuzz'] },
+  { subject: 'OSINT / Recon',  value: 72, color: '#34d399', tools: ['Subfinder', 'Amass', 'Gobuster', 'Enum4linux', 'OSINT Framework'] },
 ];
 
-export default function SkillsSection() {
+// Custom dot que respeta el hover global
+function CustomDot(props: any) {
+  const { cx, cy, index, hoveredIdx } = props;
+  const isHovered = hoveredIdx === index || hoveredIdx === null;
   return (
-    <section id="skills" className="py-24 px-4">
+    <circle
+      cx={cx} cy={cy} r={isHovered ? 5 : 3}
+      fill={isHovered ? SKILLS[index]?.color ?? '#fff' : '#555'}
+      opacity={hoveredIdx !== null && hoveredIdx !== index ? 0.2 : 1}
+      style={{ transition: 'all 0.25s' }}
+    />
+  );
+}
+
+export default function SkillsSection() {
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+
+  return (
+    <section id="skills" className="section-planet">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-4 rounded-full border border-green-500/20 bg-green-500/5">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-xs font-mono text-green-400 tracking-widest uppercase">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-4 rounded-full border border-blue-500/20 bg-blue-500/5">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+            <span className="text-xs font-mono text-blue-400 tracking-widest uppercase">
               sys: cybersec.skills loaded
             </span>
           </div>
           <h2 className="text-4xl md:text-5xl font-bold mb-4">Security Skills</h2>
-          <p className="text-gray-500 font-mono text-sm">// tools &amp; techniques I wield</p>
+          <p className="text-gray-500 font-mono text-sm">// tools & techniques I wield</p>
         </div>
 
-        {/* Cards */}
-        <div className="grid lg:grid-cols-3 gap-6">
-          {cybersecSkills.map((cat) => (
-            <div
-              key={cat.category}
-              className={`relative rounded-xl border border-white/10 bg-white/[0.02] p-6 transition-all duration-300 group shadow-lg ${cat.glowClass} hover:bg-white/[0.04] hover:border-white/20`}
-            >
-              {/* Accent left border */}
-              <div
-                className="absolute left-0 top-6 bottom-6 w-0.5 rounded-full opacity-50 group-hover:opacity-90 transition-opacity"
-                style={{ background: cat.accentColor }}
-              />
-
-              {/* Category header */}
-              <div className="flex items-center gap-3 mb-5 pl-3">
-                <span className={`text-xl ${cat.colorClass}`}>{cat.icon}</span>
-                <h3 className={`text-xs font-mono font-semibold ${cat.colorClass} tracking-widest uppercase`}>
-                  {cat.category}
-                </h3>
-              </div>
-
-              {/* Tags */}
-              <div className="flex flex-wrap gap-2 pl-3">
-                {cat.skills.map((skill) => (
-                  <span
-                    key={skill}
-                    className="px-2.5 py-1 text-xs font-mono rounded-md bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-white/20 transition-colors cursor-default"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
+        {/* Layout: planeta (45%) | radar (55%) */}
+        <div className="grid lg:grid-cols-[45%_55%] gap-8 items-center">
+          {/* Planeta izquierda */}
+          <div className="flex justify-center">
+            <div style={{ width: 360, height: 360 }}>
+              <SkillsPlanet />
             </div>
-          ))}
+          </div>
+
+          {/* Radar + leyenda derecha */}
+          <div className="flex flex-col gap-6">
+            <ResponsiveContainer width="100%" height={320}>
+              <RadarChart data={SKILLS} cx="50%" cy="50%" outerRadius="75%">
+                <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                <PolarAngleAxis
+                  dataKey="subject"
+                  tick={({ payload, x, y }: any) => {
+                    const idx = SKILLS.findIndex(s => s.subject === payload.value);
+                    const dim = hoveredIdx !== null && hoveredIdx !== idx;
+                    return (
+                      <text
+                        x={x} y={y}
+                        fill={dim ? 'rgba(156,163,175,0.25)' : SKILLS[idx]?.color ?? '#fff'}
+                        fontSize={11}
+                        fontFamily="monospace"
+                        textAnchor="middle"
+                        style={{ transition: 'fill 0.25s', cursor: 'pointer' }}
+                        onMouseEnter={() => setHoveredIdx(idx)}
+                        onMouseLeave={() => setHoveredIdx(null)}
+                      >
+                        {payload.value}
+                      </text>
+                    );
+                  }}
+                />
+                <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
+                <Radar
+                  dataKey="value"
+                  stroke="rgba(139,92,246,0.8)"
+                  fill="rgba(139,92,246,0.15)"
+                  strokeWidth={2}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+
+            {/* Leyenda con hover */}
+            <div className="flex flex-wrap gap-3 justify-center">
+              {SKILLS.map((s, i) => (
+                <button
+                  key={s.subject}
+                  onMouseEnter={() => setHoveredIdx(i)}
+                  onMouseLeave={() => setHoveredIdx(null)}
+                  style={{
+                    opacity: hoveredIdx !== null && hoveredIdx !== i ? 0.25 : 1,
+                    transition: 'opacity 0.25s',
+                    borderColor: s.color + '60',
+                  }}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full border bg-white/5 text-xs font-mono text-gray-300 cursor-default"
+                >
+                  <span className="w-2 h-2 rounded-full" style={{ background: s.color }} />
+                  {s.subject}
+                </button>
+              ))}
+            </div>
+
+            {/* Tools del skill con hover */}
+            {hoveredIdx !== null && (
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                <p className="text-xs font-mono mb-3" style={{ color: SKILLS[hoveredIdx].color }}>
+                  // {SKILLS[hoveredIdx].subject} tools
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {SKILLS[hoveredIdx].tools.map(t => (
+                    <span
+                      key={t}
+                      className="px-2.5 py-1 text-xs font-mono rounded-md bg-white/5 border border-white/10 text-gray-300"
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </section>

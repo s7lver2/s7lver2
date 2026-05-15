@@ -1,81 +1,171 @@
+// app/components/sections/Projects.tsx
 'use client';
-import { FaExternalLinkAlt } from 'react-icons/fa';
+import dynamic from 'next/dynamic';
+import { useState } from 'react';
 
-const projects = [
+const ProjectsCloseup = dynamic(() => import('../planets/ProjectsCloseup'), { ssr: false });
+
+interface Project {
+  title: string;
+  description?: string;
+  language?: string;
+  status?: string;
+  url?: string;
+}
+
+// ── Lista de proyectos (rellenar con los reales)
+const projects: Project[] = [
   {
-    title:       'file-meet',
-    description: 'CLI tool written in Go for easier file transfers between systems. Allows users to safely send and receive files.',
-    tech:        ['Go', 'CLI', 'Networking'],
-    link:        'https://github.com/s7lver2/file-meet',
-    status:      'Done',
+    title: 'file-meet',
+    description: 'Plataforma para compartir archivos con salas efímeras.',
+    language: 'TypeScript',
+    status: 'active',
+    url: 'https://github.com/s7lver2/file-meet',
   },
   {
-    title:       'ZephyrOS',
-    description: 'Arch based Operative system, designed for old computers and servers with a custom kernel.',
-    tech:        ['Linux', 'Arch', 'QML', 'Shell'],
-    link:        'https://github.com/s7lver2/ZephyrOS',
-    status:      'Stable but with updates on way',
+    title: 'ZephyrOS',
+    description: 'Sistema operativo experimental escrito en Rust.',
+    language: 'Rust',
+    status: 'WIP',
+    url: 'https://github.com/s7lver2/ZephyrOS',
   },
   {
-    title:       'CodeDotJS',
-    description: 'Revolutionary framework for Code.org that extends their capabilities with javascript for strong developments.',
-    tech:        ['JavaScript', 'Framework'],
-    link:        'https://CodeDotjs.vercel.app',
-    status:      'Beta',
+    title: 'CodeDotJS',
+    description: 'Editor de código online minimalista.',
+    language: 'JavaScript',
+    status: 'active',
+    url: 'https://CodeDotjs.vercel.app',
   },
   {
-    title:       'tsuki',
-    description: 'Code transpiler for build projects for arduino. Custom implementations, IDE, cli, more than 5 languages and native library compatibility.',
-    tech:        ['Rust', 'Go', 'Ruby', 'Python'],
-    link:        'https://github.com/s7lver2/tsuki',
-    status:      'In Development',
+    title: 'tsuki',
+    description: 'Framework de firmware para Arduino en Go/Python.',
+    language: 'Go',
+    status: 'active',
+    url: 'https://tsuki.s7lver.xyz',
   },
 ];
 
-export { projects };
-
 export default function ProjectsSection() {
+  const [selected, setSelected] = useState<Project | null>(null);
+
   return (
-    <section id="projects" className="py-24 px-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">My projects</h2>
-          <p className="text-gray-500">Here's My Best Projects</p>
+    <section
+      id="projects"
+      style={{
+        position: 'relative',
+        minHeight: '100vh',
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: 'flex-start',
+        paddingTop: 120,
+      }}
+    >
+      {/* Planeta en primer plano — posición absoluta detrás del contenido */}
+      <ProjectsCloseup />
+
+      {/* Contenido superpuesto al planeta */}
+      <div className="container" style={{ position: 'relative', zIndex: 2, width: '100%' }}>
+
+        {/* Header */}
+        <div className="reveal" style={{ marginBottom: 52 }}>
+          <div className="t-label" style={{ marginBottom: 12 }}>projects.work</div>
+          <h2 className="t-h2" style={{ marginBottom: 8 }}>Projects</h2>
+          <p className="t-body">// select a project to explore</p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project, index) => (
-            <a
-              key={project.title}
-              href={project.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`${index === 0 ? 'card-glass' : 'card-subtle'} p-6 hover:border-white/20 transition-all duration-300 group`}
+        {/* Lista de proyectos */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 480 }}>
+          {projects.map((p, i) => (
+            <button
+              key={p.title}
+              onClick={() => setSelected(p)}
+              className="card reveal"
+              style={{
+                padding: '14px 20px',
+                textAlign: 'left',
+                cursor: 'pointer',
+                background: 'rgba(10,10,10,0.72)',   // semi-transparente sobre el planeta
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                transitionDelay: `${i * 0.05}s`,
+              }}
             >
-              <div className="flex items-start justify-between mb-4">
-                <h3 className="text-xl font-semibold text-white group-hover:text-gradient transition-all">
-                  {project.title}
-                </h3>
-                <FaExternalLinkAlt className="text-gray-600 group-hover:text-white transition-colors text-sm shrink-0 mt-1" />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{
+                  fontFamily: 'var(--font-sans)', fontWeight: 500,
+                  color: 'var(--fg)', fontSize: 14,
+                }}>
+                  {p.title}
+                </span>
+                <span className="t-label">{p.language}</span>
               </div>
-
-              <p className="text-gray-500 text-sm mb-4 leading-relaxed">{project.description}</p>
-
-              <div className="flex flex-wrap gap-2 mb-4">
-                {project.tech.map((t) => (
-                  <span key={t} className="px-2.5 py-1 text-xs rounded-md bg-white/5 border border-white/10 text-gray-400">
-                    {t}
-                  </span>
-                ))}
-              </div>
-
-              <div className="text-xs text-gray-600 pt-2 border-t border-white/5">
-                {project.status}
-              </div>
-            </a>
+              {p.description && (
+                <p style={{
+                  fontFamily: 'var(--font-sans)', fontSize: 12.5,
+                  color: 'var(--fg-muted)', marginTop: 4, lineHeight: 1.5,
+                }}>
+                  {p.description.slice(0, 80)}{p.description.length > 80 ? '…' : ''}
+                </p>
+              )}
+            </button>
           ))}
         </div>
       </div>
+
+      {/* ── Modal de proyecto ──────────────────────────── */}
+      {selected && (
+        <div
+          onClick={() => setSelected(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9000,
+            background: 'rgba(0,0,0,0.78)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="project-modal-in"
+            style={{
+              background: 'var(--surface-1)',
+              border: '1px solid var(--border)',
+              borderRadius: 10, width: '100%', maxWidth: 420, padding: 32,
+              position: 'relative',
+            }}
+          >
+            <button
+              onClick={() => setSelected(null)}
+              style={{
+                position: 'absolute', top: 14, right: 14,
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                color: 'var(--fg-faint)', fontSize: 16, transition: 'color 0.15s',
+              }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--fg-muted)'}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--fg-faint)'}
+            >✕</button>
+
+            <div className="t-label" style={{ marginBottom: 10 }}>{selected.language}</div>
+            <h3 className="t-h3" style={{ marginBottom: 8 }}>{selected.title}</h3>
+            <p className="t-body" style={{ marginBottom: 24 }}>{selected.description}</p>
+
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              {selected.status && <span className="badge">{selected.status}</span>}
+              {selected.url && (
+                <a
+                  href={selected.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-secondary"
+                  style={{ fontSize: 12, padding: '5px 14px' }}
+                >
+                  View repo ↗
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

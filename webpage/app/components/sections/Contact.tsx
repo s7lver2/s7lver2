@@ -1,58 +1,54 @@
+// app/components/sections/Contact.tsx
 'use client';
 import {
-  FaGithub, FaDiscord, FaTwitter, FaTiktok, FaInstagram, FaEnvelope,
+  FaGithub, FaDiscord, FaTwitter, FaTiktok, FaInstagram,
 } from 'react-icons/fa';
+import MeetPlanet from '../planets/MeetPlanet';
 
-const socials = [
-  { icon: <FaGithub />,    name: 'GitHub',    handle: '@s7lver2',     link: 'https://github.com/s7lver2' },
-  { icon: <FaDiscord />,   name: 'Discord',   handle: 's7lver2',      link: '#' },
-  { icon: <FaTwitter />,   name: 'X',         handle: '@not_s7lver',  link: 'https://twitter.com/not_s7lver' },
-  { icon: <FaTiktok />,    name: 'TikTok',    handle: '@s7lver6',     link: 'https://tiktok.com/@s7lver6' },
-  { icon: <FaInstagram />, name: 'Instagram', handle: 'ims7lver',     link: 'https://instagram.com/ims7lver' },
+const socialLinks = [
+  { name: 'GitHub', handle: '@s7lver2', url: 'https://github.com/s7lver2', icon: <FaGithub />, color: '#e5e7eb' },
+  { name: 'Discord', handle: 's7lver2', url: '#', icon: <FaDiscord />, color: '#818cf8' },
+  { name: 'X (Twitter)', handle: '@not_s7lver', url: 'https://twitter.com/not_s7lver', icon: <FaTwitter />, color: '#60a5fa' },
+  { name: 'TikTok', handle: '@s7lver6', url: 'https://tiktok.com/@s7lver6', icon: <FaTiktok />, color: '#f9a8d4' },
+  { name: 'Instagram', handle: 'ims7lver', url: 'https://instagram.com/ims7lver', icon: <FaInstagram />, color: '#f97316' },
 ];
-
-export { socials };
 
 export default function ContactSection() {
   return (
-    <section id="contact" className="py-24 px-4">
-      <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">Meet me</h2>
-          <p className="text-gray-500">Find me!</p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-16">
-          {socials.map((social, index) => (
+    <section id="contact" className="section-planet overflow-hidden">
+      <div className="w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center gap-0">
+        {/* Columna izquierda: lista de redes sociales */}
+        <div className="flex-1 flex flex-col gap-4 pr-8">
+          <div className="mb-6">
+            <p className="text-xs font-mono text-pink-400 tracking-widest uppercase mb-2">// meet me at</p>
+            <h2 className="text-4xl md:text-5xl font-bold text-white">Contact</h2>
+          </div>
+          {socialLinks.map((link) => (
             <a
-              key={social.name}
-              href={social.link}
-              target="_blank"
+              key={link.name}
+              href={link.url}
+              target={link.url !== '#' ? '_blank' : undefined}
               rel="noopener noreferrer"
-              className={`${index === 0 ? 'card-glass' : 'card-subtle'} p-5 hover:border-white/20 transition-all duration-300 group`}
+              className="group flex items-center gap-4 px-5 py-4 rounded-xl border border-white/10 bg-white/[0.02] hover:border-pink-500/30 hover:bg-pink-500/5 transition-all duration-200"
             >
-              <div className="flex items-center gap-4">
-                <div className="text-2xl text-gray-500 group-hover:text-white transition-colors">
-                  {social.icon}
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-white mb-0.5">{social.name}</h3>
-                  <p className="text-xs text-gray-500">{social.handle}</p>
-                </div>
+              <span className="text-2xl text-gray-400 group-hover:text-pink-400 transition-colors">
+                {link.icon}
+              </span>
+              <div className="flex-1">
+                <p className="text-white font-medium">{link.name}</p>
+                <p className="text-xs text-gray-500 font-mono group-hover:text-gray-400 transition-colors">
+                  {link.handle}
+                </p>
               </div>
+              <span className="text-gray-600 group-hover:text-pink-400 transition-colors">→</span>
             </a>
           ))}
         </div>
 
-        <div className="card-accent p-8 backdrop-blur-xl max-w-2xl mx-auto text-center">
-          <blockquote className="text-xl md:text-2xl text-gray-300 italic mb-6">
-            "Are you interested in a more serious talk? Email me"
-          </blockquote>
-          <div className="flex items-center justify-center gap-3 text-gray-400">
-            <FaEnvelope className="text-lg" />
-            <a href="mailto:nickespro130@outlook.es" className="hover:text-white transition-colors">
-              nickespro130@outlook.es
-            </a>
+        {/* Columna derecha: planeta rosa (sobresale por la derecha) */}
+        <div className="flex justify-end md:justify-center flex-shrink-0 md:-mr-16 lg:-mr-24">
+          <div style={{ width: 400, height: 400 }}>
+            <MeetPlanet />
           </div>
         </div>
       </div>
