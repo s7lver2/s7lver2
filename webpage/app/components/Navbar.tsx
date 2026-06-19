@@ -11,6 +11,7 @@ const sections = [
   { id: 'skills',   label: 'Skills' },
   { id: 'projects', label: 'Projects' },
   { id: 'htb',      label: 'HTB' },
+  { id: 'github',   label: 'GitHub' },
   { id: 'contact',  label: 'Contact' },
 ];
 
@@ -28,7 +29,7 @@ export default function Navbar({ onOpenTerminal = () => {} }: NavbarProps) {
 
   // Scroll-spy effect
   useEffect(() => {
-    const ids = ['hero', 'skills', 'projects', 'htb', 'contact'];
+    const ids = ['hero', 'skills', 'projects', 'htb', 'github', 'contact'];
     const io = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => {
@@ -70,33 +71,37 @@ export default function Navbar({ onOpenTerminal = () => {} }: NavbarProps) {
           </button>
 
           <div className="hidden md:flex items-center space-x-8">
-            {sections.map(({ id, label }) => (
-              <button
-                key={id}
-                onClick={() => scrollToSection(id)}
-                className={`transition-colors text-sm ${
-                  activeId === id
-                    ? 'text-white'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-
-            <a
-              id="github"
-              href="https://github.com/s7lver2"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`transition-colors ${
-                activeId === 'github'
-                  ? 'text-white'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              <FaGithub className="text-xl" />
-            </a>
+            {sections.map(({ id, label }) => {
+              if (id === 'github') {
+                // External GitHub link
+                return (
+                  <a
+                    key={id}
+                    href="https://github.com/s7lver2"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="transition-colors text-gray-400 hover:text-white"
+                    title="Visit GitHub"
+                  >
+                    <FaGithub className="text-lg" />
+                  </a>
+                );
+              }
+              // Internal section links
+              return (
+                <button
+                  key={id}
+                  onClick={() => scrollToSection(id)}
+                  className={`transition-colors text-sm ${
+                    activeId === id
+                      ? 'text-white'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
 
             <span className="hidden md:inline-flex items-center gap-1 font-mono text-[11px] text-gray-500 border border-white/10 rounded px-2 py-1">
               ⌘K

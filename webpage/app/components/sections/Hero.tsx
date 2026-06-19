@@ -11,7 +11,7 @@ export default function HeroSection({ onOpenTerminal = () => {} }: HeroProps) {
   const reveal = useReveal();
 
   return (
-    <section className="hero" id="about">
+    <section className="hero" id="hero">
       <HeroBackground />
       <div className="wrap">
         <div className="block reveal" ref={reveal}>
