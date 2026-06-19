@@ -83,7 +83,17 @@ Se **fusiona** la terminal dentro del ⌘K. Una sola ventana con dos pestañas.
 3. **Ghost autocomplete:** sugerencia gris inline al escribir (p.ej. `na…→nmap`), además del Tab actual.
 4. **Banner mejorado** + línea de estado (host, uptime/reloj simulado).
 5. **`open <sección>`** integrado con el cierre del ⌘K (navega y cierra).
-6. **Comandos nuevos / easter eggs:** `neofetch`, `sudo su`, `matrix`, `theme` (y los existentes).
+6. **Comandos nuevos / easter eggs** (además de los existentes):
+   - `neofetch` — panel estilo neofetch: a la izquierda **ASCII de una imagen aleatoria de `public/art/`** (la misma carpeta que usa el arte aleatorio del ⌘K, vía pipeline `loadImageToCanvas`+`toAscii`), a la derecha las "specs" del portfolio (OS, Host, Shell, Uptime, Stack, HTB…).
+   - `banner` — reimprime el banner ASCII.
+   - `date` / `uptime` — fecha y "tiempo encendido" simulado.
+   - `echo <texto>` — devuelve el texto.
+   - `curl <sección>` — variante hacker de `open` (`curl htb` → navega).
+   - `exploit` / `ssh s7lver@box` — gag CTF con barra de progreso falsa.
+   - `sudo make me a sandwich` — XKCD 149 (`Okay. 🥪`).
+   - `sudo su` — `root access denied. nice try, visitor 😏`.
+   - `matrix` — lluvia de caracteres verde estilo Matrix durante unos segundos en el output.
+   - `theme [morado|azul|verde|mono]` — cambia el color de acento en vivo (CSS variables); sin args lista opciones.
 
 - Componente: `CommandPalette.tsx` reescrito como command center con tabs; reutiliza el `processCommand` de `Terminal.tsx` (extraído a un módulo compartido, p.ej. `app/lib/terminal.ts`). `page.tsx` deja de montar `<Terminal>` por separado; `onOpenTerminal` abre el ⌘K en modo terminal.
 
