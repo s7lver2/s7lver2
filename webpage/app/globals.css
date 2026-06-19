@@ -4,6 +4,8 @@
 
 @layer base {
   :root {
+    --brand-1: #8b5cf6;
+    --brand-2: #3b82f6;
     --gradient-purple: 139, 92, 246;
     --gradient-blue: 59, 130, 246;
     --purple: #8b5cf6;
@@ -272,7 +274,7 @@
   }
 
   .grad {
-    background: linear-gradient(100deg, #8b5cf6, #3b82f6);
+    background: linear-gradient(100deg, var(--brand-1), var(--brand-2));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
