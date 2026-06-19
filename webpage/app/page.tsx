@@ -10,12 +10,11 @@ import HTBSection      from '@/components/sections/HTB';
 import GitHubSection   from '@/components/sections/GitHub';
 import SocialSection   from '@/components/sections/Social';
 import Footer          from '@/components/sections/Footer';
-import Terminal        from '@/components/Terminal';
 import CommandPalette  from '@/components/CommandPalette';
 
 export default function Home() {
-  const [terminalOpen, setTerminalOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [paletteTab, setPaletteTab] = useState<'nav' | 'term'>('nav');
 
   // Handle terminal navigation to sections
   const handleNavigateToSection = (section: string) => {
@@ -37,30 +36,44 @@ export default function Home() {
     }
   };
 
+  // Open terminal tab in palette
+  const openTerminal = () => {
+    setPaletteTab('term');
+    setPaletteOpen(true);
+  };
+
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 
-      // ⌘K / Ctrl+K for command palette
+      // ⌘K / Ctrl+K for command palette (nav tab)
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
+        setPaletteTab('nav');
         setPaletteOpen((o) => !o);
-        setTerminalOpen(false); // Close terminal when opening palette
       }
 
       // Backtick for terminal
-      if (e.key === '`') setTerminalOpen((o) => !o);
-      if (e.key === 'Escape') setTerminalOpen(false);
+      if (e.key === '`') {
+        e.preventDefault();
+        openTerminal();
+      }
+      if (e.key === 'Escape') {
+        // Escape closes palette if open
+        if (paletteOpen) {
+          setPaletteOpen(false);
+        }
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, []);
+  }, [paletteOpen]);
 
   return (
     <>
-      <Navbar onOpenTerminal={() => setTerminalOpen(true)} />
+      <Navbar onOpenTerminal={openTerminal} />
 
       <main className="min-h-screen">
         {/* Background ambient blobs */}
@@ -70,7 +83,7 @@ export default function Home() {
         </div>
 
         <div className="relative z-10">
-          <HeroSection     onOpenTerminal={() => setTerminalOpen(true)} />
+          <HeroSection     onOpenTerminal={openTerminal} />
           <SkillsSection   />
           <LanguagesSection />
           <ProjectsSection />
@@ -82,14 +95,11 @@ export default function Home() {
 
       <Footer />
 
-      <Terminal
-        open={terminalOpen}
-        onClose={() => setTerminalOpen(false)}
-        onNavigate={handleNavigateToSection}
-      />
       <CommandPalette
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
+        initialTab={paletteTab}
+        onNavigate={handleNavigateToSection}
       />
     </>
   );

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { FaTimes, FaArrowUp, FaArrowDown } from 'react-icons/fa';
+import TerminalPanel from './TerminalPanel';
 
 // Image manifest - add your images to /public/art/
 const ART_IMAGES: string[] = [
@@ -70,9 +71,17 @@ function toAscii(canvas: HTMLCanvasElement, width: number, height: number): stri
 interface CommandPaletteProps {
   open: boolean;
   onClose: () => void;
+  initialTab?: 'nav' | 'term';
+  onNavigate?: (s: string) => void;
 }
 
-export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
+export default function CommandPalette({
+  open,
+  onClose,
+  initialTab = 'nav',
+  onNavigate
+}: CommandPaletteProps) {
+  const [tab, setTab] = useState<'nav' | 'term'>('nav');
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [asciiArt, setAsciiArt] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -90,14 +99,15 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
         .catch((err) => console.error('ASCII art error:', err));
     }
     setSelectedIdx(0);
-  }, [open]);
+    setTab(initialTab);
+  }, [open, initialTab]);
 
   // Auto-focus on open
   useEffect(() => {
-    if (open) {
+    if (open && tab === 'nav') {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [open]);
+  }, [open, tab]);
 
   // Handle keyboard navigation
   const handleKeyDown = useCallback(
@@ -144,67 +154,103 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
         />
       )}
 
-      {/* Palette container */}
-      <div className={`pal ${open ? 'pal-open' : ''}`}>
-        <div className="palbar">
-          <span className="text-gray-400 text-sm">
-            <span className="text-primary-purple">⌘</span>K
-          </span>
-          <input
-            ref={inputRef}
-            onKeyDown={handleKeyDown}
-            className="palq"
-            placeholder="Navigate sections..."
-            autoComplete="off"
-            spellCheck={false}
-          />
+      {/* Command Center container */}
+      <div className={`cc ${open ? 'cc-open' : ''}`}>
+        {/* Mac-style window header with dots */}
+        <div className="ccbar">
+          <div className="dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div className="cctitle">command center</div>
           <button
             onClick={onClose}
-            className="text-gray-600 hover:text-gray-400 transition-colors"
+            className="ccx"
           >
-            <FaTimes className="text-xs" />
+            <FaTimes className="text-sm" />
           </button>
         </div>
 
-        <div className="palbody">
-          {/* ASCII Art Panel */}
-          <div className="palart">
-            <pre className="text-xs leading-tight overflow-hidden">
-              {asciiArt || 'No art loaded'}
-            </pre>
-          </div>
-
-          {/* Sections List */}
-          <div className="pallist">
-            {SECTIONS.map((section, idx) => (
-              <button
-                ref={idx === selectedIdx ? selectedRef : null}
-                key={section.id}
-                onClick={() => {
-                  const element = document.getElementById(section.id);
-                  if (element) {
-                    element.scrollIntoView({ behavior: 'smooth' });
-                    onClose();
-                  }
-                }}
-                className={`li ${idx === selectedIdx ? 'li-selected' : ''}`}
-              >
-                <span className="li-label">{section.label}</span>
-                <span className="li-hint">{section.href}</span>
-              </button>
-            ))}
-          </div>
+        {/* Tab buttons */}
+        <div className="cctabs">
+          <button
+            className={`cctab ${tab === 'nav' ? 'cctab-active' : ''}`}
+            onClick={() => setTab('nav')}
+          >
+            ❯ navigate
+          </button>
+          <button
+            className={`cctab ${tab === 'term' ? 'cctab-active' : ''}`}
+            onClick={() => setTab('term')}
+          >
+            $ terminal
+          </button>
         </div>
 
-        {/* Footer hints */}
-        <div className="palfoot">
-          <span className="flex items-center gap-1">
-            <FaArrowUp className="text-[10px]" />
-            <FaArrowDown className="text-[10px]" />
-            <span>navigate</span>
-          </span>
-          <span>↵ go</span>
-          <span>esc close</span>
+        {/* Tab content */}
+        <div className="ccbody">
+          {/* Navigate panel */}
+          {tab === 'nav' && (
+            <>
+              <div className="ccq-wrapper">
+                <input
+                  ref={inputRef}
+                  onKeyDown={handleKeyDown}
+                  className="ccq"
+                  placeholder="Navigate sections..."
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+              </div>
+
+              <div className="palart">
+                <pre className="text-xs leading-tight overflow-hidden">
+                  {asciiArt || 'No art loaded'}
+                </pre>
+              </div>
+
+              <div className="pallist">
+                {SECTIONS.map((section, idx) => (
+                  <button
+                    ref={idx === selectedIdx ? selectedRef : null}
+                    key={section.id}
+                    onClick={() => {
+                      const element = document.getElementById(section.id);
+                      if (element) {
+                        element.scrollIntoView({ behavior: 'smooth' });
+                        onClose();
+                      }
+                    }}
+                    className={`li ${idx === selectedIdx ? 'li-selected' : ''}`}
+                  >
+                    <span className="li-label">{section.label}</span>
+                    <span className="li-hint">{section.href}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="palfoot">
+                <span className="flex items-center gap-1">
+                  <FaArrowUp className="text-[10px]" />
+                  <FaArrowDown className="text-[10px]" />
+                  <span>navigate</span>
+                </span>
+                <span>↵ go</span>
+                <span>esc close</span>
+              </div>
+            </>
+          )}
+
+          {/* Terminal panel stub */}
+          {tab === 'term' && (
+            <TerminalPanel
+              active={open && tab === 'term'}
+              onClose={onClose}
+              onNavigate={onNavigate}
+              onBackToNav={() => setTab('nav')}
+            />
+          )}
         </div>
       </div>
     </>

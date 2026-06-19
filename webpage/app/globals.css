@@ -916,7 +916,7 @@
   .mtrack { animation: none; flex-wrap: wrap; }
 }
 
-/* Command Palette Styles */
+/* Command Center Overlay & Window */
 .ov {
   position: fixed;
   inset: 0;
@@ -926,73 +926,190 @@
   -webkit-backdrop-filter: blur(4px);
 }
 
-.pal {
+.cc {
   position: fixed;
-  top: 5vh;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   z-index: 100;
   width: 90%;
   max-width: 1200px;
-  background: rgba(15, 15, 15, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+  height: 70vh;
+  background: linear-gradient(135deg, rgba(15, 15, 20, 0.98), rgba(20, 15, 25, 0.98));
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 16px;
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
-  max-height: 80vh;
   opacity: 0;
-  scale: 0.95;
+  scale: 0.92;
   pointer-events: none;
   transition: opacity 0.2s ease-out, scale 0.2s ease-out;
 }
 
-.pal.pal-open {
+.cc.cc-open {
   opacity: 1;
   scale: 1;
   pointer-events: auto;
 }
 
-.palbar {
+/* Window header with Mac-style dots */
+.ccbar {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.15);
   background: rgba(255, 255, 255, 0.02);
-  border-radius: 12px 12px 0 0;
+  border-radius: 16px 16px 0 0;
+  position: relative;
 }
 
-.palq {
+.dots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.dots span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(139, 92, 246, 0.5);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dots span:hover {
+  background: rgba(139, 92, 246, 0.7);
+}
+
+.cctitle {
+  flex: 1;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+}
+
+.ccx {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: color 0.2s;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ccx:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Tab navigation */
+.cctabs {
+  display: flex;
+  gap: 0;
+  padding: 12px 18px 0;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+.cctab {
+  flex: 0 0 auto;
+  background: transparent;
+  border: none;
+  padding: 10px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  text-transform: lowercase;
+  letter-spacing: 0.05em;
+}
+
+.cctab:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.cctab.cctab-active {
+  color: #8b5cf6;
+  border-bottom-color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.08);
+}
+
+/* Main body container */
+.ccbody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 16px;
+  gap: 12px;
+}
+
+/* Search input in command center */
+.ccq-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.ccq-wrapper:focus-within {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(139, 92, 246, 0.4);
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.15);
+}
+
+.ccq {
   flex: 1;
   background: transparent;
   color: white;
-  font-size: 14px;
+  font-size: 13px;
   outline: none;
   border: none;
   font-family: 'JetBrains Mono', monospace;
   caret-color: #8b5cf6;
 }
 
-.palq::placeholder {
-  color: #666;
+.ccq::placeholder {
+  color: rgba(255, 255, 255, 0.35);
 }
 
-.palbody {
-  display: flex;
-  gap: 20px;
-  padding: 16px;
-  overflow: hidden;
-  flex: 1;
+/* Mode chip for status */
+.modechip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: rgba(139, 92, 246, 0.7);
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 6px;
+  padding: 3px 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
 }
 
+/* Navigate panel styles (reused from palette) */
 .palart {
   flex-shrink: 0;
   width: 240px;
   background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.15);
   border-radius: 8px;
   padding: 12px;
   overflow: hidden;
@@ -1023,11 +1140,11 @@
   justify-content: space-between;
   padding: 12px 14px;
   text-align: left;
-  font-size: 14px;
+  font-size: 13px;
   border: none;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   background: transparent;
-  color: #999;
+  color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -1054,30 +1171,48 @@
 
 .li-hint {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  color: #666;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .li.li-selected .li-hint {
-  color: #8b5cf6;
+  color: rgba(139, 92, 246, 0.8);
 }
 
+/* Footer hints */
 .palfoot {
   display: flex;
   items-align: center;
   gap: 20px;
-  padding: 10px 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px 12px;
+  border-top: 1px solid rgba(139, 92, 246, 0.1);
   background: rgba(255, 255, 255, 0.01);
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  color: #666;
-  border-radius: 0 0 12px 12px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  border-radius: 0 0 0 0;
+  margin-top: auto;
+}
+
+/* Terminal stub panel */
+.ccterm-stub {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: rgba(139, 92, 246, 0.6);
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px dashed rgba(139, 92, 246, 0.2);
+  border-radius: 8px;
+  text-align: center;
 }
 
 @media (max-width: 768px) {
-  .palbody {
-    flex-direction: column;
+  .cc {
+    height: 80vh;
+    max-width: 95%;
   }
 
   .palart {
@@ -1241,4 +1376,222 @@
     scroll-behavior: auto !important;
   }
   .reveal, .reveal.revealed { opacity: 1 !important; transform: none !important; }
+}
+
+/* ─── Terminal Panel Styles ─────────────────────────────────────────────────── */
+
+/* Terminal container (integrated into command center) */
+.ccterm {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  background: rgba(10, 10, 15, 0.5);
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  border: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+/* Scrollable terminal output area */
+.term {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Terminal output wrapper */
+.term-output {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+/* Banner text */
+.term-banner {
+  color: rgba(34, 197, 94, 0.7);
+  font-size: 9px;
+  line-height: 1.2;
+  margin: 0 0 8px 0;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* Prompt + input line */
+.term-input-line {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.term-prompt {
+  color: rgba(34, 197, 94, 0.9);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.term-input-text {
+  color: white;
+  word-break: break-all;
+  flex: 1;
+}
+
+/* Output text (colorized) */
+.term-output-text {
+  color: rgba(209, 213, 219, 0.8);
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+/* Quick command chips */
+.term-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 6px;
+}
+
+/* Chip button */
+.chip {
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  color: rgba(139, 92, 246, 0.8);
+  padding: 4px 9px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chip:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: #a78bfa;
+}
+
+/* Terminal input form */
+.termin {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 10px 14px;
+  border-top: 1px solid rgba(139, 92, 246, 0.1);
+  background: rgba(255, 255, 255, 0.01);
+  flex-shrink: 0;
+}
+
+.term-prompt-inline {
+  color: rgba(34, 197, 94, 0.9);
+  flex-shrink: 0;
+  user-select: none;
+  font-size: 12px;
+}
+
+/* Input wrapper for ghost suggestion */
+.term-input-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Input field */
+.term-input-field {
+  flex: 1;
+  background: transparent;
+  color: white;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  border: none;
+  outline: none;
+  caret-color: rgba(34, 197, 94, 0.9);
+  z-index: 2;
+  position: relative;
+}
+
+.term-input-field::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* Ghost autocomplete suggestion */
+.term-ghost {
+  position: absolute;
+  left: 0;
+  color: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  z-index: 1;
+}
+
+/* Blinking cursor */
+.term-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: rgba(34, 197, 94, 0.8);
+  margin-left: 2px;
+  animation: cursor-blink 1s steps(1) infinite;
+}
+
+@keyframes cursor-blink {
+  50% { opacity: 0; }
+}
+
+/* Matrix rain canvas overlay */
+.term-matrix {
+  display: block !important;
+  opacity: 0.9;
+  mix-blend-mode: lighten;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .ccterm {
+    border-radius: 6px;
+  }
+
+  .term {
+    font-size: 11px;
+    padding: 10px 12px;
+  }
+
+  .term-banner {
+    font-size: 8px;
+  }
+
+  .term-output-text {
+    font-size: 10px;
+  }
+
+  .chip {
+    font-size: 9px;
+    padding: 3px 8px;
+  }
+
+  .termin {
+    padding: 8px 12px;
+    gap: 4px;
+  }
+
+  .term-prompt-inline {
+    font-size: 11px;
+  }
+
+  .term-input-field {
+    font-size: 11px;
+  }
 }
