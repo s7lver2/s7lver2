@@ -7,7 +7,7 @@ interface NavbarProps {
 }
 
 const sections = [
-  { id: 'about',    label: 'Introduction' },
+  { id: 'hero',     label: 'Home' },
   { id: 'skills',   label: 'Skills' },
   { id: 'projects', label: 'Projects' },
   { id: 'htb',      label: 'HTB' },
@@ -16,6 +16,7 @@ const sections = [
 
 export default function Navbar({ onOpenTerminal = () => {} }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
+  const [activeId, setActiveId] = useState('hero');
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20);
@@ -23,6 +24,24 @@ export default function Navbar({ onOpenTerminal = () => {} }: NavbarProps) {
     handler();
     window.addEventListener('scroll', handler, { passive: true });
     return () => window.removeEventListener('scroll', handler);
+  }, []);
+
+  // Scroll-spy effect
+  useEffect(() => {
+    const ids = ['hero', 'skills', 'projects', 'htb', 'contact'];
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) setActiveId(e.target.id);
+        });
+      },
+      { rootMargin: '-45% 0px -50% 0px' }
+    );
+    ids.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) io.observe(el);
+    });
+    return () => io.disconnect();
   }, []);
 
   const scrollToSection = (id: string) => {
@@ -42,7 +61,7 @@ export default function Navbar({ onOpenTerminal = () => {} }: NavbarProps) {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <button
-            onClick={() => scrollToSection('about')}
+            onClick={() => scrollToSection('hero')}
             className="text-xl font-bold group"
           >
             <span className="text-white  group-hover:text-gradient transition-all duration-300">s</span>
@@ -55,20 +74,33 @@ export default function Navbar({ onOpenTerminal = () => {} }: NavbarProps) {
               <button
                 key={id}
                 onClick={() => scrollToSection(id)}
-                className="text-gray-400 hover:text-white transition-colors text-sm"
+                className={`transition-colors text-sm ${
+                  activeId === id
+                    ? 'text-white'
+                    : 'text-gray-400 hover:text-white'
+                }`}
               >
                 {label}
               </button>
             ))}
 
             <a
+              id="github"
               href="https://github.com/s7lver2"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-400 hover:text-white transition-colors"
+              className={`transition-colors ${
+                activeId === 'github'
+                  ? 'text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
             >
               <FaGithub className="text-xl" />
             </a>
+
+            <span className="hidden md:inline-flex items-center gap-1 font-mono text-[11px] text-gray-500 border border-white/10 rounded px-2 py-1">
+              ⌘K
+            </span>
           </div>
         </div>
       </div>
