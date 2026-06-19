@@ -291,6 +291,55 @@
   .mono {
     font-family: 'JetBrains Mono', monospace;
   }
+
+  /* Radar Skills */
+  .radarwrap {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 30px;
+    margin-top: 24px;
+    align-items: center;
+  }
+
+  @media (max-width: 760px) {
+    .radarwrap {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .rl {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+  }
+
+  .rl-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .rl-nm {
+    flex: 1;
+    color: #f4f4f6;
+  }
+
+  .rl-tools {
+    display: block;
+    color: #5b6270;
+    font-size: 11px;
+    margin-top: 2px;
+  }
+
+  .rl-pc {
+    color: #9ca3af;
+    white-space: nowrap;
+  }
 }
 
 @layer utilities {
