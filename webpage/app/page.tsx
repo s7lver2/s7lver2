@@ -7,7 +7,7 @@ import SkillsSection   from '@/components/sections/Skills';
 import ProjectsSection from '@/components/sections/Projects';
 import HTBSection      from '@/components/sections/HTB';
 import GitHubSection   from '@/components/sections/GitHub';
-import ContactSection  from '@/components/sections/Contact';
+import SocialSection   from '@/components/sections/Social';
 import Footer          from '@/components/sections/Footer';
 import Terminal        from '@/components/Terminal';
 import CommandPalette  from '@/components/CommandPalette';
@@ -74,7 +74,7 @@ export default function Home() {
           <ProjectsSection />
           <HTBSection      />
           <GitHubSection   />
-          <ContactSection  />
+          <SocialSection   />
         </div>
       </main>
 
@@ -88,7 +88,6 @@ export default function Home() {
       <CommandPalette
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
-        onOpenTerminal={() => setTerminalOpen(true)}
       />
     </>
   );

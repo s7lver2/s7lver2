@@ -31,6 +31,7 @@ export function toAscii(src: HTMLCanvasElement, cols: number, rows: number): str
 export function loadImageToCanvas(url: string, w = 160, h = 160): Promise<HTMLCanvasElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
+    img.crossOrigin = 'anonymous';
     img.onload = () => {
       const c = document.createElement('canvas');
       c.width = w; c.height = h;
@@ -40,7 +41,32 @@ export function loadImageToCanvas(url: string, w = 160, h = 160): Promise<HTMLCa
       x.drawImage(img, 0, 0, w, h);
       resolve(c);
     };
-    img.onerror = reject;
+    img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
     img.src = url;
   });
+}
+
+/** Genera un canvas con un avatar simple (gradiente + texto). */
+export function generateAvatarCanvas(color: string, text: string, w = 160, h = 160): HTMLCanvasElement {
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  const x = c.getContext('2d');
+  if (!x) throw new Error('no ctx');
+
+  // Gradiente de color a fondo
+  const g = x.createLinearGradient(0, 0, w, h);
+  g.addColorStop(0, color);
+  g.addColorStop(1, '#0a0a12');
+  x.fillStyle = g;
+  x.fillRect(0, 0, w, h);
+
+  // Texto centrado
+  x.fillStyle = '#ffffff';
+  x.textAlign = 'center';
+  x.textBaseline = 'middle';
+  x.font = `bold ${Math.floor(w * 0.48)}px Arial`;
+  x.fillText(text, w / 2, h / 2 + Math.floor(h * 0.025));
+
+  return c;
 }
