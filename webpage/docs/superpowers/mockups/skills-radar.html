@@ -1,0 +1,126 @@
+<title>Skills — opciones (sin JS)</title>
+<style>
+  :root{--bg:#08080b;--purple:#8b5cf6;--blue:#3b82f6;--green:#22c55e;--ink:#f4f4f6;--mut:#9ca3af;--dim:#5b6270;
+    --line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.055);--glass:rgba(255,255,255,.025);
+    --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;--disp:'Sora',system-ui,sans-serif;--maxw:1080px;}
+  *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--disp);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+  h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}.mono{font-family:var(--mono)}
+  .grad{background:linear-gradient(100deg,var(--purple),var(--blue));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:26px}
+  .blk{padding:46px 0 56px;border-bottom:1px solid var(--line2)}
+  .seclabel{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--purple);border:1px solid rgba(139,92,246,.35);border-radius:999px;padding:6px 14px;display:inline-block}
+  .secdesc{color:var(--mut);font-size:13.5px;margin:14px 0 4px;max-width:680px}
+  .eyebrow{font-family:var(--mono);font-size:13px;color:var(--green);margin:26px 0 6px}.eyebrow::before{content:"$ ";opacity:.7}
+  .h2{font-size:clamp(24px,3.4vw,32px);font-weight:700;margin-bottom:4px}
+  .note{font-family:var(--mono);font-size:11px;color:var(--dim);text-align:center;padding:13px;border-bottom:1px solid var(--line2);background:rgba(139,92,246,.04)}
+  .tagk{font-family:var(--mono);font-size:11px;color:var(--mut);background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:7px;padding:4px 8px}
+
+  /* OPT4 matrix */
+  .mtx{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px}
+  @media(max-width:760px){.mtx{grid-template-columns:1fr}}
+  .mcard{border:1px solid var(--line);border-top:2px solid var(--ac);border-radius:14px;background:var(--glass);padding:20px;transition:.25s}
+  .mcard:hover{transform:translateY(-4px);box-shadow:0 22px 55px -38px var(--ac)}
+  .mhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .mhd .nm{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--ac);display:flex;gap:8px;align-items:center}
+  .mhd .lvl{font-family:var(--mono);font-size:11px;color:var(--mut)}
+  .ptrack{height:7px;background:rgba(255,255,255,.06);border-radius:6px;overflow:hidden;margin-bottom:14px}
+  .pfill{height:100%;border-radius:6px;width:0;background:var(--ac);animation:gw 1.2s ease forwards}
+  @keyframes gw{to{width:var(--w)}}
+  .mtags{display:flex;flex-wrap:wrap;gap:6px}
+
+  /* OPT5 radar (static SVG) */
+  .radarwrap{display:grid;grid-template-columns:340px 1fr;gap:30px;margin-top:24px;align-items:center}
+  @media(max-width:760px){.radarwrap{grid-template-columns:1fr}}
+  .rl{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line2);font-family:var(--mono);font-size:12.5px}
+  .rl .dot{width:9px;height:9px;border-radius:50%}.rl .nm{flex:1;color:var(--ink)}.rl .pc{color:var(--mut)}
+  .rl .tools{display:block;color:var(--dim);font-size:11px;margin-top:2px}
+
+  /* OPT6 marquee */
+  .mq{margin-top:24px;display:flex;flex-direction:column;gap:12px}
+  .mqrow{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:var(--glass);padding:12px 0}
+  .mqlabel{position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;padding:0 16px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--ac);background:linear-gradient(90deg,var(--bg) 72%,transparent);z-index:2}
+  .mqtrack{display:flex;gap:10px;width:max-content;animation:scroll var(--dur,28s) linear infinite;padding-left:150px}
+  .mqrow:nth-child(even) .mqtrack{animation-direction:reverse}
+  .mqrow:hover .mqtrack{animation-play-state:paused}
+  @keyframes scroll{to{transform:translateX(-50%)}}
+  .mqchip{font-family:var(--mono);font-size:12.5px;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 13px;white-space:nowrap;background:rgba(255,255,255,.02)}
+  @media(prefers-reduced-motion:reduce){.mqtrack{animation:none;flex-wrap:wrap}}
+</style>
+<div class="note">SKILLS — 3 opciones nuevas, todas en HTML/CSS (sin JS). Desplázate: hay 3 bloques.</div>
+<main>
+  <!-- OPT 4 -->
+  <section class="blk"><div class="wrap">
+    <span class="seclabel">Opción 4 · Matriz de dominio (barras)</span>
+    <p class="secdesc">Cada categoría con una barra de nivel animada y sus herramientas. Comunica <b>cuánto</b> dominas cada área.</p>
+    <div class="eyebrow mono">cat skills.md</div><h3 class="h2">Security skills</h3>
+    <div class="mtx">
+      <div class="mcard" style="--ac:#f87171"><div class="mhd"><span class="nm">💀 Red Team</span><span class="lvl">advanced</span></div><div class="ptrack"><div class="pfill" style="--w:88%"></div></div><div class="mtags"><span class="tagk">Burp</span><span class="tagk">SQLMap</span><span class="tagk">Mimikatz</span><span class="tagk">Impacket</span><span class="tagk">Evil-WinRM</span></div></div>
+      <div class="mcard" style="--ac:#fde047"><div class="mhd"><span class="nm">🚩 CTF / Exploit</span><span class="lvl">advanced</span></div><div class="ptrack"><div class="pfill" style="--w:82%"></div></div><div class="mtags"><span class="tagk">pwntools</span><span class="tagk">Ghidra</span><span class="tagk">BOF</span><span class="tagk">Web Exploit</span><span class="tagk">Crypto</span></div></div>
+      <div class="mcard" style="--ac:#22d3ee"><div class="mhd"><span class="nm">🛰 Networking</span><span class="lvl">solid</span></div><div class="ptrack"><div class="pfill" style="--w:76%"></div></div><div class="mtags"><span class="tagk">Nmap</span><span class="tagk">Wireshark</span><span class="tagk">Gobuster</span><span class="tagk">Responder</span><span class="tagk">tcpdump</span></div></div>
+    </div>
+  </div></section>
+
+  <!-- OPT 5 radar static -->
+  <section class="blk"><div class="wrap">
+    <span class="seclabel">Opción 5 · Radar de habilidades</span>
+    <p class="secdesc">Radar hexagonal: tu perfil de un vistazo (Web, Network, Recon, AD, Crypto, Reversing). A la derecha el detalle por eje.</p>
+    <div class="eyebrow mono">cat skills.md</div><h3 class="h2">Security skills</h3>
+    <div class="radarwrap">
+      <svg viewBox="0 0 300 300" width="100%" style="max-width:340px">
+        <!-- rings -->
+        <polygon points="150,40 245.3,95 245.3,205 150,260 54.7,205 54.7,95" fill="none" stroke="rgba(255,255,255,.08)"/>
+        <polygon points="150,77.4 212.9,113.7 212.9,186.3 150,222.6 87.1,186.3 87.1,113.7" fill="none" stroke="rgba(255,255,255,.07)"/>
+        <polygon points="150,113.7 181.4,131.9 181.4,168.1 150,186.3 118.6,168.1 118.6,131.9" fill="none" stroke="rgba(255,255,255,.06)"/>
+        <!-- axes -->
+        <g stroke="rgba(255,255,255,.08)">
+          <line x1="150" y1="150" x2="150" y2="40"/><line x1="150" y1="150" x2="245.3" y2="95"/>
+          <line x1="150" y1="150" x2="245.3" y2="205"/><line x1="150" y1="150" x2="150" y2="260"/>
+          <line x1="150" y1="150" x2="54.7" y2="205"/><line x1="150" y1="150" x2="54.7" y2="95"/>
+        </g>
+        <!-- data -->
+        <polygon points="150,48.8 231,103.3 226.2,194 150,232.5 92.8,183 85.2,112.6" fill="rgba(139,92,246,.28)" stroke="#8b5cf6" stroke-width="2"/>
+        <circle cx="150" cy="48.8" r="3.5" fill="#f87171"/><circle cx="231" cy="103.3" r="3.5" fill="#22d3ee"/>
+        <circle cx="226.2" cy="194" r="3.5" fill="#a3e635"/><circle cx="150" cy="232.5" r="3.5" fill="#8b5cf6"/>
+        <circle cx="92.8" cy="183" r="3.5" fill="#fde047"/><circle cx="85.2" cy="112.6" r="3.5" fill="#f472b6"/>
+        <!-- labels -->
+        <g font-family="monospace" font-size="9" fill="#9ca3af">
+          <text x="150" y="30" text-anchor="middle">Web Exploit</text>
+          <text x="258" y="92" text-anchor="start">Network</text>
+          <text x="258" y="212" text-anchor="start">Recon</text>
+          <text x="150" y="278" text-anchor="middle">Active Dir</text>
+          <text x="42" y="212" text-anchor="end">Crypto</text>
+          <text x="42" y="92" text-anchor="end">Reversing</text>
+        </g>
+      </svg>
+      <div>
+        <div class="rl"><span class="dot" style="background:#f87171"></span><span class="nm">Web Exploit<span class="tools">Burp · SQLMap · Wfuzz</span></span><span class="pc">92%</span></div>
+        <div class="rl"><span class="dot" style="background:#22d3ee"></span><span class="nm">Network<span class="tools">Nmap · Wireshark · tcpdump</span></span><span class="pc">85%</span></div>
+        <div class="rl"><span class="dot" style="background:#a3e635"></span><span class="nm">Recon<span class="tools">Amass · Subfinder · OSINT</span></span><span class="pc">80%</span></div>
+        <div class="rl"><span class="dot" style="background:#8b5cf6"></span><span class="nm">Active Directory<span class="tools">BloodHound · Impacket</span></span><span class="pc">75%</span></div>
+        <div class="rl"><span class="dot" style="background:#f472b6"></span><span class="nm">Reversing<span class="tools">Ghidra · gdb · radare2</span></span><span class="pc">68%</span></div>
+        <div class="rl"><span class="dot" style="background:#fde047"></span><span class="nm">Crypto<span class="tools">hashcat · John · sage</span></span><span class="pc">60%</span></div>
+      </div>
+    </div>
+  </div></section>
+
+  <!-- OPT 6 marquee static -->
+  <section class="blk"><div class="wrap">
+    <span class="seclabel">Opción 6 · Marquee animado</span>
+    <p class="secdesc">Filas de herramientas que se desplazan en bucle (direcciones alternas), por categoría. Se pausan al pasar el ratón.</p>
+    <div class="eyebrow mono">cat skills.md</div><h3 class="h2">Security skills</h3>
+    <div class="mq">
+      <div class="mqrow" style="--ac:#f87171;--dur:30s"><span class="mqlabel">Red Team</span><div class="mqtrack">
+        <span class="mqchip">Burp Suite</span><span class="mqchip">SQLMap</span><span class="mqchip">Hydra</span><span class="mqchip">Hashcat</span><span class="mqchip">Mimikatz</span><span class="mqchip">Impacket</span><span class="mqchip">CrackMapExec</span><span class="mqchip">Evil-WinRM</span><span class="mqchip">BloodHound</span>
+        <span class="mqchip">Burp Suite</span><span class="mqchip">SQLMap</span><span class="mqchip">Hydra</span><span class="mqchip">Hashcat</span><span class="mqchip">Mimikatz</span><span class="mqchip">Impacket</span><span class="mqchip">CrackMapExec</span><span class="mqchip">Evil-WinRM</span><span class="mqchip">BloodHound</span>
+      </div></div>
+      <div class="mqrow" style="--ac:#fde047;--dur:34s"><span class="mqlabel">CTF</span><div class="mqtrack">
+        <span class="mqchip">Buffer Overflow</span><span class="mqchip">Rev Eng</span><span class="mqchip">Web Exploit</span><span class="mqchip">Cryptography</span><span class="mqchip">Ghidra</span><span class="mqchip">Pivoting</span><span class="mqchip">Active Directory</span><span class="mqchip">pwntools</span><span class="mqchip">Stego</span>
+        <span class="mqchip">Buffer Overflow</span><span class="mqchip">Rev Eng</span><span class="mqchip">Web Exploit</span><span class="mqchip">Cryptography</span><span class="mqchip">Ghidra</span><span class="mqchip">Pivoting</span><span class="mqchip">Active Directory</span><span class="mqchip">pwntools</span><span class="mqchip">Stego</span>
+      </div></div>
+      <div class="mqrow" style="--ac:#22d3ee;--dur:28s"><span class="mqlabel">Network</span><div class="mqtrack">
+        <span class="mqchip">Nmap</span><span class="mqchip">Wireshark</span><span class="mqchip">Netcat</span><span class="mqchip">Gobuster</span><span class="mqchip">Subfinder</span><span class="mqchip">Amass</span><span class="mqchip">tcpdump</span><span class="mqchip">Responder</span><span class="mqchip">Masscan</span>
+        <span class="mqchip">Nmap</span><span class="mqchip">Wireshark</span><span class="mqchip">Netcat</span><span class="mqchip">Gobuster</span><span class="mqchip">Subfinder</span><span class="mqchip">Amass</span><span class="mqchip">tcpdump</span><span class="mqchip">Responder</span><span class="mqchip">Masscan</span>
+      </div></div>
+    </div>
+  </div></section>
+</main>
