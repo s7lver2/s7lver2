@@ -4,18 +4,18 @@ import { FaTimes } from 'react-icons/fa';
 
 // ── ASCII banner ───────────────────────────────────────────────────────
 const BANNER = `
- _____ _____                 
-|   __|___  |___ _ _ ___ ___ 
+ _____ _____
+|   __|___  |___ _ _ ___ ___
 |__   |_  | | -_| | | -_|  _|
-|_____|___|_|___|___| _|_|  
-               |_|          
+|_____|___|_|___|___| _|_|
+               |_|
 
 s7lver@portfolio ~ zsh
 Type 'help' for available commands.
 `;
 
 // ── Command processor ──────────────────────────────────────────────────
-function processCommand(raw: string): string {
+function processCommand(raw: string, onNavgate?: (section: string) => void): string {
   const input = raw.trim();
   const lower = input.toLowerCase();
   const [cmd, ...args] = lower.split(' ');
@@ -34,6 +34,9 @@ Available commands:
   hack            → Initialize hack sequence
   uname -a        → System info
   history         → Command history
+  github          → GitHub summary
+  htb             → HackTheBox stats
+  open <section>  → Navigate to section
   clear           → Clear terminal
   exit            → Close terminal
       `;
@@ -127,6 +130,26 @@ Built with Next.js 15 & pure chaos`;
     5  nmap localhost
     6  hack`;
 
+    case 'github':
+      return `Fetching GitHub summary…
+See GitHub section or: open github`;
+
+    case 'htb':
+      return `HackTheBox stats in #htb section. Try: open htb`;
+
+    case 'open':
+      const section = args[0];
+      const validSections = ['hero', 'skills', 'projects', 'htb', 'github', 'contact'];
+      if (!section) {
+        return `Usage: open <section>\nValid sections: ${validSections.join(', ')}`;
+      }
+      if (!validSections.includes(section)) {
+        return `Invalid section: ${section}\nValid sections: ${validSections.join(', ')}`;
+      }
+      // Signal to close and navigate
+      if (onNavgate) onNavgate(section);
+      return '__NAVIGATE__';
+
     case 'clear':
       return '__CLEAR__';
     case 'exit':
@@ -138,13 +161,20 @@ Built with Next.js 15 & pure chaos`;
   }
 }
 
+// ── Get command list ──────────────────────────────────────────────────
+const COMMANDS = [
+  'whoami', 'ls', 'cat', 'nmap', 'ping', 'skills', 'sudo', 'hack', 'uname',
+  'history', 'github', 'htb', 'open', 'help', 'clear', 'exit',
+];
+
 // ── Component ──────────────────────────────────────────────────────────
 interface TerminalProps {
   open: boolean;
   onClose: () => void;
+  onNavigate?: (section: string) => void;
 }
 
-export default function Terminal({ open, onClose }: TerminalProps) {
+export default function Terminal({ open, onClose, onNavigate }: TerminalProps) {
   const [input, setInput]       = useState('');
   const [history, setHistory]   = useState<{ type: 'input' | 'output' | 'banner'; text: string }[]>([
     { type: 'banner', text: BANNER },
@@ -180,12 +210,19 @@ export default function Terminal({ open, onClose }: TerminalProps) {
     (e: React.FormEvent) => {
       e.preventDefault();
       const raw = input.trim();
-      const result = processCommand(raw || '');
+      const result = processCommand(raw || '', onNavigate);
 
       if (result === '__CLEAR__') {
         setHistory([{ type: 'banner', text: BANNER }]);
       } else if (result === '__EXIT__') {
         onClose();
+      } else if (result === '__NAVIGATE__') {
+        setHistory((h) => [
+          ...h,
+          { type: 'input', text: raw || '' },
+        ]);
+        // onNavigate was already called by processCommand
+        setTimeout(() => onClose(), 300);
       } else {
         setHistory((h) => [
           ...h,
@@ -198,7 +235,7 @@ export default function Terminal({ open, onClose }: TerminalProps) {
       setHistoryIdx(-1);
       setInput('');
     },
-    [input, onClose]
+    [input, onClose, onNavigate]
   );
 
   const handleKey = useCallback(
@@ -219,8 +256,18 @@ export default function Terminal({ open, onClose }: TerminalProps) {
           return next;
         });
       }
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const currentInput = input.trim().toLowerCase();
+        // Filter commands that start with current input
+        const matches = COMMANDS.filter((cmd) => cmd.startsWith(currentInput));
+        // If exactly one match, autocomplete it
+        if (matches.length === 1) {
+          setInput(matches[0] + ' ');
+        }
+      }
     },
-    [cmdHistory]
+    [cmdHistory, input]
   );
 
   return (

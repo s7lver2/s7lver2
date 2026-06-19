@@ -15,6 +15,26 @@ export default function Home() {
   const [terminalOpen, setTerminalOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
 
+  // Handle terminal navigation to sections
+  const handleNavigateToSection = (section: string) => {
+    const sectionMap: Record<string, string> = {
+      hero: 'hero',
+      skills: 'skills',
+      projects: 'projects',
+      htb: 'htb',
+      github: 'htb', // GitHub info is in HTB section
+      contact: 'contact',
+    };
+
+    const elementId = sectionMap[section];
+    if (elementId) {
+      const element = document.getElementById(elementId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -58,7 +78,11 @@ export default function Home() {
 
       <Footer />
 
-      <Terminal open={terminalOpen} onClose={() => setTerminalOpen(false)} />
+      <Terminal
+        open={terminalOpen}
+        onClose={() => setTerminalOpen(false)}
+        onNavigate={handleNavigateToSection}
+      />
       <CommandPalette
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
