@@ -1,0 +1,38 @@
+import type { Metadata } from "next";
+import { JetBrains_Mono, Sora } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next"
+import { Analytics } from "@vercel/analytics/next"
+import TrackingBeacon from "@/app/components/TrackingBeacon"
+import "./globals.css";
+
+const jetbrainsMono = JetBrains_Mono({ 
+  subsets: ["latin"],
+  variable: '--font-mono',
+});
+
+const sora = Sora({ 
+  subsets: ["latin"],
+  variable: '--font-display',
+});
+
+export const metadata: Metadata = {
+  title: "s7lver - Developer Portfolio",
+  description: "S7lver Personal Portfolio",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="es">
+      <body className={`${jetbrainsMono.variable} ${sora.variable} font-mono antialiased`}>
+        {children}
+        <TrackingBeacon />
+        <SpeedInsights />
+        <Analytics />
+      </body>
+    </html>
+  );
+}
