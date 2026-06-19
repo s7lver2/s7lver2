@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 
 interface LiveVisit {
   lat: number; lon: number
@@ -52,27 +51,21 @@ const FEED_META: Record<FeedItem['kind'], { color: string; icon: string; word: s
 }
 
 export default function LivePage() {
-  const router = useRouter()
   const [stream, setStream] = useState<StreamData>({ activeLastHour: 0, todayTotal: 0, recent: [], ts: 0 })
   const [feed, setFeed] = useState<FeedItem[]>([])
   const [online, setOnline] = useState<PresenceSession[]>([])
   const seenRef = useRef(new Set<string>())
 
   useEffect(() => {
-    const es = new EventSource('/api/admin/stream')
-    es.onmessage = e => {
+    const poll = async () => {
       try {
-        const d = JSON.parse(e.data) as StreamData
+        const r = await fetch('/api/admin/stats')
+        if (!r.ok) return
+        const d = await r.json() as StreamData
         setStream(d)
         setOnline(d.online ?? [])
 
         const added: FeedItem[] = []
-        for (const ev of d.events ?? []) {
-          const key = `${ev.type}:${ev.sessionId}:${ev.ts}`
-          if (seenRef.current.has(key)) continue
-          seenRef.current.add(key)
-          added.push({ kind: ev.type, label: ev.city || ev.country || 'somewhere', page: ev.page, ts: ev.ts, key })
-        }
         for (const v of d.recent ?? []) {
           const key = `visit:${v.timestamp}:${v.lat}:${v.lon}`
           if (seenRef.current.has(key)) continue
@@ -88,11 +81,10 @@ export default function LivePage() {
         }
       } catch { }
     }
-    es.onerror = () => {
-      if (es.readyState === EventSource.CLOSED) router.replace('/admin/login')
-    }
-    return () => es.close()
-  }, [router])
+    poll()
+    const id = setInterval(poll, 5000)
+    return () => clearInterval(id)
+  }, [])
 
   return (
     <>

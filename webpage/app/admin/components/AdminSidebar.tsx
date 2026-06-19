@@ -19,16 +19,20 @@ export default function AdminSidebar() {
   const router = useRouter()
   const [live, setLive] = useState<LiveData>({ activeLastHour: 0, todayTotal: 0 })
   const [open, setOpen] = useState(false)
-  const esRef = useRef<EventSource | null>(null)
+  const esRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
-    const es = new EventSource('/api/admin/stream')
-    esRef.current = es
-    es.onmessage = (e) => {
-      try { const d = JSON.parse(e.data) as LiveData; setLive(d) } catch { }
+    const poll = async () => {
+      try {
+        const r = await fetch('/api/admin/stats')
+        if (!r.ok) return
+        const d = await r.json() as { activeLastHour?: number; todayTotal?: number }
+        setLive({ activeLastHour: d.activeLastHour ?? 0, todayTotal: d.todayTotal ?? 0 })
+      } catch { }
     }
-    es.onerror = () => { es.close() }
-    return () => es.close()
+    poll()
+    esRef.current = setInterval(poll, 15000)
+    return () => { if (esRef.current) clearInterval(esRef.current) }
   }, [])
 
   const logout = async () => {
