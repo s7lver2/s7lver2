@@ -6,6 +6,10 @@
   :root {
     --gradient-purple: 139, 92, 246;
     --gradient-blue: 59, 130, 246;
+    --purple: #8b5cf6;
+    --blue: #3b82f6;
+    --green: #22c55e;
+    --mono: 'JetBrains Mono', monospace;
   }
   
   body {
@@ -548,6 +552,117 @@
     .p1, .p5 { grid-column: 1 / span 2; }
     .de { max-height: 120px; opacity: 1; }
     .bento:hover .tile:not(:hover) { opacity: 1; }
+  }
+
+  /* HTB KPIs + Bars */
+  .row4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-top: 24px;
+  }
+
+  .row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 14px;
+  }
+
+  @media (max-width: 760px) {
+    .row4 { grid-template-columns: repeat(2, 1fr); }
+    .row2 { grid-template-columns: 1fr; }
+  }
+
+  .kpi {
+    background: var(--glass);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px;
+    transition: .25s;
+  }
+
+  .kpi:hover {
+    transform: translateY(-4px);
+    border-color: rgba(139, 92, 246, .4);
+    box-shadow: 0 22px 55px -38px rgba(139, 92, 246, .6);
+  }
+
+  .lab {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+
+  .val {
+    font-size: 27px;
+    font-weight: 800;
+    margin-top: 7px;
+    letter-spacing: -.02em;
+  }
+
+  .val.g {
+    background: linear-gradient(100deg, var(--purple), var(--blue));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .dd {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--green);
+    margin-top: 4px;
+  }
+
+  .card {
+    background: var(--glass);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px;
+  }
+
+  .cap {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--dim);
+    margin-bottom: 8px;
+  }
+
+  .bar {
+    margin: 12px 0;
+  }
+
+  .bar .t {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+
+  .bar .t .n {
+    color: var(--mut);
+  }
+
+  .track {
+    height: 8px;
+    background: rgba(255, 255, 255, .06);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .fill {
+    height: 100%;
+    border-radius: 6px;
+    width: 0;
+    animation: gw 1.1s ease forwards;
+  }
+
+  @keyframes gw {
+    to { width: var(--w); }
   }
 }
 
