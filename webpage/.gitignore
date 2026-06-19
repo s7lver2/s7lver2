@@ -28,6 +28,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local analytics data (use Redis in prod)
+/data
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
