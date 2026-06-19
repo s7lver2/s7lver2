@@ -9,15 +9,26 @@ import HTBSection      from '@/components/sections/HTB';
 import ContactSection  from '@/components/sections/Contact';
 import Footer          from '@/components/sections/Footer';
 import Terminal        from '@/components/Terminal';
+import CommandPalette  from '@/components/CommandPalette';
 
 export default function Home() {
   const [terminalOpen, setTerminalOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
-  // Backtick global shortcut
+  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+      // ⌘K / Ctrl+K for command palette
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setPaletteOpen((o) => !o);
+        setTerminalOpen(false); // Close terminal when opening palette
+      }
+
+      // Backtick for terminal
       if (e.key === '`') setTerminalOpen((o) => !o);
       if (e.key === 'Escape') setTerminalOpen(false);
     };
@@ -48,6 +59,11 @@ export default function Home() {
       <Footer />
 
       <Terminal open={terminalOpen} onClose={() => setTerminalOpen(false)} />
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        onOpenTerminal={() => setTerminalOpen(true)}
+      />
     </>
   );
 }
