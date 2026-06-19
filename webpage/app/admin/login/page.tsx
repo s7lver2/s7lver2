@@ -199,7 +199,7 @@ export default function AdminLogin() {
       })
       const data = await res.json().catch(() => ({}))
       if (res.ok) {
-        if (data.needsSetup) { setSetupName(data.name ?? username); setLoading(false); return }
+        if (data.setup) { setSetupName(data.name ?? (username || 'user')); setLoading(false); return }
         window.location.replace('/admin')
       } else {
         setError(data.error ?? 'Invalid credentials'); setShake(n => n + 1); setLoading(false)
