@@ -34,7 +34,14 @@ yarn install
 pnpm install
 ```
 
-3. Inicia el servidor de desarrollo:
+3. Configura las variables de entorno (`.env.local`):
+```
+GITHUB_USERNAME=tu_usuario_github
+# Opcional: para mayor límite de rate limit de GitHub API
+GITHUB_TOKEN=tu_token_github
+```
+
+4. Inicia el servidor de desarrollo:
 ```bash
 npm run dev
 # o
@@ -43,7 +50,7 @@ yarn dev
 pnpm dev
 ```
 
-4. Abre [http://localhost:3000](http://localhost:3000) en tu navegador
+5. Abre [http://localhost:3000](http://localhost:3000) en tu navegador
 
 ## 🏗️ Estructura del Proyecto
 
@@ -65,8 +72,28 @@ portfolio/
 1. **Hero Section** - Presentación con nombre y tecnologías
 2. **Tech Stack** - Grid de tecnologías que dominas
 3. **Proyectos** - Tarjetas con tus proyectos destacados de GitHub
-4. **Redes Sociales** - Enlaces a todas tus redes
-5. **Footer** - Cita inspiradora y email de contacto
+4. **GitHub** - Información de perfil (requiere `GITHUB_USERNAME` configurada)
+5. **Redes Sociales** - Enlaces a todas tus redes
+6. **Footer** - Cita inspiradora y email de contacto
+
+## ⌨️ Keyboard Shortcuts
+
+- **⌘K / Ctrl+K** - Abre la paleta de comandos (búsqueda de secciones)
+- **`` ` `` (acento grave)** - Abre el terminal interactivo
+
+## 🔧 Variables de Entorno
+
+### Requeridas
+- **GITHUB_USERNAME** - Tu nombre de usuario en GitHub. Necesario para cargar la sección de GitHub con información de perfil.
+
+### Opcionales
+- **GITHUB_TOKEN** - Token de acceso personal de GitHub (Fine-grained tokens recomendado). Aumenta el límite de rate limit de la API de GitHub de 60 a 5000 requests/hora. [Crear token](https://github.com/settings/tokens)
+
+Crear archivo `.env.local` en la raíz del proyecto:
+```
+GITHUB_USERNAME=tu_usuario_github
+GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
+```
 
 ## 🛠️ Personalización
 
