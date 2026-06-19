@@ -6,6 +6,7 @@ import HeroSection     from '@/components/sections/Hero';
 import SkillsSection   from '@/components/sections/Skills';
 import ProjectsSection from '@/components/sections/Projects';
 import HTBSection      from '@/components/sections/HTB';
+import GitHubSection   from '@/components/sections/GitHub';
 import ContactSection  from '@/components/sections/Contact';
 import Footer          from '@/components/sections/Footer';
 import Terminal        from '@/components/Terminal';
@@ -22,7 +23,7 @@ export default function Home() {
       skills: 'skills',
       projects: 'projects',
       htb: 'htb',
-      github: 'htb', // GitHub info is in HTB section
+      github: 'github',
       contact: 'contact',
     };
 
@@ -72,6 +73,7 @@ export default function Home() {
           <SkillsSection   />
           <ProjectsSection />
           <HTBSection      />
+          <GitHubSection   />
           <ContactSection  />
         </div>
       </main>
