@@ -1,5 +1,6 @@
 'use client';
 import { FaSkull, FaFlag, FaNetworkWired } from 'react-icons/fa';
+import { useReveal } from '@/lib/reveal';
 
 const cybersecSkills = [
   {
@@ -29,9 +30,12 @@ const cybersecSkills = [
 ];
 
 export default function SkillsSection() {
+  const reveal = useReveal();
+
   return (
-    <section id="skills" className="py-24 px-4">
-      <div className="max-w-6xl mx-auto">
+    <section id="skills" className="section py-24 px-4">
+      <div className="container-page">
+        <div ref={reveal} className="reveal">
         {/* Header */}
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-4 rounded-full border border-green-500/20 bg-green-500/5">
@@ -49,7 +53,7 @@ export default function SkillsSection() {
           {cybersecSkills.map((cat) => (
             <div
               key={cat.category}
-              className={`relative rounded-xl border border-white/10 bg-white/[0.02] p-6 transition-all duration-300 group shadow-lg ${cat.glowClass} hover:bg-white/[0.04] hover:border-white/20`}
+              className={`card-hover relative rounded-xl border border-white/10 bg-white/[0.02] p-6 transition-all duration-300 group shadow-lg ${cat.glowClass} hover:bg-white/[0.04] hover:border-white/20`}
             >
               {/* Accent left border */}
               <div
@@ -78,6 +82,7 @@ export default function SkillsSection() {
               </div>
             </div>
           ))}
+        </div>
         </div>
       </div>
     </section>

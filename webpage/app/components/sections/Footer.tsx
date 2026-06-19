@@ -29,8 +29,8 @@ export default function Footer() {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
 
   return (
-    <footer className="relative z-10 border-t border-white/10 bg-black/50 backdrop-blur-sm">
-      <div className="container mx-auto px-6 py-12">
+    <footer id="footer" className="section relative z-10 border-t border-white/10 bg-black/50 backdrop-blur-sm">
+      <div className="container-page py-12">
         <div className="grid md:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
           <div>

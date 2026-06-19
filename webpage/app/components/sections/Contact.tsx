@@ -2,6 +2,7 @@
 import {
   FaGithub, FaDiscord, FaTwitter, FaTiktok, FaInstagram, FaEnvelope,
 } from 'react-icons/fa';
+import { useReveal } from '@/lib/reveal';
 
 const socials = [
   { icon: <FaGithub />,    name: 'GitHub',    handle: '@s7lver2',     link: 'https://github.com/s7lver2' },
@@ -14,9 +15,12 @@ const socials = [
 export { socials };
 
 export default function ContactSection() {
+  const reveal = useReveal();
+
   return (
-    <section id="contact" className="py-24 px-4">
-      <div className="max-w-5xl mx-auto">
+    <section id="contact" className="section py-24 px-4">
+      <div className="container-page">
+        <div ref={reveal} className="reveal">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">Meet me</h2>
           <p className="text-gray-500">Find me!</p>
@@ -29,7 +33,7 @@ export default function ContactSection() {
               href={social.link}
               target="_blank"
               rel="noopener noreferrer"
-              className={`${index === 0 ? 'card-glass' : 'card-subtle'} p-5 hover:border-white/20 transition-all duration-300 group`}
+              className={`card-hover ${index === 0 ? 'card-glass' : 'card-subtle'} p-5 hover:border-white/20 transition-all duration-300 group`}
             >
               <div className="flex items-center gap-4">
                 <div className="text-2xl text-gray-500 group-hover:text-white transition-colors">
@@ -44,7 +48,7 @@ export default function ContactSection() {
           ))}
         </div>
 
-        <div className="card-accent p-8 backdrop-blur-xl max-w-2xl mx-auto text-center">
+        <div className="card-hover card-accent p-8 backdrop-blur-xl max-w-2xl mx-auto text-center">
           <blockquote className="text-xl md:text-2xl text-gray-300 italic mb-6">
             "Are you interested in a more serious talk? Email me"
           </blockquote>
@@ -54,6 +58,7 @@ export default function ContactSection() {
               nickespro130@outlook.es
             </a>
           </div>
+        </div>
         </div>
       </div>
     </section>

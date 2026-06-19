@@ -7,6 +7,7 @@ import {
 import {
   SiTypescript, SiNextdotjs, SiGo, SiLinux, SiRust,
 } from 'react-icons/si';
+import { useReveal } from '@/lib/reveal';
 
 const phrases      = ["I'm s7lver", "Call me s7lver", "Code with s7lver", "Build with s7lver"];
 const typingSpeed  = 80;
@@ -34,6 +35,7 @@ export default function HeroSection({ onOpenTerminal = () => {} }: HeroProps) {
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
   const [displayText, setDisplayText]           = useState('');
   const [isDeleting, setIsDeleting]             = useState(false);
+  const reveal = useReveal();
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -71,11 +73,12 @@ export default function HeroSection({ onOpenTerminal = () => {} }: HeroProps) {
   return (
     <section
       id="hero"
-      className={`min-h-screen flex flex-col items-center justify-center px-6 sm:px-8 pt-20 transition-opacity duration-1000 ${
+      className={`section min-h-screen flex flex-col items-center justify-center px-6 sm:px-8 pt-20 transition-opacity duration-1000 ${
         mounted ? 'opacity-100' : 'opacity-0'
       }`}
     >
-      <div className="w-full max-w-5xl mx-auto text-center space-y-10 md:space-y-14">
+      <div className="container-page w-full text-center">
+        <div ref={reveal} className="reveal space-y-10 md:space-y-14">
         {/* Badge */}
         <div className="inline-block px-5 py-2 rounded-full border border-white/10 bg-white/5">
           <span className="text-sm sm:text-base text-gray-400 font-medium">Developer & Creator</span>
@@ -118,7 +121,7 @@ export default function HeroSection({ onOpenTerminal = () => {} }: HeroProps) {
           {technologies.map((tech, index) => (
             <div
               key={tech.name}
-              className="group flex flex-col items-center gap-2"
+              className="card-hover group flex flex-col items-center gap-2"
               style={{ animationDelay: `${index * 0.05}s` }}
             >
               <div className="text-3xl sm:text-4xl text-gray-500 group-hover:text-white transition-all duration-300">
@@ -129,6 +132,7 @@ export default function HeroSection({ onOpenTerminal = () => {} }: HeroProps) {
               </span>
             </div>
           ))}
+        </div>
         </div>
       </div>
 

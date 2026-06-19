@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { FaShieldAlt, FaFlag, FaSkull, FaTrophy, FaExternalLinkAlt, FaLinux, FaWindows, FaApple } from 'react-icons/fa';
 import { SiFreebsd } from 'react-icons/si';
+import { useReveal } from '@/lib/reveal';
 
 interface HTBProfile {
   id:          number;
@@ -60,6 +61,7 @@ export default function HTBSection() {
   const [progress, setProgress] = useState<HTBProgress | null>(null);
   const [status,   setStatus]   = useState<'loading' | 'ok' | 'error'>('loading');
   const [errMsg,   setErrMsg]   = useState('');
+  const reveal = useReveal();
 
   useEffect(() => {
     fetch('/api/htb')
@@ -80,8 +82,9 @@ export default function HTBSection() {
   }, []);
 
   return (
-    <section id="htb" className="py-24 px-4">
-      <div className="max-w-6xl mx-auto">
+    <section id="htb" className="section py-24 px-4">
+      <div className="container-page">
+        <div ref={reveal} className="reveal">
 
         {/* Header */}
         <div className="text-center mb-16">
@@ -132,7 +135,7 @@ export default function HTBSection() {
                 { label: 'System Owns',  value: profile.system_owns,                   icon: <FaSkull /> },
                 { label: 'Points',       value: profile.points,                        icon: <FaShieldAlt /> },
               ].map((s) => (
-                <div key={s.label} className="rounded-xl border border-white/10 bg-white/[0.02] p-5 text-center">
+                <div key={s.label} className="card-hover rounded-xl border border-white/10 bg-white/[0.02] p-5 text-center">
                   <div className="text-green-400 text-xl mb-2 flex justify-center">{s.icon}</div>
                   <div className="text-2xl font-bold text-white font-mono mb-1">{s.value ?? '—'}</div>
                   <div className="text-xs text-gray-500 uppercase tracking-wider">{s.label}</div>
@@ -144,7 +147,7 @@ export default function HTBSection() {
               <div className="grid md:grid-cols-2 gap-6">
 
                 {/* ── Dificultades ── */}
-                <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6">
+                <div className="card-hover rounded-xl border border-white/10 bg-white/[0.02] p-6">
                   <h3 className="text-sm font-mono text-gray-400 uppercase tracking-widest mb-5">
                     By Difficulty
                   </h3>
@@ -174,7 +177,7 @@ export default function HTBSection() {
                 </div>
 
                 {/* ── OS ── */}
-                <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6">
+                <div className="card-hover rounded-xl border border-white/10 bg-white/[0.02] p-6">
                   <h3 className="text-sm font-mono text-gray-400 uppercase tracking-widest mb-5">
                     By OS
                   </h3>
@@ -219,6 +222,7 @@ export default function HTBSection() {
             </div>
           </>
         )}
+        </div>
       </div>
     </section>
   );

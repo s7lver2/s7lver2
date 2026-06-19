@@ -1,5 +1,6 @@
 'use client';
 import { FaExternalLinkAlt } from 'react-icons/fa';
+import { useReveal } from '@/lib/reveal';
 
 const projects = [
   {
@@ -35,9 +36,12 @@ const projects = [
 export { projects };
 
 export default function ProjectsSection() {
+  const reveal = useReveal();
+
   return (
-    <section id="projects" className="py-24 px-4">
-      <div className="max-w-7xl mx-auto">
+    <section id="projects" className="section py-24 px-4">
+      <div className="container-page">
+        <div ref={reveal} className="reveal">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">My projects</h2>
           <p className="text-gray-500">Here's My Best Projects</p>
@@ -50,7 +54,7 @@ export default function ProjectsSection() {
               href={project.link}
               target="_blank"
               rel="noopener noreferrer"
-              className={`${index === 0 ? 'card-glass' : 'card-subtle'} p-6 hover:border-white/20 transition-all duration-300 group`}
+              className={`card-hover ${index === 0 ? 'card-glass' : 'card-subtle'} p-6 hover:border-white/20 transition-all duration-300 group`}
             >
               <div className="flex items-start justify-between mb-4">
                 <h3 className="text-xl font-semibold text-white group-hover:text-gradient transition-all">
@@ -74,6 +78,7 @@ export default function ProjectsSection() {
               </div>
             </a>
           ))}
+        </div>
         </div>
       </div>
     </section>
