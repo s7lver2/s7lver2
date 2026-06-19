@@ -129,13 +129,37 @@ npm run build
 npm start
 ```
 
+## 📊 Admin Panel (Phase 2)
+
+El portfolio incluye un panel de analytics en `/admin`.
+
+### Acceso
+Navega a `/admin/login` e ingresa la contraseña configurada en `ROOT_PASSWORD`.
+
+### Variables de entorno
+```
+ADMIN_SECRET=cambiar_a_string_largo_aleatorio
+ROOT_PASSWORD=cambiar_esto
+# Storage (opcional; sin Redis los datos son efímeros en Vercel)
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
+```
+
+### Tracking
+El tracking de visitas está habilitado por defecto. Las páginas `/admin/*` no se rastrean.
+Sin Upstash Redis, los datos se guardan en `data/` (local) o `/tmp` (Vercel, efímero).
+
+### Dashboard
+- `/admin` — Overview con KPIs, gráficos y sessions recientes
+- `/admin/traffic` — Heatmap de actividad y análisis de fuentes
+- `/admin/live` — Actividad en tiempo real via SSE
+
 ## 💡 Mejoras Futuras
 
 - [ ] Agregar modo claro/oscuro
 - [ ] Implementar animaciones más complejas con Framer Motion
 - [ ] Agregar un blog integrado
 - [ ] Sistema de comentarios
-- [ ] Analytics integrado
 - [ ] Formulario de contacto funcional
 
 ## 📄 Licencia
