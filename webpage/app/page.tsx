@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Navbar          from '@/components/Navbar';
 import HeroSection     from '@/components/sections/Hero';
 import SkillsSection   from '@/components/sections/Skills';
+import LanguagesSection from '@/components/sections/Languages';
 import ProjectsSection from '@/components/sections/Projects';
 import HTBSection      from '@/components/sections/HTB';
 import GitHubSection   from '@/components/sections/GitHub';
@@ -71,6 +72,7 @@ export default function Home() {
         <div className="relative z-10">
           <HeroSection     onOpenTerminal={() => setTerminalOpen(true)} />
           <SkillsSection   />
+          <LanguagesSection />
           <ProjectsSection />
           <HTBSection      />
           <GitHubSection   />

@@ -777,6 +777,42 @@
   }
 }
 
+/* Languages marquee */
+.marq {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.mrow {
+  position: relative;
+  overflow: hidden;
+  -webkit-mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.mtrack {
+  display: flex;
+  gap: 42px;
+  width: max-content;
+  align-items: center;
+  animation: marqScroll 32s linear infinite;
+}
+.mrow:nth-child(even) .mtrack { animation-direction: reverse; }
+.mrow:hover .mtrack { animation-play-state: paused; }
+@keyframes marqScroll { to { transform: translateX(-50%); } }
+.lang {
+  display: flex; align-items: center; gap: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px; font-weight: 600;
+  color: rgba(255,255,255,.55); white-space: nowrap;
+  transition: color .2s;
+}
+.lang:hover { color: #fff; }
+.lang .lic { width: 24px; height: 24px; color: var(--lc); }
+@media (prefers-reduced-motion: reduce) {
+  .mtrack { animation: none; flex-wrap: wrap; }
+}
+
 /* Command Palette Styles */
 .ov {
   position: fixed;
