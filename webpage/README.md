@@ -129,12 +129,13 @@ npm run build
 npm start
 ```
 
-## 📊 Admin Panel (Phase 2)
+## 📊 Admin Panel (Phase 2 + Phase 3)
 
-El portfolio incluye un panel de analytics en `/admin`.
+El portfolio incluye un panel de analytics y gestión de usuarios en `/admin`.
 
 ### Acceso
 Navega a `/admin/login` e ingresa la contraseña configurada en `ROOT_PASSWORD`.
+Los usuarios no-root reciben un OTP de primer acceso generado por el root.
 
 ### Variables de entorno
 ```
@@ -143,16 +144,25 @@ ROOT_PASSWORD=cambiar_esto
 # Storage (opcional; sin Redis los datos son efímeros en Vercel)
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
+# WebAuthn (Phase 3)
+NEXT_PUBLIC_SITE_URL=https://tu-dominio
+# Avatar/banner uploads con Vercel Blob (Phase 3, opcional)
+BLOB_READ_WRITE_TOKEN=
 ```
 
 ### Tracking
 El tracking de visitas está habilitado por defecto. Las páginas `/admin/*` no se rastrean.
 Sin Upstash Redis, los datos se guardan en `data/` (local) o `/tmp` (Vercel, efímero).
 
-### Dashboard
+### Dashboard (Phase 2)
 - `/admin` — Overview con KPIs, gráficos y sessions recientes
 - `/admin/traffic` — Heatmap de actividad y análisis de fuentes
 - `/admin/live` — Actividad en tiempo real via SSE
+
+### Usuarios y seguridad (Phase 3)
+- `/admin/users` — Gestión de usuarios (solo root): crear, suspender, resetear OTP, eliminar
+- `/admin/account` — Perfil propio: avatar, bio, passkeys WebAuthn
+- `/admin/audit` — Log de auditoría paginado (últimas 2000 acciones)
 
 ## 💡 Mejoras Futuras
 
