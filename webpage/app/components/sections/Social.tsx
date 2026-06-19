@@ -5,12 +5,12 @@ import { toAscii, loadImageToCanvas, generateAvatarCanvas } from '@/lib/ascii';
 import { useReveal } from '@/lib/reveal';
 
 const SOCIALS = [
-  { k: 'github', v: 'github.com/s7lver', color: '#6e5494', avatar: '/avatars/github.png', url: 'https://github.com/s7lver', initials: 'GH' },
-  { k: 'discord', v: '@s7lver', color: '#5865f2', avatar: '/avatars/discord.png', url: '#', initials: 'DC' },
-  { k: 'twitter', v: 'x.com/s7lver', color: '#1d9bf0', avatar: '/avatars/twitter.png', url: 'https://x.com/s7lver', initials: 'X' },
-  { k: 'tiktok', v: '@s7lver', color: '#ff0050', avatar: '/avatars/tiktok.png', url: '#', initials: 'TT' },
-  { k: 'instagram', v: '@s7lver', color: '#e1306c', avatar: '/avatars/instagram.png', url: '#', initials: 'IG' },
-  { k: 'htb', v: 'app.hackthebox.com/s7lver', color: '#9fef00', avatar: '/avatars/htb.png', url: '#', initials: 'HTB' },
+  { k: 'github', v: 'github.com/s7lver2', color: '#6e5494', avatar: '/api/avatar/github', url: 'https://github.com/s7lver2', initials: 'GH' },
+  { k: 'discord', v: '@s7lver', color: '#5865f2', avatar: '/api/avatar/discord', url: '#', initials: 'DC' },
+  { k: 'twitter', v: 'x.com/s7lver', color: '#1d9bf0', avatar: '/api/avatar/twitter', url: 'https://x.com/s7lver', initials: 'X' },
+  { k: 'tiktok', v: '@s7lver', color: '#ff0050', avatar: '/api/avatar/tiktok', url: '#', initials: 'TT' },
+  { k: 'instagram', v: '@s7lver', color: '#e1306c', avatar: '/api/avatar/instagram', url: '#', initials: 'IG' },
+  { k: 'htb', v: 'app.hackthebox.com/s7lver', color: '#9fef00', avatar: '/api/avatar/htb', url: '#', initials: 'HTB' },
 ];
 
 const PLACEHOLDER_ASCII = `
