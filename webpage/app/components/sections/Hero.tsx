@@ -70,7 +70,7 @@ export default function HeroSection({ onOpenTerminal = () => {} }: HeroProps) {
 
   return (
     <section
-      id="about"
+      id="hero"
       className={`min-h-screen flex flex-col items-center justify-center px-6 sm:px-8 pt-20 transition-opacity duration-1000 ${
         mounted ? 'opacity-100' : 'opacity-0'
       }`}
