@@ -124,7 +124,7 @@
   /* Hero section */
   .hero {
     position: relative;
-    min-height: 84vh;
+    min-height: 100vh;
     display: flex;
     align-items: center;
     overflow: hidden;
@@ -145,9 +145,65 @@
   }
 
   .bgGlow {
-    background:
-      radial-gradient(620px 480px at 16% 34%, rgba(139, 92, 246, 0.22), transparent 60%),
-      radial-gradient(560px 460px at 88% 20%, rgba(59, 130, 246, 0.16), transparent 62%);
+    background: transparent;
+  }
+
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(70px);
+    will-change: transform;
+    pointer-events: none;
+  }
+  .orb1 {
+    width: 62vw; height: 54vw; left: -6%; top: -8%;
+    background: radial-gradient(circle, rgba(139,92,246,.30), transparent 62%);
+    animation: orbDrift1 36s ease-in-out infinite;
+  }
+  .orb2 {
+    width: 56vw; height: 52vw; right: -8%; top: 12%;
+    background: radial-gradient(circle, rgba(59,130,246,.26), transparent 64%);
+    animation: orbDrift2 44s ease-in-out infinite;
+  }
+  @keyframes orbDrift1 {
+    0%,100% { transform: translate(0,0) scale(1); }
+    50%     { transform: translate(48px,36px) scale(1.10); }
+  }
+  @keyframes orbDrift2 {
+    0%,100% { transform: translate(0,0) scale(1.05); }
+    50%     { transform: translate(-44px,28px) scale(.94); }
+  }
+
+  .scrolldown {
+    position: absolute;
+    left: 50%; bottom: 26px;
+    transform: translateX(-50%);
+    z-index: 3;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: .2em; text-transform: uppercase;
+    color: rgba(255,255,255,.4);
+  }
+  .scrolldown .mouse {
+    width: 24px; height: 38px;
+    border: 1.5px solid rgba(255,255,255,.3);
+    border-radius: 13px; position: relative;
+  }
+  .scrolldown .mouse::before {
+    content: ""; position: absolute; left: 50%; top: 7px;
+    width: 3px; height: 7px; border-radius: 3px; background: #8b5cf6;
+    transform: translateX(-50%);
+    animation: scrollWheel 1.6s ease-in-out infinite;
+  }
+  @keyframes scrollWheel {
+    0%   { opacity: 0; transform: translate(-50%, 0); }
+    30%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, 12px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .orb { animation: none; }
+    .scrolldown .mouse::before { animation: none; }
   }
 
   #wave {

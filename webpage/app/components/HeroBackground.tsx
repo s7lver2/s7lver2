@@ -149,7 +149,10 @@ export default function HeroBackground() {
 
   return (
     <>
-      <div className="bg bgGlow" id="glow" ref={glowRef}></div>
+      <div className="bg bgGlow" id="glow" ref={glowRef}>
+        <div className="orb orb1"></div>
+        <div className="orb orb2"></div>
+      </div>
       <canvas className="bg" id="wave" ref={canvasRef}></canvas>
       <div className="veil"></div>
     </>

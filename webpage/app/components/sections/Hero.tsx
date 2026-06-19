@@ -35,16 +35,11 @@ export default function HeroSection({ onOpenTerminal = () => {} }: HeroProps) {
               $ start hacking
             </button>
           </div>
-          <div className="chips">
-            <span className="chip">TypeScript</span>
-            <span className="chip">Next.js</span>
-            <span className="chip">Rust</span>
-            <span className="chip">Go</span>
-            <span className="chip">Python</span>
-            <span className="chip">Linux</span>
-            <span className="chip">Docker</span>
-          </div>
         </div>
+      </div>
+      <div className="scrolldown" aria-hidden="true">
+        <span>scroll</span>
+        <div className="mouse"></div>
       </div>
     </section>
   );
