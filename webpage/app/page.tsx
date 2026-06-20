@@ -11,6 +11,7 @@ import GitHubSection   from '@/components/sections/GitHub';
 import SocialSection   from '@/components/sections/Social';
 import Footer          from '@/components/sections/Footer';
 import CommandPalette  from '@/components/CommandPalette';
+import ProgressRail    from '@/components/ProgressRail';
 
 export default function Home() {
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -74,6 +75,7 @@ export default function Home() {
   return (
     <>
       <Navbar onOpenTerminal={openTerminal} />
+      <ProgressRail />
 
       <main className="min-h-screen">
         {/* Background ambient blobs */}

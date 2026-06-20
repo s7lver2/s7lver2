@@ -1523,6 +1523,24 @@
   opacity: 0.2;
 }
 
+/* Progress rail */
+.prail { position: fixed; left: 22px; top: 50%; transform: translateY(-50%); z-index: 40;
+  display: flex; flex-direction: column; gap: 18px; padding-left: 6px;
+  opacity: 0; pointer-events: none; transition: opacity .35s; }
+.prail-on { opacity: 1; pointer-events: auto; }
+.prail-line { position: absolute; left: 12px; top: 6px; bottom: 6px; width: 2px; background: rgba(255,255,255,.08); }
+.prail-fill { width: 2px; background: linear-gradient(180deg, #8b5cf6, #3b82f6); box-shadow: 0 0 8px #8b5cf6; transition: height .15s linear; }
+.prnode { position: relative; display: flex; align-items: center; gap: 10px; background: none; border: 0; cursor: pointer; padding: 0; z-index: 2; }
+.prdot { width: 13px; height: 13px; border-radius: 50%; border: 2px solid rgba(255,255,255,.2); background: #08080b; flex-shrink: 0; transition: .2s; }
+.prnode.done .prdot { border-color: #8b5cf6; background: #8b5cf6; }
+.prnode.active .prdot { border-color: #3b82f6; background: #3b82f6; box-shadow: 0 0 0 4px rgba(59,130,246,.2); }
+.prlabel { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: rgba(255,255,255,.5);
+  opacity: 0; transform: translateX(-6px); transition: opacity .2s, transform .2s; white-space: nowrap; }
+.prnode:hover .prlabel { opacity: 1; transform: translateX(0); }
+.prnode.active .prlabel { color: #fff; }
+@media (max-width: 900px) { .prail { display: none; } }
+@media (prefers-reduced-motion: reduce) { .prail-fill { transition: none; } }
+
 /* Social fastfetch section */
 .ff {
   margin-top: 26px;
