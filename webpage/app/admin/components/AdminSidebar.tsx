@@ -21,9 +21,7 @@ const GROUPS: NavGroup[] = [
     title: 'Contenido',
     items: [
       { href: '/admin/content/projects', label: 'Proyectos', icon: '◫' },
-      { href: '/admin/content/skills', label: 'Skills', icon: '◈' },
       { href: '/admin/content/socials', label: 'Redes', icon: '@' },
-      { href: '/admin/content/home', label: 'Home', icon: '¶' },
     ]
   },
   {
@@ -32,7 +30,6 @@ const GROUPS: NavGroup[] = [
       { href: '/admin/profiles', label: 'Profiles', icon: '🎭' },
       { href: '/admin/users', label: 'Users', icon: '👤' },
       { href: '/admin/audit', label: 'Audit', icon: '📋' },
-      { href: '/admin/settings', label: 'Ajustes', icon: '⚙' },
     ]
   }
 ]
