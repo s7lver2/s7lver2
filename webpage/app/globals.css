@@ -12,6 +12,7 @@
     --blue: #3b82f6;
     --green: #22c55e;
     --mono: 'JetBrains Mono', monospace;
+    --font-body: var(--font-display);
   }
   
   body {

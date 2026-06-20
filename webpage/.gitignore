@@ -34,3 +34,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# build logs & task artifacts
+*.log
+.sdd/task-*-brief.md
+.sdd/task-*-report.md
+.sdd/task-*-review.md
