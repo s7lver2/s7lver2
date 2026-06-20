@@ -1123,8 +1123,6 @@
 
 /* Navigate panel styles (reused from palette) */
 .palart {
-  flex-shrink: 0;
-  width: 240px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(139, 92, 246, 0.15);
   border-radius: 8px;
@@ -1140,6 +1138,34 @@
   margin: 0;
   white-space: pre;
   word-wrap: break-word;
+}
+
+.ccnav-body {
+  display: flex;
+  gap: 22px;
+  padding: 18px;
+}
+
+.ccnav-body .palart {
+  flex-shrink: 0;
+  width: 230px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ccnav-body .pallist {
+  flex: 1;
+}
+
+@media (max-width: 600px) {
+  .ccnav-body {
+    flex-direction: column;
+  }
+
+  .ccnav-body .palart {
+    width: 100%;
+  }
 }
 
 .pallist {

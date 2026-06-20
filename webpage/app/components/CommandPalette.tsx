@@ -159,11 +159,12 @@ export default function CommandPalette({
         {/* Mac-style window header with dots */}
         <div className="ccbar">
           <div className="dots">
-            <span></span>
-            <span></span>
-            <span></span>
+            <span className="r"></span>
+            <span className="y"></span>
+            <span className="g"></span>
           </div>
-          <div className="cctitle">command center</div>
+          <div className="cctitle"><b>s7lver@portfolio</b> — command center</div>
+          <div className="kbadge">⌘K</div>
           <button
             onClick={onClose}
             className="ccx"
@@ -204,30 +205,32 @@ export default function CommandPalette({
                 />
               </div>
 
-              <div className="palart">
-                <pre className="text-xs leading-tight overflow-hidden">
-                  {asciiArt || 'No art loaded'}
-                </pre>
-              </div>
+              <div className="ccnav-body">
+                <div className="palart">
+                  <pre className="text-xs leading-tight overflow-hidden">
+                    {asciiArt || 'No art loaded'}
+                  </pre>
+                </div>
 
-              <div className="pallist">
-                {SECTIONS.map((section, idx) => (
-                  <button
-                    ref={idx === selectedIdx ? selectedRef : null}
-                    key={section.id}
-                    onClick={() => {
-                      const element = document.getElementById(section.id);
-                      if (element) {
-                        element.scrollIntoView({ behavior: 'smooth' });
-                        onClose();
-                      }
-                    }}
-                    className={`li ${idx === selectedIdx ? 'li-selected' : ''}`}
-                  >
-                    <span className="li-label">{section.label}</span>
-                    <span className="li-hint">{section.href}</span>
-                  </button>
-                ))}
+                <div className="pallist">
+                  {SECTIONS.map((section, idx) => (
+                    <button
+                      ref={idx === selectedIdx ? selectedRef : null}
+                      key={section.id}
+                      onClick={() => {
+                        const element = document.getElementById(section.id);
+                        if (element) {
+                          element.scrollIntoView({ behavior: 'smooth' });
+                          onClose();
+                        }
+                      }}
+                      className={`li ${idx === selectedIdx ? 'li-selected' : ''}`}
+                    >
+                      <span className="li-label">{section.label}</span>
+                      <span className="li-hint">{section.href}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="palfoot">
@@ -237,6 +240,7 @@ export default function CommandPalette({
                   <span>navigate</span>
                 </span>
                 <span>↵ go</span>
+                <span>Tab terminal</span>
                 <span>esc close</span>
               </div>
             </>
