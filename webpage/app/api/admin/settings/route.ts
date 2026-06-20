@@ -40,6 +40,22 @@ export async function PATCH(req: Request) {
   if (typeof body.discordId === 'string') patch.discordId = body.discordId.replace(/[^0-9]/g, '');
   if (typeof body.trackingEnabled === 'boolean') patch.trackingEnabled = body.trackingEnabled;
 
+  // Handle flags
+  if (body.flags && typeof body.flags === 'object') {
+    const flags = {
+      terminal: typeof body.flags.terminal === 'boolean' ? body.flags.terminal : true,
+      machines: typeof body.flags.machines === 'boolean' ? body.flags.machines : true,
+      timeline: typeof body.flags.timeline === 'boolean' ? body.flags.timeline : true,
+      maintenance: typeof body.flags.maintenance === 'boolean' ? body.flags.maintenance : false,
+    };
+    patch.flags = flags;
+  }
+
+  // Handle theme
+  if (typeof body.theme === 'string' && ['morado', 'azul', 'verde', 'mono'].includes(body.theme)) {
+    patch.theme = body.theme;
+  }
+
   const next = await updateSettings(patch);
 
   const ip = getTrueClientIp(new Headers(req.headers));
@@ -52,5 +68,7 @@ export async function PATCH(req: Request) {
     avatars: next.avatars,
     discordId: next.discordId,
     trackingEnabled: next.trackingEnabled,
+    flags: next.flags,
+    theme: next.theme,
   });
 }

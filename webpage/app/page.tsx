@@ -14,10 +14,40 @@ import CommandPalette  from '@/components/CommandPalette';
 import ProgressRail    from '@/components/ProgressRail';
 import { track } from '@/lib/track';
 
+interface Flags {
+  terminal: boolean;
+  machines: boolean;
+  timeline: boolean;
+  maintenance: boolean;
+}
+
+const THEMES: Record<string, { color1: string; color2: string }> = {
+  morado: { color1: '#8b5cf6', color2: '#3b82f6' },
+  azul: { color1: '#3b82f6', color2: '#06b6d4' },
+  verde: { color1: '#22c55e', color2: '#06b6d4' },
+  mono: { color1: '#ffffff', color2: '#a0a0a0' },
+};
+
 export default function Home() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [paletteTab, setPaletteTab] = useState<'nav' | 'term'>('nav');
   const [trackedSections, setTrackedSections] = useState(new Set<string>());
+  const [flags, setFlags] = useState<Flags>({ terminal: true, machines: true, timeline: true, maintenance: false });
+
+  // Fetch flags and apply theme on mount
+  useEffect(() => {
+    fetch('/api/flags')
+      .then(r => r.json())
+      .then(data => {
+        if (data.flags) setFlags(data.flags);
+        if (data.theme && THEMES[data.theme]) {
+          const themeConfig = THEMES[data.theme];
+          document.documentElement.style.setProperty('--brand-1', themeConfig.color1);
+          document.documentElement.style.setProperty('--brand-2', themeConfig.color2);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Handle terminal navigation to sections
   const handleNavigateToSection = (section: string) => {
@@ -51,8 +81,8 @@ export default function Home() {
       const tag = (e.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 
-      // ⌘K / Ctrl+K for command palette (nav tab)
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      // ⌘K / Ctrl+K for command palette (nav tab) — only if terminal flag is true
+      if (flags.terminal && (e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setPaletteTab('nav');
         setPaletteOpen((o) => {
@@ -64,8 +94,8 @@ export default function Home() {
         });
       }
 
-      // Backtick for terminal
-      if (e.key === '`') {
+      // Backtick for terminal — only if terminal flag is true
+      if (flags.terminal && e.key === '`') {
         e.preventDefault();
         track('cmdk_open', { detail: 'term' });
         openTerminal();
@@ -79,7 +109,7 @@ export default function Home() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [paletteOpen]);
+  }, [paletteOpen, flags.terminal]);
 
   // Track scroll depth
   useEffect(() => {
@@ -124,7 +154,7 @@ export default function Home() {
   return (
     <>
       <Navbar onOpenTerminal={openTerminal} />
-      <ProgressRail />
+      {flags.timeline && <ProgressRail />}
 
       <main className="min-h-screen">
         {/* Background ambient blobs */}
@@ -135,7 +165,7 @@ export default function Home() {
 
         <div className="relative z-10">
           <HeroSection     onOpenTerminal={openTerminal} />
-          <SkillsSection   />
+          <SkillsSection   machinesEnabled={flags.machines} />
           <LanguagesSection />
           <ProjectsSection />
           <HTBSection      />

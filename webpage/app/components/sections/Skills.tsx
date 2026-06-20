@@ -24,7 +24,11 @@ function generateDataPoints(axes: SkillC[], cx = 150, cy = 150) {
   });
 }
 
-export default function SkillsSection() {
+interface Props {
+  machinesEnabled?: boolean;
+}
+
+export default function SkillsSection({ machinesEnabled = true }: Props) {
   const reveal = useReveal();
   const svgRef = React.useRef<SVGSVGElement>(null);
   const [axes, setAxes] = React.useState<SkillC[]>(DEFAULT_SKILLS);
@@ -156,7 +160,7 @@ export default function SkillsSection() {
             </div>
           </div>
 
-          <MachinesCarousel activeConcept={activeConcept} onConceptHover={setActiveConcept} />
+          <MachinesCarousel activeConcept={activeConcept} onConceptHover={setActiveConcept} enabled={machinesEnabled} />
         </div>
       </div>
     </section>

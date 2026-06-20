@@ -6,7 +6,7 @@ interface MachineCard {
   name: string; difficulty: string; os: string; date: string;
   concepts: string[]; conceptKeys: ConceptKey[]; youtube?: string;
 }
-interface Props { activeConcept: ConceptKey | null; onConceptHover: (c: ConceptKey | null) => void; }
+interface Props { activeConcept: ConceptKey | null; onConceptHover: (c: ConceptKey | null) => void; enabled?: boolean; }
 
 function diffClass(d: string) {
   const x = d.toLowerCase();
@@ -23,7 +23,7 @@ function osIcon(os: string) {
   return '💻';
 }
 
-export default function MachinesCarousel({ activeConcept, onConceptHover }: Props) {
+export default function MachinesCarousel({ activeConcept, onConceptHover, enabled = true }: Props) {
   const [machines, setMachines] = useState<MachineCard[]>([]);
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export default function MachinesCarousel({ activeConcept, onConceptHover }: Prop
       .catch(() => setMachines([]));
   }, []);
 
-  if (machines.length === 0) return null;
+  if (!enabled || machines.length === 0) return null;
   const doubled = [...machines, ...machines];
 
   return (
