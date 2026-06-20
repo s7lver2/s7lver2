@@ -1904,3 +1904,33 @@
 .skillblk[data-active] svg .axline:not(.on) { opacity: .15; }
 .rl, .pt, .axline { transition: opacity .18s, background .18s; }
 @media (prefers-reduced-motion: reduce) { .rl, .pt, .axline { transition: none; } }
+
+/* Machines carousel */
+.mcaro-mask { position: relative; overflow: hidden; margin-top: 12px;
+  -webkit-mask: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+  mask: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); }
+.mtrack2 { display: flex; gap: 14px; width: max-content; animation: machScroll 48s linear infinite; }
+.mcaro-mask:hover .mtrack2 { animation-play-state: paused; }
+@keyframes machScroll { to { transform: translateX(-50%); } }
+.mcard { flex: 0 0 250px; border: 1px solid rgba(255,255,255,.08); border-top: 2px solid var(--ac, #8b5cf6);
+  border-radius: 14px; background: rgba(21,21,29,.7); padding: 15px 16px; transition: transform .2s, box-shadow .2s, opacity .2s, filter .2s; }
+.mcard:hover { transform: translateY(-4px); box-shadow: 0 20px 45px -32px rgba(139,92,246,.8); }
+.mcaro[data-active] .mcard:not(.has) { opacity: .2; filter: grayscale(.6); }
+.mcaro[data-active] .mcard.has { box-shadow: 0 0 0 1px #8b5cf6; }
+.mtop { display: flex; align-items: center; justify-content: space-between; }
+.mname { font-weight: 800; font-size: 17px; }
+.mos { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: rgba(255,255,255,.55); margin-top: 6px; }
+.diff { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em; padding: 3px 7px; border-radius: 5px; }
+.d-easy { color: #22c55e; background: rgba(34,197,94,.13); }
+.d-med { color: #eab308; background: rgba(234,179,8,.13); }
+.d-hard { color: #f97316; background: rgba(249,115,22,.13); }
+.d-ins { color: #ef4444; background: rgba(239,68,68,.13); }
+.mtags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.mtag { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: rgba(255,255,255,.55); border: 1px solid rgba(255,255,255,.08); border-radius: 6px; padding: 2px 7px; }
+.mfoot { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: rgba(255,255,255,.4); }
+.mfoot .pwn { color: #22c55e; }
+.mfoot a { color: #3b82f6; text-decoration: none; }
+@media (prefers-reduced-motion: reduce), (max-width: 760px) {
+  .mcaro-mask { -webkit-mask: none; mask: none; overflow-x: auto; }
+  .mtrack2 { animation: none; }
+}
