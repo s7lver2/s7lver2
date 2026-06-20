@@ -1,0 +1,8 @@
+[
+  { "name": "Lame", "so": "Linux", "dificultad": "Fácil", "skills": "Enumeration Samba CVE", "youtube": "" },
+  { "name": "Forest", "so": "Windows", "dificultad": "Fácil", "skills": "Active Directory Kerberoasting BloodHound DCSync", "youtube": "" },
+  { "name": "Cap", "so": "Linux", "dificultad": "Fácil", "skills": "Web IDOR Linux Capabilities", "youtube": "" },
+  { "name": "Tentacle", "so": "Linux", "dificultad": "Difícil", "skills": "Active Directory Kerberos Crypto Enumeration", "youtube": "" },
+  { "name": "Jeeves", "so": "Windows", "dificultad": "Media", "skills": "Web RCE Reversing", "youtube": "" },
+  { "name": "Cascade", "so": "Windows", "dificultad": "Media", "skills": "Active Directory LDAP Crypto Reversing", "youtube": "" }
+]
