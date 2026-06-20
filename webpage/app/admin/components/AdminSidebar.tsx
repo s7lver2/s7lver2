@@ -4,13 +4,37 @@ import { useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-const NAV = [
-  { href: '/admin', label: 'Overview', icon: '◈' },
-  { href: '/admin/traffic', label: 'Traffic', icon: '⊡' },
-  { href: '/admin/live', label: 'Live', icon: '◎' },
-  { href: '/admin/profiles', label: 'Profiles', icon: '🎭' },
-  { href: '/admin/users', label: 'Users', icon: '👤' },
-  { href: '/admin/audit', label: 'Audit', icon: '📋' },
+interface NavItem { href: string; label: string; icon: string }
+interface NavGroup { title: string; items: NavItem[] }
+
+const GROUPS: NavGroup[] = [
+  {
+    title: 'Analytics',
+    items: [
+      { href: '/admin', label: 'Overview', icon: '◈' },
+      { href: '/admin/traffic', label: 'Traffic', icon: '⊡' },
+      { href: '/admin/live', label: 'Live', icon: '◎' },
+      { href: '/admin/engagement', label: 'Engagement', icon: '⊙' },
+    ]
+  },
+  {
+    title: 'Contenido',
+    items: [
+      { href: '/admin/content/projects', label: 'Proyectos', icon: '◫' },
+      { href: '/admin/content/skills', label: 'Skills', icon: '◈' },
+      { href: '/admin/content/socials', label: 'Redes', icon: '@' },
+      { href: '/admin/content/home', label: 'Home', icon: '¶' },
+    ]
+  },
+  {
+    title: 'Sistema',
+    items: [
+      { href: '/admin/profiles', label: 'Profiles', icon: '🎭' },
+      { href: '/admin/users', label: 'Users', icon: '👤' },
+      { href: '/admin/audit', label: 'Audit', icon: '📋' },
+      { href: '/admin/settings', label: 'Ajustes', icon: '⚙' },
+    ]
+  }
 ]
 
 interface LiveData { activeLastHour: number; todayTotal: number }
@@ -55,29 +79,45 @@ export default function AdminSidebar() {
         </div>
       </div>
 
-      {/* Nav */}
+      {/* Nav with groups */}
       <nav style={{ padding: '12px 10px', flex: 1, overflowY: 'auto' }}>
-        {NAV.map(({ href, label, icon }) => (
-          <Link
-            key={href}
-            href={href}
-            onClick={() => setOpen(false)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '9px 12px', borderRadius: 8, marginBottom: 2,
-              fontFamily: 'var(--font-body)', fontSize: 12,
-              letterSpacing: '0.08em', textDecoration: 'none',
-              transition: 'background 0.15s, color 0.15s, border-color 0.15s',
-              background: isActive(href) ? 'rgba(139,92,246,0.14)' : 'transparent',
-              color: isActive(href) ? 'var(--text)' : 'rgba(255,255,255,0.45)',
-              border: isActive(href) ? '1px solid rgba(139,92,246,0.3)' : '1px solid transparent',
-            }}
-          >
-            <span style={{ fontSize: 14, width: 18, textAlign: 'center', color: isActive(href) ? '#8b5cf6' : 'inherit' }}>
-              {icon}
-            </span>
-            {label}
-          </Link>
+        {GROUPS.map((group, groupIdx) => (
+          <div key={group.title}>
+            {groupIdx > 0 && <div style={{ height: 1, background: 'rgba(139,92,246,0.1)', margin: '8px 0' }} />}
+            <div style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 10,
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+              color: 'rgba(139,92,246,0.4)',
+              padding: '8px 12px 6px 12px',
+              marginTop: groupIdx > 0 ? 8 : 0,
+            }}>
+              {group.title}
+            </div>
+            {group.items.map(({ href, label, icon }) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setOpen(false)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '9px 12px', borderRadius: 8, marginBottom: 2,
+                  fontFamily: 'var(--font-body)', fontSize: 12,
+                  letterSpacing: '0.08em', textDecoration: 'none',
+                  transition: 'background 0.15s, color 0.15s, border-color 0.15s',
+                  background: isActive(href) ? 'rgba(139,92,246,0.14)' : 'transparent',
+                  color: isActive(href) ? 'var(--text)' : 'rgba(255,255,255,0.45)',
+                  border: isActive(href) ? '1px solid rgba(139,92,246,0.3)' : '1px solid transparent',
+                }}
+              >
+                <span style={{ fontSize: 14, width: 18, textAlign: 'center', color: isActive(href) ? '#8b5cf6' : 'inherit' }}>
+                  {icon}
+                </span>
+                {label}
+              </Link>
+            ))}
+          </div>
         ))}
       </nav>
 
