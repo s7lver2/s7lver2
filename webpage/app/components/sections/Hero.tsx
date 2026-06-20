@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import HeroBackground from '@/components/HeroBackground';
 import { useReveal } from '@/lib/reveal';
+import { DEFAULT_HOME } from '@/lib/content-constants';
 
 interface HeroProps {
   onOpenTerminal?: () => void;
@@ -9,6 +11,21 @@ interface HeroProps {
 
 export default function HeroSection({ onOpenTerminal = () => {} }: HeroProps) {
   const reveal = useReveal();
+  const [title, setTitle] = useState(DEFAULT_HOME.heroTitle);
+  const [subtitle, setSubtitle] = useState(DEFAULT_HOME.heroSubtitle);
+
+  // Fetch home content from KV with fallback
+  useEffect(() => {
+    fetch('/api/content/home')
+      .then((r) => r.ok ? r.json() : null)
+      .then((d: typeof DEFAULT_HOME | null) => {
+        if (d && d.heroTitle && d.heroSubtitle) {
+          setTitle(d.heroTitle);
+          setSubtitle(d.heroSubtitle);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <section className="hero" id="hero">
@@ -19,7 +36,7 @@ export default function HeroSection({ onOpenTerminal = () => {} }: HeroProps) {
           <h1>
             Hi, I&apos;m <span className="grad">s7lver</span>
             <br />
-            Developer &amp; Cybersecurity Student
+            {subtitle}
           </h1>
           <div className="cta">
             <button

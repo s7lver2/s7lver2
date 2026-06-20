@@ -47,7 +47,7 @@ export default function GitHubSection() {
   const [data, setData] = useState<GitHubData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Generar heatmap pseudoaleatorio (demo) si no viene del API
+  // Heatmap demo solo si el API no devuelve datos reales
   const generateHeatmap = useMemo(() => {
     return Array.from({ length: 196 }, () => Math.floor(Math.random() * 5));
   }, []);
@@ -69,9 +69,9 @@ export default function GitHubSection() {
             repos: apiData.publicRepos || 0,
             stars: apiData.totalStars || 0,
             followers: apiData.followers || 0,
-            commitsPerYear: Math.floor(Math.random() * 500) + 100,
+            commitsPerYear: apiData.commitsPerYear ?? 0,
             languages,
-            heatmap: generateHeatmap,
+            heatmap: apiData.heatmap?.length ? apiData.heatmap : generateHeatmap,
           });
         } else {
           // Si no hay API, mostrar datos demo

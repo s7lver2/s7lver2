@@ -3,15 +3,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { toAscii, loadImageToCanvas, generateAvatarCanvas } from '@/lib/ascii';
 import { useReveal } from '@/lib/reveal';
-
-const SOCIALS = [
-  { k: 'github', v: 'github.com/s7lver2', color: '#6e5494', avatar: '/api/avatar/github', url: 'https://github.com/s7lver2', initials: 'GH' },
-  { k: 'discord', v: '@s7lver', color: '#5865f2', avatar: '/api/avatar/discord', url: '#', initials: 'DC' },
-  { k: 'twitter', v: 'x.com/s7lver', color: '#1d9bf0', avatar: '/api/avatar/twitter', url: 'https://x.com/s7lver', initials: 'X' },
-  { k: 'tiktok', v: '@s7lver', color: '#ff0050', avatar: '/api/avatar/tiktok', url: '#', initials: 'TT' },
-  { k: 'instagram', v: '@s7lver', color: '#e1306c', avatar: '/api/avatar/instagram', url: '#', initials: 'IG' },
-  { k: 'htb', v: 'app.hackthebox.com/s7lver', color: '#9fef00', avatar: '/api/avatar/htb', url: '#', initials: 'HTB' },
-];
+import ScrambleText from '@/components/ScrambleText';
+import { DEFAULT_SOCIALS } from '@/lib/content-constants';
 
 const PLACEHOLDER_ASCII = `
         :=+*#%@#*+=:
@@ -34,7 +27,7 @@ interface Social {
   k: string;
   v: string;
   color: string;
-  avatar: string;
+  avatar?: string;
   url: string;
   ascii?: string;
   initials?: string;
@@ -42,11 +35,34 @@ interface Social {
 
 export default function SocialSection() {
   const reveal = useReveal();
-  const [socials, setSocials] = useState<Social[]>(SOCIALS);
+  const defaultSocials = DEFAULT_SOCIALS.map((s) => ({
+    k: s.k,
+    v: s.v,
+    color: s.color,
+    url: s.url,
+    initials: s.initials,
+    avatar: `/api/avatar/${s.k}`,
+  }));
+  const [socials, setSocials] = useState<Social[]>(defaultSocials);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
+
+  // Fetch socials from KV with fallback to defaults
+  useEffect(() => {
+    fetch('/api/content/socials')
+      .then((r) => r.ok ? r.json() : null)
+      .then((d: Social[] | null) => {
+        if (Array.isArray(d) && d.length) {
+          setSocials(d.map((s) => ({
+            ...s,
+            avatar: s.avatar || `/api/avatar/${s.k}`,
+          })));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Cargar ASCIIs de avatares
   useEffect(() => {
@@ -55,18 +71,21 @@ export default function SocialSection() {
         socials.map(async (social) => {
           try {
             // Intenta cargar la imagen real
-            const canvas = await loadImageToCanvas(social.avatar, 160, 160);
-            return {
-              ...social,
-              ascii: toAscii(canvas, 28, 14),
-            };
+            if (social.avatar) {
+              const canvas = await loadImageToCanvas(social.avatar, 160, 160);
+              return {
+                ...social,
+                ascii: toAscii(canvas, 64, 36),
+              };
+            }
+            throw new Error('No avatar');
           } catch (e) {
             try {
               // Si falla, genera un canvas con gradiente + iniciales
               const canvas = generateAvatarCanvas(social.color, social.initials || '?', 160, 160);
               return {
                 ...social,
-                ascii: toAscii(canvas, 28, 14),
+                ascii: toAscii(canvas, 64, 36),
               };
             } catch (e2) {
               // Si todo falla, usa placeholder
@@ -83,7 +102,7 @@ export default function SocialSection() {
     };
 
     loadAvatars();
-  }, []);
+  }, [socials.length]);
 
   // Navegación por teclado
   useEffect(() => {
@@ -130,7 +149,7 @@ export default function SocialSection() {
         <div ref={reveal} className="reveal">
           <span className="seclabel">Sección · Social</span>
           <div className="eyebrow">./connect.sh</div>
-          <h2 className="h2">Find me online</h2>
+          <h2 className="h2"><ScrambleText text="Find me online" /></h2>
           <p className="secdesc">
             Pasa por cada red: el ASCII de la izquierda muestra tu{' '}
             <b>foto de perfil</b> (generada dinámicamente desde canvas).

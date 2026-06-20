@@ -1,0 +1,63 @@
+
+> portfolio@0.1.0 build
+> next build
+
+   ▲ Next.js 14.1.0
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/28) ...
+   Generating static pages (7/28) 
+   Generating static pages (14/28) 
+   Generating static pages (21/28) 
+ ✓ Generating static pages (28/28) 
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                               Size     First Load JS
+┌ ○ /                                     31.4 kB         116 kB
+├ ○ /_not-found                           887 B          85.3 kB
+├ λ /admin                                3.99 kB         188 kB
+├ λ /admin/account                        2.4 kB         86.9 kB
+├ λ /admin/audit                          1.88 kB        86.3 kB
+├ λ /admin/live                           2.03 kB        86.5 kB
+├ λ /admin/login                          3.22 kB        87.7 kB
+├ λ /admin/profiles                       2.26 kB        86.7 kB
+├ λ /admin/traffic                        3.33 kB         187 kB
+├ λ /admin/users                          2.72 kB        87.2 kB
+├ λ /api/admin/audit                      0 B                0 B
+├ λ /api/admin/auth                       0 B                0 B
+├ λ /api/admin/auth/setup                 0 B                0 B
+├ λ /api/admin/content/[type]             0 B                0 B
+├ λ /api/admin/me                         0 B                0 B
+├ λ /api/admin/settings                   0 B                0 B
+├ λ /api/admin/stats                      0 B                0 B
+├ λ /api/admin/stream                     0 B                0 B
+├ λ /api/admin/upload                     0 B                0 B
+├ λ /api/admin/users                      0 B                0 B
+├ λ /api/admin/users/[id]                 0 B                0 B
+├ λ /api/admin/webauthn/credentials/[id]  0 B                0 B
+├ λ /api/admin/webauthn/login/options     0 B                0 B
+├ λ /api/admin/webauthn/login/verify      0 B                0 B
+├ λ /api/admin/webauthn/register/options  0 B                0 B
+├ λ /api/admin/webauthn/register/verify   0 B                0 B
+├ λ /api/avatar/[network]                 0 B                0 B
+├ λ /api/content/[type]                   0 B                0 B
+├ ○ /api/github                           0 B                0 B
+├ λ /api/htb                              0 B                0 B
+├ ○ /api/htb/machines                     0 B                0 B
+└ λ /api/tracking                         0 B                0 B
++ First Load JS shared by all             84.5 kB
+  ├ chunks/69-3efcdcfddb07ba8b.js         29 kB
+  ├ chunks/fd9d1056-eb877075b4e8588c.js   53.4 kB
+  └ other shared chunks (total)           2.03 kB
+
+
+ƒ Middleware                              40.1 kB
+
+○  (Static)   prerendered as static content
+λ  (Dynamic)  server-rendered on demand using Node.js
+

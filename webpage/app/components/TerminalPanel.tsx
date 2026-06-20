@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { BANNER, processCommand, COMMANDS, THEMES } from '@/lib/terminal';
 import { toAscii, loadImageToCanvas } from '@/lib/ascii';
+import { track } from '@/lib/track';
 
 interface Entry {
   type: 'input' | 'output' | 'banner';
@@ -152,6 +153,10 @@ export default function TerminalPanel({
   const handleCommand = useCallback(
     (raw: string) => {
       const result = processCommand(raw, onNavigate);
+
+      // Track command
+      const cmd = raw.split(' ')[0];
+      track('terminal_cmd', { detail: cmd });
 
       // Handle sentinels
       if (result === '__CLEAR__') {

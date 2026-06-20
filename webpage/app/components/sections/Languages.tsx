@@ -1,6 +1,7 @@
 'use client';
 import { SiTypescript, SiNextdotjs, SiRust, SiGo, SiPython, SiJavascript, SiReact, SiCss3, SiDocker, SiLinux, SiGit, SiPostgresql } from 'react-icons/si';
 import { useReveal } from '@/lib/reveal';
+import ScrambleText from '@/components/ScrambleText';
 
 interface Language {
   name: string;
@@ -8,16 +9,13 @@ interface Language {
   color: string;
 }
 
-const ROW_A: Language[] = [
+const TOOLS: Language[] = [
   { name: 'TypeScript', icon: <SiTypescript />, color: '#3178c6' },
   { name: 'Next.js', icon: <SiNextdotjs />, color: '#ffffff' },
   { name: 'Rust', icon: <SiRust />, color: '#dea584' },
   { name: 'Go', icon: <SiGo />, color: '#00add8' },
   { name: 'Python', icon: <SiPython />, color: '#3776ab' },
   { name: 'JavaScript', icon: <SiJavascript />, color: '#f7df1e' },
-];
-
-const ROW_B: Language[] = [
   { name: 'React', icon: <SiReact />, color: '#61dafb' },
   { name: 'CSS3', icon: <SiCss3 />, color: '#1572b6' },
   { name: 'Docker', icon: <SiDocker />, color: '#2496ed' },
@@ -26,23 +24,6 @@ const ROW_B: Language[] = [
   { name: 'PostgreSQL', icon: <SiPostgresql />, color: '#4169e1' },
 ];
 
-function MarqueeRow({ languages, isEven }: { languages: Language[]; isEven: boolean }) {
-  const doubled = [...languages, ...languages];
-
-  return (
-    <div className="mrow">
-      <div className="mtrack">
-        {doubled.map((lang, idx) => (
-          <div key={idx} className="lang" style={{ '--lc': lang.color } as React.CSSProperties}>
-            <div className="lic">{lang.icon}</div>
-            <span>{lang.name}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function LanguagesSection() {
   const reveal = useReveal();
 
@@ -50,16 +31,22 @@ export default function LanguagesSection() {
     <section id="languages" className="section py-24 px-4">
       <div className="wrap">
         <div ref={reveal} className="reveal">
-          {/* Eyebrow */}
           <div className="eyebrow">ls -la tech/</div>
+          <h2 className="text-3xl md:text-4xl font-bold mb-2"><ScrambleText text="Languages & tools" /></h2>
 
-          {/* Title */}
-          <h2 className="text-3xl md:text-4xl font-bold mb-2">Languages & tools</h2>
-
-          {/* Marquee */}
-          <div className="marq">
-            <MarqueeRow languages={ROW_A} isEven={false} />
-            <MarqueeRow languages={ROW_B} isEven={true} />
+          <div className="toolsmarq">
+            <div className="toolstrack">
+              {[...TOOLS, ...TOOLS].map((tool, idx) => (
+                <div
+                  key={idx}
+                  className="toolbox"
+                  style={{ '--gc': tool.color } as React.CSSProperties}
+                  title={tool.name}
+                >
+                  {tool.icon}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

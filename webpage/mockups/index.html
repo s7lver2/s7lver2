@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>s7lver · mockups v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --b1:#8b5cf6; --b2:#3b82f6; --teal:#5eead4; --green:#22c55e; --cyan:#22d3ee;
+  --bg:#08080b; --line:rgba(255,255,255,.09);
+  --mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  --sans:'Sora',system-ui,-apple-system,sans-serif;
+  --dim:rgba(255,255,255,.5); --mut:rgba(255,255,255,.72); --txt:#f3f3f6;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:16px;
+  background-image:radial-gradient(1000px 560px at 82% -8%,rgba(139,92,246,.12),transparent),
+   radial-gradient(760px 420px at -5% 25%,rgba(59,130,246,.08),transparent);}
+code{font-family:var(--mono);font-size:.85em;color:var(--teal);background:rgba(94,234,212,.08);padding:1px 5px;border-radius:5px}
+
+.shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+.side{position:sticky;top:0;height:100vh;border-right:1px solid var(--line);padding:24px 16px;
+  background:rgba(10,10,14,.75);backdrop-filter:blur(12px)}
+.side .brand{font-family:var(--mono);font-size:15px;font-weight:700;letter-spacing:.02em;margin:0 0 2px;
+  background:linear-gradient(100deg,var(--b1),var(--b2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.side .sub{font-family:var(--mono);font-size:10.5px;color:var(--dim);margin-bottom:24px}
+.side nav a{display:flex;gap:9px;font-family:var(--mono);font-size:12.5px;color:var(--mut);
+  padding:9px 11px;border-radius:9px;text-decoration:none;border-left:2px solid transparent;transition:.15s}
+.side nav a:hover{background:rgba(139,92,246,.12);color:#fff;border-left-color:var(--b1)}
+.side nav .n{color:var(--b1);opacity:.65;font-size:11px}
+
+.sec{padding:60px 52px;border-bottom:1px solid var(--line);max-width:1080px}
+.eyebrow{font-family:var(--mono);font-size:11.5px;color:var(--b1);letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px}
+.sec h2{font-size:31px;font-weight:800;margin:0 0 8px;letter-spacing:-.02em}
+.note{color:var(--mut);font-size:14.5px;max-width:700px;line-height:1.6;margin:0 0 28px}
+
+/* window chrome shared */
+.win{width:100%;background:linear-gradient(145deg,rgba(16,16,22,.99),rgba(19,16,26,.99));
+  border:1px solid rgba(139,92,246,.22);border-radius:14px;overflow:hidden;
+  box-shadow:0 34px 90px -34px rgba(0,0,0,.95),inset 0 1px 0 rgba(255,255,255,.05)}
+.winbar{display:flex;align-items:center;gap:11px;padding:13px 16px;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.018)}
+.dots{display:flex;gap:8px}.dots i{width:12px;height:12px;border-radius:50%}
+.dots .r{background:#ff5f56}.dots .y{background:#ffbd2e}.dots .g{background:#27c93f}
+.wintitle{flex:1;text-align:center;font-family:var(--mono);font-size:12.5px;color:var(--mut)}
+.wintitle b{color:#fff;font-weight:500}
+.kbadge{font-family:var(--mono);font-size:11.5px;color:var(--mut);border:1px solid var(--line);border-radius:7px;padding:3px 9px;background:rgba(255,255,255,.03)}
+
+/* tabs */
+.tabs{display:flex;gap:4px;padding:10px 14px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+.tab{font-family:var(--mono);font-size:13px;color:var(--dim);padding:10px 17px;cursor:pointer;border:none;background:transparent;border-bottom:2px solid transparent;border-radius:8px 8px 0 0;transition:.15s}
+.tab:hover{color:var(--mut)}
+.tab.on{color:var(--teal);border-bottom-color:var(--teal);background:rgba(94,234,212,.07)}
+
+/* terminal body */
+.term{padding:18px 20px;font-family:var(--mono);font-size:13px;line-height:1.6;min-height:330px}
+.banner{color:var(--teal);font-size:12px;line-height:1.08;margin:0 0 6px;white-space:pre;text-shadow:0 0 16px rgba(94,234,212,.4)}
+.bsub{color:var(--dim);font-size:11.5px;margin-bottom:18px}
+.bsub .t{color:var(--teal)}
+.tprompt{color:var(--teal)}
+.tline{margin:2.5px 0}
+.tcmd{color:#fff}
+.tkey{color:#93a3bd;display:inline-block;min-width:58px}
+.tp{color:#a78bfa}.tg{color:var(--green)}.tc{color:var(--cyan)}.ty{color:#fbbf24}.td{color:var(--dim)}
+.cursor{display:inline-block;width:8px;height:16px;background:var(--teal);vertical-align:-3px;margin-left:3px;animation:blink 1.05s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* find me online */
+.ffbody{display:grid;grid-template-columns:330px 1fr;gap:26px;padding:24px;font-family:var(--mono);align-items:center}
+.bigart{white-space:pre;font-size:8.5px;line-height:1.05;color:var(--cyan);text-shadow:0 0 14px rgba(34,211,238,.35);letter-spacing:.5px;margin:0}
+.netrow{display:flex;align-items:baseline;gap:11px;padding:9px 12px;border-radius:9px;cursor:pointer;border:1px solid transparent;transition:.14s}
+.netrow:hover{background:rgba(94,234,212,.06)}
+.netrow.on{background:rgba(94,234,212,.09);border-color:rgba(94,234,212,.28)}
+.netrow .pk{color:var(--teal);width:12px;opacity:0}.netrow.on .pk{opacity:1}
+.netrow .k{min-width:100px;font-weight:600;font-size:14px}
+.netrow .v{color:var(--dim);font-size:12.5px}
+
+/* radar */
+.radarwrap{display:grid;grid-template-columns:360px 1fr;gap:38px;align-items:center}
+.radarcard{padding:8px}
+.rl{display:flex;align-items:center;gap:13px;padding:10px 9px;border-radius:9px;border-bottom:1px solid rgba(255,255,255,.06);font-family:var(--mono);font-size:13px;transition:.15s}
+.rl:hover{background:rgba(139,92,246,.1)}
+.rl-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;box-shadow:0 0 9px currentColor}
+.rl-nm{flex:1;color:var(--txt)}.rl-tools{display:block;color:var(--dim);font-size:11px;margin-top:2px}
+.rl-pc{color:var(--mut);font-weight:600}
+.btn{font-family:var(--mono);font-size:12.5px;color:var(--b1);background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.32);border-radius:9px;padding:8px 15px;cursor:pointer;margin-top:14px}
+.btn:hover{background:rgba(139,92,246,.22)}
+
+/* text fx */
+.fxgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px}
+.fxcard{background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:14px;padding:30px 22px;min-height:130px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.fxcard .lbl{position:absolute;top:11px;left:15px;font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.1em;text-transform:uppercase}
+.fxtxt{font-size:31px;font-weight:800}
+.fx-shimmer{background:linear-gradient(100deg,#fff 0%,var(--b1) 28%,var(--b2) 50%,var(--b1) 72%,#fff 100%);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 3.2s linear infinite}
+@keyframes shimmer{to{background-position:-200% center}}
+.fx-glitch{position:relative;color:#fff}
+.fx-glitch::before,.fx-glitch::after{content:attr(data-t);position:absolute;left:0;top:0;width:100%;overflow:hidden}
+.fx-glitch::before{color:#22d3ee;animation:gl1 2.6s infinite linear alternate}
+.fx-glitch::after{color:#f472b6;animation:gl2 2.2s infinite linear alternate}
+@keyframes gl1{0%,92%{clip-path:inset(0 0 100% 0)}93%{clip-path:inset(10% 0 60% 0);transform:translateX(-3px)}96%{clip-path:inset(42% 0 20% 0);transform:translateX(3px)}100%{clip-path:inset(0 0 100% 0)}}
+@keyframes gl2{0%,90%{clip-path:inset(100% 0 0 0)}91%{clip-path:inset(60% 0 10% 0);transform:translateX(3px)}95%{clip-path:inset(20% 0 50% 0);transform:translateX(-3px)}100%{clip-path:inset(100% 0 0 0)}}
+.fx-neon{color:#fff;text-shadow:0 0 7px var(--b1),0 0 16px var(--b1),0 0 30px var(--b2);animation:flick 4s infinite}
+@keyframes flick{0%,19%,21%,80%,100%{opacity:1}20%{opacity:.55}}
+.fx-scramble{font-family:var(--mono);color:var(--teal);text-shadow:0 0 13px rgba(94,234,212,.35)}
+.fx-type{font-family:var(--mono);color:#fff;border-right:3px solid var(--b1);white-space:nowrap;overflow:hidden;min-height:1em}
+.fx-uline{color:#fff;position:relative;padding-bottom:9px}
+.fx-uline::after{content:'';position:absolute;left:0;bottom:0;height:3px;width:100%;background:linear-gradient(90deg,var(--b1),var(--b2));transform-origin:left;animation:uline 2.6s ease-in-out infinite}
+@keyframes uline{0%,100%{transform:scaleX(0)}50%{transform:scaleX(1)}}
+
+/* social split */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.col{border:1px solid var(--line);border-radius:13px;padding:18px;background:rgba(255,255,255,.018)}
+.col h4{margin:0 0 14px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.before h4{color:#ef7a7a}.after h4{color:var(--green)}
+.smallart{white-space:pre;font-size:10px;line-height:1.04;color:var(--cyan);font-family:var(--mono);margin:0}
+
+/* ===== Selected work · real TUI (lazygit / ranger) ===== */
+.tui{--ac:#8b5cf6;font-family:var(--mono);background:#090a0e;font-size:12.5px}
+.tui-grid{display:grid;grid-template-columns:272px 1fr;padding:12px 12px 2px}
+.pane{position:relative;border:1px solid rgba(255,255,255,.13);margin:7px;padding:14px 0 8px}
+.pane.right{padding:16px 16px 12px}
+.pane.active{border-color:rgba(94,234,212,.45)}
+.pane-t{position:absolute;top:-9px;left:13px;background:#090a0e;padding:0 7px;font-size:11px;color:var(--dim);letter-spacing:.02em}
+.pane.active .pane-t{color:var(--teal)}
+.pane-t .n{color:var(--ac)}
+/* list */
+.lhdr{display:grid;grid-template-columns:18px 1fr auto;gap:8px;padding:0 13px 7px;color:var(--dim);font-size:10px;letter-spacing:.08em;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:3px}
+.prow{display:grid;grid-template-columns:18px 1fr auto;gap:8px;align-items:center;padding:8px 13px;cursor:pointer}
+.prow:hover{background:rgba(139,92,246,.08)}
+.prow.on{background:rgba(139,92,246,.92)}
+.prow.on .pn,.prow.on .pst,.prow.on .car{color:#fff}
+.prow .car{color:var(--ac);visibility:hidden}
+.prow.on .car{visibility:visible}
+.prow .pn{color:var(--mut);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prow .pst{font-size:10px;color:var(--dim)}
+/* bat preview */
+.bat{line-height:1.7;font-size:12px}
+.bl{display:flex}
+.bln{width:26px;text-align:right;color:rgba(255,255,255,.22);user-select:none;padding-right:9px;border-right:1px solid rgba(255,255,255,.07);margin-right:13px;flex-shrink:0}
+.bc{white-space:pre-wrap;color:var(--mut)}
+.bc.h1{color:#fff;font-weight:800}.bc.h1 .hh{color:var(--ac)}
+.bc.h2{color:var(--teal);font-weight:600}
+.bc .b{color:var(--ac)}
+.bc .blk{filter:drop-shadow(0 0 3px currentColor)}.bc .eblk{color:rgba(255,255,255,.1)}
+.bc .num{color:#fbbf24}.bc .str{color:#a3e635}.bc .k2{color:var(--cyan)}
+.batcur{display:inline-block;width:7px;height:13px;background:var(--teal);vertical-align:-2px;animation:blink 1.05s steps(1) infinite}
+/* vim status line */
+.statusline{display:flex;align-items:stretch;font-size:11px;border-top:1px solid rgba(255,255,255,.12)}
+.sl-mode{background:var(--ac);color:#06070a;font-weight:800;padding:6px 13px;letter-spacing:.1em}
+.sl-ctx{padding:6px 13px;color:var(--mut);background:rgba(255,255,255,.04);border-right:1px solid rgba(255,255,255,.06)}
+.sl-keys{padding:6px 13px;color:var(--dim);margin-left:auto;display:flex;gap:15px}
+.sl-keys b{color:var(--teal);font-weight:600}
+
+/* languages boxed icons */
+.toolsgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:14px}
+.toolbox{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);
+  border-radius:17px;background:rgba(255,255,255,.028);transition:.2s;cursor:pointer;position:relative;overflow:hidden}
+.toolbox::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 125%,var(--gc),transparent 70%);opacity:0;transition:.25s}
+.toolbox:hover{transform:translateY(-5px);border-color:var(--gc);box-shadow:0 20px 44px -26px var(--gc)}
+.toolbox:hover::before{opacity:.2}
+.toolbox svg{width:48px;height:48px;position:relative;z-index:1;filter:drop-shadow(0 4px 11px rgba(0,0,0,.5))}
+
+.howto{background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.2);border-radius:12px;padding:18px 22px;font-size:13.5px;color:var(--mut);line-height:1.6;max-width:720px}
+.howto b{color:#fff}.howto code{display:inline-block;margin-top:4px}
+
+@media(max-width:920px){.shell{grid-template-columns:1fr}.side{display:none}.sec{padding:40px 22px}
+.radarwrap,.ffbody,.split,.tui{grid-template-columns:1fr}.tui-list{border-right:none;border-bottom:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <div class="brand">s7lver / mockups</div>
+    <div class="sub">v2 · autocontenido</div>
+    <nav>
+      <a href="#cmd"><span class="n">01</span>Command center</a>
+      <a href="#find"><span class="n">02</span>Find me online</a>
+      <a href="#radar"><span class="n">03</span>Skills radar</a>
+      <a href="#fx"><span class="n">04</span>Text effects</a>
+      <a href="#social"><span class="n">05</span>ASCII social XL</a>
+      <a href="#work"><span class="n">06</span>Selected work · TUI</a>
+      <a href="#tools"><span class="n">07</span>Languages & tools</a>
+    </nav>
+  </aside>
+
+  <main>
+    <!-- 01 -->
+    <section class="sec" id="cmd">
+      <div class="eyebrow">⌘K · command center</div>
+      <h2>Command center idéntico a la foto</h2>
+      <p class="note">Dots mac reales, título <code>s7lver@portfolio — command center</code>, badge <code>⌘K</code>, tabs <b>navigate / terminal</b>, banner de bloques <b>S7LVER</b> en teal con glow y salida zsh coloreada. Click en los tabs.</p>
+      <div class="win" style="max-width:660px">
+        <div class="winbar">
+          <div class="dots"><i class="r"></i><i class="y"></i><i class="g"></i></div>
+          <div class="wintitle"><b>s7lver@portfolio</b> — command center</div>
+          <div class="kbadge">⌘K</div>
+        </div>
+        <div class="tabs">
+          <button class="tab" data-g="cmd">❯ navigate</button>
+          <button class="tab on" data-g="cmd">$ terminal</button>
+        </div>
+        <div class="term">
+<pre class="banner">  ███  ██████  ██      ██  ██  ██████  █████
+ ████      ██  ██      ██  ██  ██      ██  ██
+███       ██   ██      ██  ██  ████   █████
+ ███     ██    ██       ████   ██      ██ ██
+  ███   ██     ██  ██    ██    ██      ██  ██
+████    ██     ██████    ██    ██████  ██  ██</pre>
+          <div class="bsub">s7lver@portfolio <span class="t">~</span> zsh · type <span class="t">'help'</span></div>
+          <div class="tline"><span class="tprompt">s7lver@portfolio:~$</span> <span class="tcmd">whoami</span></div>
+          <div class="tline"><span class="tp">s7lver</span> <span class="td">·</span> uid=1337(s7lver) gid=1337(hackers)</div>
+          <div class="tline"><span class="tkey">Role:</span> Developer &amp; Cybersecurity Student</div>
+          <div class="tline"><span class="tkey">HTB:</span> <span class="tg">Hacker</span> Rank · user s7lver</div>
+          <div class="tline" style="margin-top:9px"><span class="tprompt">s7lver@portfolio:~$</span> <span class="tcmd">nmap localhost</span></div>
+          <div class="tline"><span class="tkey">PORT</span> STATE SERVICE</div>
+          <div class="tline">22/tcp <span class="tg">open</span> ssh</div>
+          <div class="tline">80/tcp <span class="tg">open</span> http<span class="cursor"></span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 -->
+    <section class="sec" id="find">
+      <div class="eyebrow">./connect.sh</div>
+      <h2>Find me online · mismo lenguaje</h2>
+      <p class="note">La terminal social hereda el marco: dots mac, prompt teal, glow y tipografía idéntica. ASCII del avatar grande. Hover en cada red.</p>
+      <div class="win">
+        <div class="winbar">
+          <div class="dots"><i class="r"></i><i class="y"></i><i class="g"></i></div>
+          <div class="wintitle"><b>s7lver@social</b> — ~/networks</div>
+          <div class="kbadge">6 nets</div>
+        </div>
+        <div class="ffbody">
+          <pre class="bigart" id="findart"></pre>
+          <div id="netlist"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section class="sec" id="radar">
+      <div class="eyebrow">cat skills.md</div>
+      <h2>Security skills · radar animado</h2>
+      <p class="note">Sonar girando, polígono que crece desde el centro, vértices con pulso/glow y hover en la leyenda resalta el vértice. Pulsa replay.</p>
+      <div class="radarwrap">
+        <div class="radarcard">
+          <svg id="radarSvg" viewBox="0 0 300 300" width="100%" style="max-width:340px;display:block;margin:auto"></svg>
+          <button class="btn" onclick="drawRadar()">↻ replay animación</button>
+        </div>
+        <div id="legend"></div>
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section class="sec" id="fx">
+      <div class="eyebrow">text fx</div>
+      <h2>Efectos de texto para títulos</h2>
+      <p class="note">Mockups en vivo. Aplicables a títulos de sección y al nombre del hero.</p>
+      <div class="fxgrid">
+        <div class="fxcard"><span class="lbl">01 · gradient shimmer</span><span class="fxtxt fx-shimmer">Security skills</span></div>
+        <div class="fxcard"><span class="lbl">02 · glitch RGB</span><span class="fxtxt fx-glitch" data-t="Selected work">Selected work</span></div>
+        <div class="fxcard"><span class="lbl">03 · neon glow</span><span class="fxtxt fx-neon">Find me online</span></div>
+        <div class="fxcard"><span class="lbl">04 · decode / scramble</span><span class="fxtxt fx-scramble" data-final="root@s7lver"></span></div>
+        <div class="fxcard"><span class="lbl">05 · typewriter</span><span class="fxtxt fx-type" id="typer"></span></div>
+        <div class="fxcard"><span class="lbl">06 · underline draw</span><span class="fxtxt fx-uline">Languages &amp; tools</span></div>
+      </div>
+    </section>
+
+    <!-- 05 -->
+    <section class="sec" id="social">
+      <div class="eyebrow">avatar.ascii</div>
+      <h2>ASCII social más grande y detallado</h2>
+      <p class="note">Más resolución de muestreo: de ~28×14 a ~70×42 chars. Más detalle, mejor presencia.</p>
+      <div class="split">
+        <div class="col before"><h4>● antes · 28×14</h4><pre class="smallart" id="art-before"></pre></div>
+        <div class="col after"><h4>● después · 70×42</h4><pre class="bigart" id="art-after" style="font-size:7px"></pre></div>
+      </div>
+    </section>
+
+    <!-- 06 TUI -->
+    <section class="sec" id="work">
+      <div class="eyebrow">ls ~/projects</div>
+      <h2>Selected work · TUI master-detail</h2>
+      <p class="note">TUI real estilo lazygit/ranger: paneles con borde y título <code>[1] projects</code>, barra de selección full-width, preview tipo <code>bat</code> (números de línea + syntax highlight + barras de lenguaje ASCII) y <b>status line</b> de vim con bloque de modo. Navega con ↑↓ (o <code>j</code>/<code>k</code>), hover o click.</p>
+      <div class="win">
+        <div class="winbar">
+          <div class="dots"><i class="r"></i><i class="y"></i><i class="g"></i></div>
+          <div class="wintitle"><b>s7lver@portfolio</b>:~$ projects</div>
+          <div class="kbadge">lazygit-style</div>
+        </div>
+        <div class="tui">
+          <div class="tui-grid">
+            <div class="pane left" id="plistPane">
+              <div class="pane-t"><span class="n">[1]</span> projects</div>
+              <div class="lhdr"><span></span><span>NAME</span><span>STATUS</span></div>
+              <div id="plist"></div>
+            </div>
+            <div class="pane right active" id="pdetailPane">
+              <div class="pane-t" id="pdetailTitle"><span class="n">[2]</span> README.md</div>
+              <div class="bat" id="pdetail"></div>
+            </div>
+          </div>
+          <div class="statusline" id="statusline"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 07 -->
+    <section class="sec" id="tools" style="border-bottom:none">
+      <div class="eyebrow">ls -la tech/</div>
+      <h2>Languages &amp; tools · solo iconos en cajitas</h2>
+      <p class="note">Sin texto, iconos 48px en cajas cuadradas con glow del color de marca al hover. (Iconos SVG embebidos — ya no dependen de internet.)</p>
+      <div class="toolsgrid" id="toolsgrid"></div>
+    </section>
+  </main>
+</div>
+
+<script src="icons.js"></script>
+<script>
+const AXES=[
+ {name:'Web Exploit',value:.92,color:'#f87171',tools:'Burp · SQLMap · Wfuzz'},
+ {name:'Network',value:.85,color:'#22d3ee',tools:'Nmap · Wireshark · tcpdump'},
+ {name:'Recon',value:.80,color:'#a3e635',tools:'Amass · Subfinder · OSINT'},
+ {name:'Active Dir',value:.75,color:'#8b5cf6',tools:'BloodHound · Impacket'},
+ {name:'Reversing',value:.68,color:'#f472b6',tools:'Ghidra · gdb · radare2'},
+ {name:'Crypto',value:.60,color:'#fde047',tools:'hashcat · John'},
+];
+const NETS=[
+ {k:'github',v:'github.com/s7lver2',c:'#a78bfa'},{k:'discord',v:'@s7lver',c:'#5865f2'},
+ {k:'twitter',v:'x.com/s7lver',c:'#1d9bf0'},{k:'tiktok',v:'@s7lver',c:'#ff4d67'},
+ {k:'instagram',v:'@s7lver',c:'#e1306c'},{k:'htb',v:'app.hackthebox.com/s7lver',c:'#9fef00'},
+];
+const PROJECTS=[
+ {slug:'file-meet',ac:'#00add8',status:'done',stars:240,forks:18,
+  desc:'P2P file sharing CLI in Go. Zero config, end-to-end encrypted transfers over a single command.',
+  tags:['Go','WebRTC','CLI'],langs:[['Go',88,'#00add8'],['Shell',12,'#89e051']]},
+ {slug:'ZephyrOS',ac:'#a3e635',status:'beta',stars:156,forks:24,
+  desc:'Minimal security-focused Linux distro for old systems and edge computing.',
+  tags:['Linux','Bash','Arch'],langs:[['Shell',64,'#89e051'],['C',26,'#555'],['Python',10,'#3776ab']]},
+ {slug:'tsuki',ac:'#dea584',status:'dev',stars:42,forks:3,
+  desc:'Arduino compiler & toolchain — a tiny language compiled to optimized AVR machine code.',
+  tags:['Rust','LLVM','Embedded'],langs:[['Rust',92,'#dea584'],['C',8,'#555']]},
+ {slug:'CodeDotJS',ac:'#3178c6',status:'dev',stars:88,forks:9,
+  desc:'Reactive JS framework. No virtual DOM, fine-grained signals, under 5kb gzipped.',
+  tags:['TypeScript','Vite'],langs:[['TypeScript',79,'#3178c6'],['JavaScript',21,'#f7df1e']]},
+];
+
+/* radar */
+function pc(i,r,cx=150,cy=150){const a=-Math.PI/2+i*Math.PI*2/AXES.length;return[cx+r*Math.cos(a),cy+r*Math.sin(a)];}
+function ring(r){return AXES.map((_,i)=>pc(i,r).join(',')).join(' ');}
+function drawRadar(){
+  const svg=document.getElementById('radarSvg');
+  const data=AXES.map((a,i)=>pc(i,110*a.value));
+  svg.innerHTML=`<defs>
+    <radialGradient id="sg"><stop offset="0%" stop-color="#8b5cf6" stop-opacity=".45"/><stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/></radialGradient>
+    <linearGradient id="fg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8b5cf6" stop-opacity=".45"/><stop offset="100%" stop-color="#3b82f6" stop-opacity=".22"/></linearGradient></defs>
+   <polygon points="${ring(110)}" fill="none" stroke="rgba(255,255,255,.08)"/>
+   <polygon points="${ring(82.5)}" fill="none" stroke="rgba(255,255,255,.07)"/>
+   <polygon points="${ring(55)}" fill="none" stroke="rgba(255,255,255,.06)"/>
+   <polygon points="${ring(27.5)}" fill="none" stroke="rgba(255,255,255,.05)"/>
+   <g stroke="rgba(255,255,255,.08)">${AXES.map((_,i)=>{const[x,y]=pc(i,110);return`<line x1="150" y1="150" x2="${x}" y2="${y}"/>`}).join('')}</g>
+   <polygon id="dp" points="${data.map(p=>p.join(',')).join(' ')}" fill="url(#fg)" stroke="#8b5cf6" stroke-width="2" style="transform-origin:150px 150px"/>
+   ${data.map((p,i)=>`<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="${AXES[i].color}" class="vtx" data-i="${i}"><animate attributeName="r" values="3.5;6.5;3.5" dur="2s" begin="${.6+i*.14}s" repeatCount="indefinite"/></circle>`).join('')}
+   <g font-family="monospace" font-size="9" fill="#9ca3af">${AXES.map((a,i)=>{const[x,y]=pc(i,133);let t='middle';if(i===1||i===2)t='start';if(i===4||i===5)t='end';return`<text x="${x}" y="${y}" text-anchor="${t}">${a.name}</text>`}).join('')}</g>
+   <g style="transform-origin:150px 150px"><polygon points="150,150 150,40 ${pc(0.55,110)[0]},${pc(0.55,110)[1]}" fill="url(#sg)"/><line x1="150" y1="150" x2="150" y2="40" stroke="#8b5cf6" stroke-width="1.5" opacity=".7"/><animateTransform attributeName="transform" type="rotate" from="0 150 150" to="360 150 150" dur="4s" repeatCount="indefinite"/></g>`;
+  document.getElementById('dp').animate([{transform:'scale(0)',opacity:0},{transform:'scale(1.06)',opacity:1,offset:.8},{transform:'scale(1)',opacity:1}],{duration:1100,easing:'cubic-bezier(.2,.8,.2,1)'});
+}
+function legend(){
+  document.getElementById('legend').innerHTML=AXES.map((a,i)=>`
+   <div class="rl" onmouseenter="hl(${i},1)" onmouseleave="hl(${i},0)">
+     <span class="rl-dot" style="background:${a.color};color:${a.color}"></span>
+     <span class="rl-nm">${a.name}<span class="rl-tools">${a.tools}</span></span>
+     <span class="rl-pc">${Math.round(a.value*100)}%</span></div>`).join('');
+}
+function hl(i,on){const c=document.querySelector('.vtx[data-i="'+i+'"]');if(c)c.setAttribute('r',on?'7.5':'3.5');}
+
+/* ascii gen */
+function genAscii(color,initials,W,H){
+  const cv=document.createElement('canvas');cv.width=160;cv.height=160;const x=cv.getContext('2d');
+  const g=x.createRadialGradient(80,58,8,80,80,120);g.addColorStop(0,color);g.addColorStop(1,'#0a0a12');
+  x.fillStyle=g;x.fillRect(0,0,160,160);
+  x.beginPath();x.arc(80,78,56,0,7);x.fillStyle='rgba(255,255,255,.13)';x.fill();
+  x.fillStyle='#fff';x.font='bold 58px monospace';x.textAlign='center';x.textBaseline='middle';x.fillText(initials,80,82);
+  const sc=document.createElement('canvas');sc.width=W;sc.height=H;const sx=sc.getContext('2d');sx.drawImage(cv,0,0,W,H);
+  const d=sx.getImageData(0,0,W,H).data;const chars='@%#*+=-:. ';let out='';
+  for(let i=0;i<H;i++){for(let j=0;j<W;j++){const p=(i*W+j)*4;const b=(d[p]+d[p+1]+d[p+2])/3/255;out+=chars[Math.floor(b*(chars.length-1))];}out+='\n';}
+  return out;
+}
+
+/* nets */
+function nets(){
+  document.getElementById('netlist').innerHTML=NETS.map((n,i)=>`
+   <div class="netrow ${i===0?'on':''}" onmouseenter="selNet(${i})">
+     <span class="pk">❯</span><span class="k" style="color:${n.c}">${n.k}</span><span class="v">${n.v}</span></div>`).join('');
+  selNet(0);
+}
+function selNet(i){
+  document.querySelectorAll('#netlist .netrow').forEach((r,j)=>r.classList.toggle('on',j===i));
+  const n=NETS[i],art=document.getElementById('findart');
+  art.textContent=genAscii(n.c,n.k.slice(0,2).toUpperCase(),64,36);
+  art.style.color=n.c;art.style.textShadow=`0 0 14px ${n.c}55`;
+}
+function social(){
+  document.getElementById('art-before').textContent=genAscii('#22d3ee','GH',28,14);
+  document.getElementById('art-after').textContent=genAscii('#22d3ee','GH',70,42);
+}
+
+/* TUI projects */
+let pIdx=0;
+function plist(){
+  document.getElementById('plist').innerHTML=PROJECTS.map((p,i)=>`
+   <div class="prow ${i===0?'on':''}" onmouseenter="selProj(${i})" onclick="selProj(${i})">
+     <span class="car">▶</span><span class="pn">${p.slug}</span><span class="pst">${p.status}</span></div>`).join('');
+  selProj(0);
+}
+function wrap(text,w){const words=text.split(' ');let lines=[],cur='';
+  words.forEach(x=>{if((cur+' '+x).trim().length>w){lines.push(cur.trim());cur=x;}else cur=(cur+' '+x).trim();});
+  if(cur)lines.push(cur);return lines;}
+function bline(n,cls,html){return `<div class="bl"><span class="bln">${n}</span><span class="bc ${cls}">${html}</span></div>`;}
+function selProj(i){
+  pIdx=i;
+  document.querySelectorAll('#plist .prow').forEach((r,j)=>r.classList.toggle('on',j===i));
+  const p=PROJECTS[i];
+  document.querySelector('#work .tui').style.setProperty('--ac',p.ac);
+  const langLines=p.langs.map(l=>{const f=Math.round(l[1]/100*16);
+    return `${l[0].padEnd(11,' ')}<span class="blk" style="color:${l[2]}">${'█'.repeat(f)}</span><span class="eblk">${'░'.repeat(16-f)}</span> ${l[1]}%`;});
+  let L=[],n=0;const add=(cls,html)=>L.push(bline(++n,cls,html));
+  add('h1',`<span class="hh"># </span>${p.slug}`);
+  add('','');
+  wrap(p.desc,48).forEach(ln=>add('',ln));
+  add('','');
+  add('h2','## languages');
+  langLines.forEach(ll=>add('',ll));
+  add('','');
+  add('h2','## meta');
+  add('',`<span class="b">·</span> stars   <span class="num">${p.stars}</span>`);
+  add('',`<span class="b">·</span> forks   <span class="num">${p.forks}</span>`);
+  add('',`<span class="b">·</span> status  <span class="k2">${p.status}</span>`);
+  add('',`<span class="b">·</span> stack   ${p.tags.map(t=>`<span class="str">${t}</span>`).join(' ')}`);
+  add('','');
+  add('',`<span class="k2">$</span> git clone <span class="str">git@github.com:s7lver2/${p.slug}.git</span><span class="batcur"></span>`);
+  document.getElementById('pdetail').innerHTML=L.join('');
+  document.getElementById('pdetailTitle').innerHTML=`<span class="n">[2]</span> ${p.slug}/README.md`;
+  document.getElementById('statusline').innerHTML=
+    `<span class="sl-mode">NORMAL</span><span class="sl-ctx">~/projects/${p.slug}</span><span class="sl-ctx">${i+1}/${PROJECTS.length}</span>`+
+    `<span class="sl-keys"><span><b>↑↓</b> move</span><span><b>↵</b> open</span><span><b>/</b> filter</span></span>`;
+}
+
+/* text fx */
+function scramble(el){
+  const final=el.dataset.final,chars='!<>-_\\/[]{}=+*^?#01';let frame=0;
+  let q=final.split('').map(c=>({c,start:Math.floor(Math.random()*20),end:20+Math.floor(Math.random()*30),r:null}));
+  (function run(){let out='',done=0;
+    q.forEach(o=>{if(frame>=o.end){out+=o.c;done++;}
+      else if(frame>=o.start){if(Math.random()<.28)o.r=chars[Math.floor(Math.random()*chars.length)];out+=`<span style="color:#a78bfa">${o.r||'0'}</span>`;}});
+    el.innerHTML=out;frame++;
+    if(done<q.length)requestAnimationFrame(run);
+    else setTimeout(()=>{frame=0;q.forEach(o=>{o.start=Math.floor(Math.random()*20);o.end=20+Math.floor(Math.random()*30);o.r=null;});run();},1900);
+  })();
+}
+function typer(el){const t='./whoami --verbose';let i=0;(function go(){el.textContent=t.slice(0,i);i++;if(i>t.length)setTimeout(()=>{i=0;go();},1700);else setTimeout(go,95);})();}
+
+/* tools */
+const TOOLS=[['typescript','#3178c6'],['nextdotjs','#fff'],['rust','#dea584'],['go','#00add8'],
+ ['python','#3776ab'],['javascript','#f7df1e'],['react','#61dafb'],['css3','#1572b6'],
+ ['docker','#2496ed'],['linux','#fcc624'],['git','#f05032'],['postgresql','#4169e1']];
+function tools(){
+  document.getElementById('toolsgrid').innerHTML=TOOLS.map(([s,c])=>{
+    const d=(window.ICONS||{})[s];
+    const svg=d?`<svg viewBox="0 0 24 24" fill="${c}"><path d="${d}"/></svg>`:`<div style="color:${c};font-family:var(--mono);font-size:11px">${s}</div>`;
+    return `<div class="toolbox" style="--gc:${c}" title="${s}">${svg}</div>`;
+  }).join('');
+}
+
+/* tab toggle */
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  t.parentElement.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');
+}));
+/* keyboard for TUI */
+window.addEventListener('keydown',e=>{
+  if(['INPUT','TEXTAREA'].includes(e.target.tagName))return;
+  if(e.key==='ArrowDown'||e.key==='j'){e.preventDefault();selProj((pIdx+1)%PROJECTS.length);}
+  if(e.key==='ArrowUp'||e.key==='k'){e.preventDefault();selProj((pIdx-1+PROJECTS.length)%PROJECTS.length);}
+});
+window.hl=hl;window.selNet=selNet;window.selProj=selProj;window.drawRadar=drawRadar;
+
+drawRadar();legend();nets();social();plist();tools();
+document.querySelectorAll('.fx-scramble').forEach(scramble);typer(document.getElementById('typer'));
+</script>
+</body>
+</html>

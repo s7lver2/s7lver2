@@ -12,10 +12,12 @@ import SocialSection   from '@/components/sections/Social';
 import Footer          from '@/components/sections/Footer';
 import CommandPalette  from '@/components/CommandPalette';
 import ProgressRail    from '@/components/ProgressRail';
+import { track } from '@/lib/track';
 
 export default function Home() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [paletteTab, setPaletteTab] = useState<'nav' | 'term'>('nav');
+  const [trackedSections, setTrackedSections] = useState(new Set<string>());
 
   // Handle terminal navigation to sections
   const handleNavigateToSection = (section: string) => {
@@ -53,12 +55,19 @@ export default function Home() {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setPaletteTab('nav');
-        setPaletteOpen((o) => !o);
+        setPaletteOpen((o) => {
+          const newOpen = !o;
+          if (newOpen) {
+            track('cmdk_open', { detail: 'nav' });
+          }
+          return newOpen;
+        });
       }
 
       // Backtick for terminal
       if (e.key === '`') {
         e.preventDefault();
+        track('cmdk_open', { detail: 'term' });
         openTerminal();
       }
       if (e.key === 'Escape') {
@@ -71,6 +80,46 @@ export default function Home() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [paletteOpen]);
+
+  // Track scroll depth
+  useEffect(() => {
+    let throttleTimer: NodeJS.Timeout | null = null;
+    const handleScroll = () => {
+      if (throttleTimer) return;
+      throttleTimer = setTimeout(() => {
+        const sections = ['hero', 'skills', 'projects', 'htb', 'github', 'contact'];
+        let deepestSection = 'hero';
+        let maxVisibility = 0;
+
+        for (const section of sections) {
+          const el = document.getElementById(section);
+          if (!el) continue;
+          const rect = el.getBoundingClientRect();
+          const visibility = Math.max(0, Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0));
+          if (visibility > maxVisibility) {
+            maxVisibility = visibility;
+            deepestSection = section;
+          }
+        }
+
+        const pageHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const depth = pageHeight > 0 ? Math.round((window.scrollY / pageHeight) * 100) : 0;
+
+        if (!trackedSections.has(deepestSection)) {
+          track('scroll_depth', { section: deepestSection, depth });
+          setTrackedSections((prev) => new Set([...prev, deepestSection]));
+        }
+
+        throttleTimer = null;
+      }, 200);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (throttleTimer) clearTimeout(throttleTimer);
+    };
+  }, [trackedSections]);
 
   return (
     <>

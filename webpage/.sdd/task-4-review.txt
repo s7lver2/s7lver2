@@ -1,0 +1,1018 @@
+ webpage/app/components/sections/Machines.tsx |   6 +
+ webpage/app/components/sections/Skills.tsx   | 170 ++++++------
+ webpage/app/globals.css                      | 375 ++++++++++++++++++++++++---
+ webpage/app/lib/content-constants.ts         |  46 ++++
+ webpage/app/lib/content.ts                   |  64 ++---
+ 5 files changed, 508 insertions(+), 153 deletions(-)
+diff --git a/webpage/app/components/sections/Machines.tsx b/webpage/app/components/sections/Machines.tsx
+new file mode 100644
+index 0000000..d7ad222
+--- /dev/null
++++ b/webpage/app/components/sections/Machines.tsx
+@@ -0,0 +1,6 @@
++'use client';
++import type { ConceptKey } from '@/app/lib/content-constants';
++
++export default function MachinesCarousel(_p: { activeConcept: ConceptKey | null; onConceptHover: (c: ConceptKey | null) => void }) {
++  return null;
++}
+diff --git a/webpage/app/components/sections/Skills.tsx b/webpage/app/components/sections/Skills.tsx
+index b174935..2a95632 100644
+--- a/webpage/app/components/sections/Skills.tsx
++++ b/webpage/app/components/sections/Skills.tsx
+@@ -1,142 +1,164 @@
+ 'use client';
++import React from 'react';
+ import { useReveal } from '@/lib/reveal';
++import ScrambleText from '@/components/ScrambleText';
++import { type SkillC, type ConceptKey, DEFAULT_SKILLS } from '@/app/lib/content-constants';
++import MachinesCarousel from './Machines';
+ 
+-type Axis = { name: string; value: number; color: string; tools: string };
+-
+-const AXES: Axis[] = [
+-  { name: 'Web Exploit', value: 0.92, color: '#f87171', tools: 'Burp · SQLMap · Wfuzz' },
+-  { name: 'Network',     value: 0.85, color: '#22d3ee', tools: 'Nmap · Wireshark · tcpdump' },
+-  { name: 'Recon',       value: 0.80, color: '#a3e635', tools: 'Amass · Subfinder · OSINT' },
+-  { name: 'Active Dir',  value: 0.75, color: '#8b5cf6', tools: 'BloodHound · Impacket' },
+-  { name: 'Reversing',   value: 0.68, color: '#f472b6', tools: 'Ghidra · gdb · radare2' },
+-  { name: 'Crypto',      value: 0.60, color: '#fde047', tools: 'hashcat · John' },
+-];
+-
+-function polarToCartesian(i: number, r: number, cx = 150, cy = 150) {
+-  const angle = (-Math.PI / 2) + (i * Math.PI * 2) / AXES.length;
++function polarToCartesian(i: number, r: number, axesLength: number, cx = 150, cy = 150) {
++  const angle = (-Math.PI / 2) + (i * Math.PI * 2) / axesLength;
+   return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)] as const;
+ }
+ 
+-function generatePolygonPoints(radius: number) {
+-  return AXES.map((_, i) => {
+-    const [x, y] = polarToCartesian(i, radius);
++function generatePolygonPoints(radius: number, axes: SkillC[]) {
++  return axes.map((_, i) => {
++    const [x, y] = polarToCartesian(i, radius, axes.length);
+     return `${x},${y}`;
+   }).join(' ');
+ }
+ 
+-function generateDataPoints(cx = 150, cy = 150) {
+-  return AXES.map((axis, i) => {
++function generateDataPoints(axes: SkillC[], cx = 150, cy = 150) {
++  return axes.map((axis, i) => {
+     const r = 110 * axis.value;
+-    return polarToCartesian(i, r, cx, cy);
++    return polarToCartesian(i, r, axes.length, cx, cy);
+   });
+ }
+ 
+ export default function SkillsSection() {
+   const reveal = useReveal();
+-  const dataPoints = generateDataPoints();
++  const svgRef = React.useRef<SVGSVGElement>(null);
++  const [axes, setAxes] = React.useState<SkillC[]>(DEFAULT_SKILLS);
++  const [activeConcept, setActiveConcept] = React.useState<ConceptKey | null>(null);
++
++  React.useEffect(() => {
++    fetch('/api/content/skills')
++      .then((r) => r.ok ? r.json() : null)
++      .then((d: SkillC[] | null) => { if (Array.isArray(d) && d.length) setAxes(d); })
++      .catch(() => {});
++  }, []);
++
++  const dataPoints = generateDataPoints(axes);
+   const dataPolygon = dataPoints.map(p => `${p[0]},${p[1]}`).join(' ');
+ 
++  React.useEffect(() => {
++    const svg = svgRef.current;
++    if (!svg || !svg.classList.contains('revealed')) return;
++
++    const polygon = svg.querySelector('[data-polygon]') as SVGPolygonElement;
++    if (polygon) {
++      polygon.animate(
++        [
++          { transform: 'scale(0)', opacity: '0' },
++          { transform: 'scale(1.06)', opacity: '1', offset: 0.8 },
++          { transform: 'scale(1)', opacity: '1' }
++        ],
++        { duration: 1100, easing: 'cubic-bezier(.2,.8,.2,1)' }
++      );
++    }
++  }, [reveal]);
++
+   return (
+     <section id="skills" className="section py-24 px-4">
+       <div className="wrap">
+-        <div ref={reveal} className="reveal">
+-          {/* Eyebrow */}
++        <div ref={reveal} className="reveal skillblk" data-active={activeConcept ?? undefined}>
+           <div className="eyebrow">cat skills.md</div>
++          <h2 className="text-3xl md:text-4xl font-bold mb-8"><ScrambleText text="Security skills" /></h2>
+ 
+-          {/* Title */}
+-          <h2 className="text-3xl md:text-4xl font-bold mb-8">Security skills</h2>
+-
+-          {/* Radar + Legend */}
+           <div className="radarwrap">
+-            {/* SVG Radar */}
+-            <svg viewBox="0 0 300 300" width="100%" style={{ maxWidth: '340px' }}>
+-              {/* Rings */}
+-              <polygon
+-                points={generatePolygonPoints(110)}
+-                fill="none"
+-                stroke="rgba(255, 255, 255, 0.08)"
+-              />
+-              <polygon
+-                points={generatePolygonPoints(82.5)}
+-                fill="none"
+-                stroke="rgba(255, 255, 255, 0.07)"
+-              />
+-              <polygon
+-                points={generatePolygonPoints(55)}
+-                fill="none"
+-                stroke="rgba(255, 255, 255, 0.06)"
+-              />
++            <svg viewBox="0 0 300 300" width="100%" style={{ maxWidth: '340px' }} ref={svgRef}>
++              <defs>
++                <linearGradient id="radarFill" x1="0" y1="0" x2="1" y2="1">
++                  <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.45" />
++                  <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.22" />
++                </linearGradient>
++              </defs>
++
++              <polygon points={generatePolygonPoints(110, axes)} fill="none" stroke="rgba(255, 255, 255, 0.08)" />
++              <polygon points={generatePolygonPoints(82.5, axes)} fill="none" stroke="rgba(255, 255, 255, 0.07)" />
++              <polygon points={generatePolygonPoints(55, axes)} fill="none" stroke="rgba(255, 255, 255, 0.06)" />
++              <polygon points={generatePolygonPoints(27.5, axes)} fill="none" stroke="rgba(255, 255, 255, 0.05)" />
+ 
+-              {/* Axes */}
+               <g stroke="rgba(255, 255, 255, 0.08)">
+-                {AXES.map((_, i) => {
+-                  const [x, y] = polarToCartesian(i, 110);
+-                  return <line key={`axis-${i}`} x1="150" y1="150" x2={x} y2={y} />;
++                {axes.map((_, i) => {
++                  const [x, y] = polarToCartesian(i, 110, axes.length);
++                  return (
++                    <line
++                      key={`axis-${i}`}
++                      x1="150"
++                      y1="150"
++                      x2={x}
++                      y2={y}
++                      className={`axline ${activeConcept === axes[i].conceptKey ? 'on' : ''}`}
++                      data-c={axes[i].conceptKey}
++                    />
++                  );
+                 })}
+               </g>
+ 
+-              {/* Data polygon */}
+               <polygon
++                data-polygon="true"
+                 points={dataPolygon}
+-                fill="rgba(139, 92, 246, 0.28)"
++                fill="url(#radarFill)"
+                 stroke="#8b5cf6"
+                 strokeWidth="2"
++                style={{ transformOrigin: '150px 150px' }}
+               />
+ 
+-              {/* Data points (circles) */}
+               {dataPoints.map((point, i) => (
+                 <circle
+                   key={`point-${i}`}
++                  className={`pt ${activeConcept === axes[i].conceptKey ? 'on' : ''}`}
++                  data-c={axes[i].conceptKey}
+                   cx={point[0]}
+                   cy={point[1]}
+                   r="3.5"
+-                  fill={AXES[i].color}
+-                />
++                  fill={axes[i].color}
++                  onMouseEnter={() => setActiveConcept(axes[i].conceptKey)}
++                  onMouseLeave={() => setActiveConcept(null)}
++                  style={{ cursor: 'pointer' }}
++                >
++                  <animate attributeName="r" values="3.5;6.5;3.5" dur="2s" begin={`${0.6 + i * 0.14}s`} repeatCount="indefinite" />
++                </circle>
+               ))}
+ 
+-              {/* Labels */}
+               <g fontFamily="monospace" fontSize="9" fill="#9ca3af">
+-                {AXES.map((axis, i) => {
+-                  const [x, y] = polarToCartesian(i, 130);
++                {axes.map((axis, i) => {
++                  const [x, y] = polarToCartesian(i, 133, axes.length);
+                   let textAnchor: 'start' | 'middle' | 'end' = 'middle';
+-                  if (i === 1) textAnchor = 'start';
+-                  if (i === 2) textAnchor = 'start';
+-                  if (i === 4) textAnchor = 'end';
+-                  if (i === 5) textAnchor = 'end';
+-
++                  if (i === 1 || i === 2) textAnchor = 'start';
++                  if (i === 4 || i === 5) textAnchor = 'end';
+                   return (
+-                    <text
+-                      key={`label-${i}`}
+-                      x={x}
+-                      y={y}
+-                      textAnchor={textAnchor}
+-                    >
++                    <text key={`label-${i}`} x={x} y={y} textAnchor={textAnchor}>
+                       {axis.name}
+                     </text>
+                   );
+                 })}
+               </g>
+             </svg>
+ 
+-            {/* Legend */}
+             <div>
+-              {AXES.map((axis) => (
+-                <div key={axis.name} className="rl">
+-                  <span
+-                    className="rl-dot"
+-                    style={{ background: axis.color }}
+-                  />
++              {axes.map((axis, i) => (
++                <div
++                  key={axis.name}
++                  className={`rl ${activeConcept === axis.conceptKey ? 'on' : ''}`}
++                  data-c={axis.conceptKey}
++                  onMouseEnter={() => setActiveConcept(axis.conceptKey)}
++                  onMouseLeave={() => setActiveConcept(null)}
++                >
++                  <span className="rl-dot" style={{ background: axis.color }} />
+                   <span className="rl-nm">
+                     {axis.name}
+                     <span className="rl-tools">{axis.tools}</span>
+                   </span>
+                   <span className="rl-pc">{Math.round(axis.value * 100)}%</span>
+                 </div>
+               ))}
+             </div>
+           </div>
++
++          <MachinesCarousel activeConcept={activeConcept} onConceptHover={setActiveConcept} />
+         </div>
+       </div>
+     </section>
+   );
+ }
+\ No newline at end of file
+diff --git a/webpage/app/globals.css b/webpage/app/globals.css
+index c653f55..3ded571 100644
+--- a/webpage/app/globals.css
++++ b/webpage/app/globals.css
+@@ -929,82 +929,97 @@
+ }
+ 
+ .cc {
+   position: fixed;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%);
+   z-index: 100;
+-  width: 90%;
+-  max-width: 1200px;
+-  height: 70vh;
+-  background: linear-gradient(135deg, rgba(15, 15, 20, 0.98), rgba(20, 15, 25, 0.98));
+-  border: 1px solid rgba(139, 92, 246, 0.2);
++  width: 92%;
++  max-width: 880px;
++  height: auto;
++  max-height: 80vh;
++  background: rgba(10, 10, 15, 0.94);
++  border: 1px solid rgba(255, 255, 255, 0.08);
+   border-radius: 16px;
+   backdrop-filter: blur(30px);
+   -webkit-backdrop-filter: blur(30px);
+-  box-shadow:
+-    0 20px 60px rgba(0, 0, 0, 0.8),
+-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
++  box-shadow: 0 36px 100px -40px rgba(139, 92, 246, 0.5);
+   display: flex;
+   flex-direction: column;
+   opacity: 0;
+   scale: 0.92;
+   pointer-events: none;
+   transition: opacity 0.2s ease-out, scale 0.2s ease-out;
+ }
+ 
+ .cc.cc-open {
+   opacity: 1;
+   scale: 1;
+   pointer-events: auto;
+ }
+ 
+-/* Window header with Mac-style dots */
++/* Window header with Mac-style dots (matches social .ffbar) */
+ .ccbar {
+   display: flex;
+   align-items: center;
+-  gap: 12px;
+-  padding: 14px 18px;
+-  border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+-  background: rgba(255, 255, 255, 0.02);
++  gap: 8px;
++  padding: 11px 14px;
++  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
++  background: #0d0d13;
+   border-radius: 16px 16px 0 0;
+   position: relative;
+ }
+ 
+ .dots {
+   display: flex;
+   gap: 8px;
+   align-items: center;
+ }
+ 
+ .dots span {
+   width: 12px;
+   height: 12px;
+   border-radius: 50%;
+-  background: rgba(139, 92, 246, 0.5);
+   cursor: pointer;
+-  transition: background 0.2s;
++  transition: opacity 0.2s;
+ }
+ 
+-.dots span:hover {
+-  background: rgba(139, 92, 246, 0.7);
+-}
++.dots span.r { background: #ff5f56; }
++.dots span.y { background: #ffbd2e; }
++.dots span.g { background: #27c93f; }
++
++.dots span:hover { opacity: 0.8; }
+ 
+ .cctitle {
+   flex: 1;
+   font-family: 'JetBrains Mono', monospace;
+   font-size: 11px;
+   letter-spacing: 0.15em;
+-  text-transform: uppercase;
++  text-transform: lowercase;
+   color: rgba(255, 255, 255, 0.5);
+   text-align: center;
+ }
+ 
++.cctitle b {
++  color: #fff;
++  font-weight: 500;
++}
++
++.kbadge {
++  font-family: 'JetBrains Mono', monospace;
++  font-size: 10px;
++  color: rgba(255, 255, 255, 0.5);
++  border: 1px solid rgba(255, 255, 255, 0.15);
++  border-radius: 6px;
++  padding: 2px 8px;
++  background: rgba(255, 255, 255, 0.03);
++}
++
+ .ccx {
+   background: transparent;
+   border: none;
+   color: rgba(255, 255, 255, 0.6);
+   cursor: pointer;
+   transition: color 0.2s;
+   padding: 4px 8px;
+   display: flex;
+@@ -1221,16 +1236,298 @@
+     width: 100%;
+   }
+ 
+   .pallist {
+     max-height: 200px;
+   }
+ }
+ 
++/* Terminal window chrome (shared: projects TUI, matches social .ff) */
++.win {
++  border: 1px solid rgba(255, 255, 255, 0.08);
++  border-radius: 16px;
++  overflow: hidden;
++  background: rgba(10, 10, 15, 0.9);
++  box-shadow: 0 36px 100px -55px rgba(139, 92, 246, 0.5);
++}
++
++.winbar {
++  display: flex;
++  align-items: center;
++  gap: 8px;
++  padding: 11px 14px;
++  background: #0d0d13;
++  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
++}
++
++.winbar .dots {
++  display: flex;
++  gap: 8px;
++}
++
++.winbar .dots i {
++  width: 11px;
++  height: 11px;
++  border-radius: 50%;
++}
++
++.winbar .dots i.r { background: #ff5f56; }
++.winbar .dots i.y { background: #ffbd2e; }
++.winbar .dots i.g { background: #27c93f; }
++
++.wintitle {
++  flex: 1;
++  text-align: center;
++  font-family: var(--mono);
++  font-size: 11.5px;
++  color: #5b6270;
++}
++
++.wintitle b { color: #fff; font-weight: 500; }
++
++/* TUI master-detail (Projects) */
++.tui {
++  --ac: #8b5cf6;
++  font-family: var(--mono);
++  background: #090a0e;
++  font-size: 12.5px;
++}
++
++.tui-grid {
++  display: grid;
++  grid-template-columns: 272px 1fr;
++  padding: 12px 12px 2px;
++}
++
++.pane {
++  position: relative;
++  border: 1px solid rgba(255, 255, 255, 0.13);
++  margin: 7px;
++  padding: 14px 0 8px;
++}
++
++.pane.left { padding: 24px 0 8px; }
++.pane.right { padding: 24px 18px 14px; }
++
++.batlogo {
++  white-space: pre;
++  font-size: 7px;
++  line-height: 1.05;
++  margin: 0 0 14px;
++  text-align: center;
++  text-shadow: 0 0 10px currentColor;
++  opacity: 0.92;
++}
++.pane.active { border-color: rgba(94, 234, 212, 0.45); }
++
++.pane-t {
++  position: absolute;
++  top: -9px;
++  left: 13px;
++  background: inherit;
++  padding: 0 7px;
++  font-size: 11px;
++  color: var(--dim);
++  letter-spacing: 0.02em;
++}
++
++.pane.active .pane-t { color: #5eead4; }
++.pane-t .n { color: var(--ac); }
++
++.lhdr {
++  display: grid;
++  grid-template-columns: 18px 1fr auto;
++  gap: 8px;
++  padding: 0 13px 7px;
++  color: var(--dim);
++  font-size: 10px;
++  letter-spacing: 0.08em;
++  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
++  margin-bottom: 3px;
++}
++
++.prow {
++  display: grid;
++  grid-template-columns: 18px 1fr auto;
++  gap: 8px;
++  align-items: center;
++  padding: 8px 13px;
++  cursor: pointer;
++  transition: 0.13s;
++}
++
++.prow:hover { background: rgba(139, 92, 246, 0.08); }
++.prow.on { background: var(--ac); }
++.prow.on .pn, .prow.on .pst, .prow.on .car { color: #fff; }
++.prow .car { color: var(--ac); visibility: hidden; }
++.prow.on .car { visibility: visible; }
++.prow .pn { color: rgba(255, 255, 255, 0.72); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
++.prow .pst { font-size: 10px; color: var(--dim); }
++
++.bat {
++  line-height: 1.7;
++  font-size: 12px;
++}
++
++.bl {
++  display: flex;
++  gap: 0;
++}
++
++.bln {
++  width: 26px;
++  text-align: right;
++  color: rgba(255, 255, 255, 0.22);
++  user-select: none;
++  padding-right: 9px;
++  border-right: 1px solid rgba(255, 255, 255, 0.07);
++  margin-right: 13px;
++  flex-shrink: 0;
++  font-size: 11px;
++}
++
++.bc {
++  white-space: pre-wrap;
++  color: rgba(255, 255, 255, 0.72);
++  flex: 1;
++}
++
++.bc.mdh1 { color: #fff; font-weight: 800; font-size: 13px; }
++.bc.mdh1 .hh { color: var(--ac); }
++.bc.mdh2 { color: #5eead4; font-weight: 600; font-size: 12px; }
++.bc .b { color: var(--ac); }
++.bc .blk { filter: drop-shadow(0 0 3px currentColor); }
++.bc .eblk { color: rgba(255, 255, 255, 0.1); }
++.bc .num { color: #fbbf24; }
++.bc .str { color: #a3e635; }
++.bc .k2 { color: #22d3ee; }
++
++.batcur {
++  display: inline-block;
++  width: 7px;
++  height: 13px;
++  background: #5eead4;
++  vertical-align: -2px;
++  margin-left: 3px;
++  animation: cursor-blink 1.05s steps(1) infinite;
++}
++
++.statusline {
++  display: flex;
++  align-items: stretch;
++  font-size: 11px;
++  border-top: 1px solid rgba(255, 255, 255, 0.12);
++  margin-top: 0;
++}
++
++.sl-mode {
++  background: var(--ac);
++  color: #06070a;
++  font-weight: 800;
++  padding: 6px 13px;
++  letter-spacing: 0.1em;
++}
++
++.sl-ctx {
++  padding: 6px 13px;
++  color: rgba(255, 255, 255, 0.72);
++  background: rgba(255, 255, 255, 0.04);
++  border-right: 1px solid rgba(255, 255, 255, 0.06);
++}
++
++.sl-keys {
++  padding: 6px 13px;
++  color: var(--dim);
++  margin-left: auto;
++  display: flex;
++  gap: 15px;
++}
++
++.sl-keys b {
++  color: #5eead4;
++  font-weight: 600;
++}
++
++@media (max-width: 768px) {
++  .tui-grid { grid-template-columns: 1fr; }
++  .pane { margin: 3px; }
++  .pane.left { border-right: none; border-bottom: 1px solid rgba(255, 255, 255, 0.13); }
++}
++
++/* Languages & tools — infinite scroll of icon boxes */
++.toolsmarq {
++  margin-top: 24px;
++  width: 100%;
++  overflow: hidden;
++  position: relative;
++  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
++  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
++}
++
++.toolstrack {
++  display: flex;
++  gap: 16px;
++  width: max-content;
++  padding: 8px 0;
++  animation: toolscroll 32s linear infinite;
++  will-change: transform;
++}
++
++.toolstrack:hover {
++  animation-play-state: paused;
++}
++
++@keyframes toolscroll {
++  0% { transform: translateX(0); }
++  100% { transform: translateX(-50%); }
++}
++
++@media (prefers-reduced-motion: reduce) {
++  .toolstrack { animation: none; flex-wrap: wrap; width: 100%; justify-content: center; }
++}
++
++.toolbox {
++  --gc: #8b5cf6;
++  flex: 0 0 88px;
++  height: 88px;
++  display: flex;
++  align-items: center;
++  justify-content: center;
++  border: 1px solid rgba(255, 255, 255, 0.09);
++  border-radius: 17px;
++  background: rgba(255, 255, 255, 0.028);
++  transition: all 0.2s;
++  cursor: pointer;
++  position: relative;
++  overflow: hidden;
++  font-size: 44px;
++  color: var(--gc);
++}
++
++.toolbox::before {
++  content: '';
++  position: absolute;
++  inset: 0;
++  background: radial-gradient(circle at 50% 125%, var(--gc), transparent 70%);
++  opacity: 0;
++  transition: opacity 0.25s;
++  pointer-events: none;
++}
++
++.toolbox:hover {
++  transform: translateY(-5px);
++  border-color: var(--gc);
++  box-shadow: 0 20px 44px -26px var(--gc);
++}
++
++.toolbox:hover::before {
++  opacity: 0.2;
++}
++
+ /* Social fastfetch section */
+ .ff {
+   margin-top: 26px;
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   border-radius: 16px;
+   overflow: hidden;
+   background: rgba(10, 10, 15, 0.9);
+   box-shadow: 0 36px 100px -55px rgba(139, 92, 246, 0.5);
+@@ -1254,17 +1551,17 @@
+ .ffbar i.r { background: #ff5f56; }
+ .ffbar i.y { background: #ffbd2e; }
+ .ffbar i.g { background: #27c93f; }
+ 
+ .ffbar .t {
+   margin-left: 10px;
+   font-family: var(--mono);
+   font-size: 11.5px;
+-  color: #5b6270;
++  color: #5eead4;
+ }
+ 
+ .ffbody {
+   display: flex;
+   gap: 26px;
+   padding: 24px 26px;
+   font-family: var(--mono);
+ }
+@@ -1273,23 +1570,24 @@
+   .ffbody {
+     flex-direction: column;
+     align-items: center;
+   }
+ }
+ 
+ .art {
+   white-space: pre;
+-  font-size: 9px;
+-  line-height: 1.02;
++  font-size: 7.5px;
++  line-height: 1.04;
+   flex-shrink: 0;
+   letter-spacing: 0.5px;
+   transition: color 0.25s;
+-  min-width: 230px;
++  min-width: 340px;
+   text-align: center;
++  text-shadow: 0 0 12px currentColor;
+ }
+ 
+ .list {
+   flex: 1;
+   min-width: 0;
+   align-self: center;
+ }
+ 
+@@ -1311,17 +1609,17 @@
+ }
+ 
+ .social-li:hover {
+   background: rgba(139, 92, 246, 0.08);
+ }
+ 
+ .social-li .pk {
+   width: 12px;
+-  color: #22c55e;
++  color: #5eead4;
+   opacity: 0;
+ }
+ 
+ .social-li .k {
+   min-width: 104px;
+   font-weight: 600;
+   font-size: 14px;
+ }
+@@ -1338,17 +1636,17 @@
+ 
+ .social-li.sel .pk {
+   opacity: 1;
+ }
+ 
+ .fb {
+   font-family: var(--mono);
+   font-size: 12px;
+-  color: #8b5cf6;
++  color: #5eead4;
+   min-height: 18px;
+   margin: 12px 10px 0;
+ }
+ 
+ .hint {
+   font-family: var(--mono);
+   font-size: 11px;
+   color: #5b6270;
+@@ -1413,33 +1711,34 @@
+   display: flex;
+   flex-direction: column;
+   gap: 2px;
+   flex: 1;
+ }
+ 
+ /* Banner text */
+ .term-banner {
+-  color: rgba(34, 197, 94, 0.7);
+-  font-size: 9px;
+-  line-height: 1.2;
+-  margin: 0 0 8px 0;
++  color: #5eead4;
++  font-size: 10px;
++  line-height: 1.08;
++  margin: 0 0 6px 0;
+   white-space: pre;
+   overflow-x: auto;
++  text-shadow: 0 0 14px rgba(94, 234, 212, 0.35);
+ }
+ 
+ /* Prompt + input line */
+ .term-input-line {
+   display: flex;
+   gap: 6px;
+   align-items: flex-start;
+ }
+ 
+ .term-prompt {
+-  color: rgba(34, 197, 94, 0.9);
++  color: #5eead4;
+   flex-shrink: 0;
+   user-select: none;
+ }
+ 
+ .term-input-text {
+   color: white;
+   word-break: break-all;
+   flex: 1;
+@@ -1491,17 +1790,17 @@
+   align-items: center;
+   padding: 10px 14px;
+   border-top: 1px solid rgba(139, 92, 246, 0.1);
+   background: rgba(255, 255, 255, 0.01);
+   flex-shrink: 0;
+ }
+ 
+ .term-prompt-inline {
+-  color: rgba(34, 197, 94, 0.9);
++  color: #5eead4;
+   flex-shrink: 0;
+   user-select: none;
+   font-size: 12px;
+ }
+ 
+ /* Input wrapper for ghost suggestion */
+ .term-input-wrapper {
+   flex: 1;
+@@ -1514,17 +1813,17 @@
+ .term-input-field {
+   flex: 1;
+   background: transparent;
+   color: white;
+   font-size: 12px;
+   font-family: 'JetBrains Mono', monospace;
+   border: none;
+   outline: none;
+-  caret-color: rgba(34, 197, 94, 0.9);
++  caret-color: #5eead4;
+   z-index: 2;
+   position: relative;
+ }
+ 
+ .term-input-field::placeholder {
+   color: rgba(255, 255, 255, 0.25);
+ }
+ 
+@@ -1539,17 +1838,17 @@
+   z-index: 1;
+ }
+ 
+ /* Blinking cursor */
+ .term-cursor {
+   display: inline-block;
+   width: 2px;
+   height: 1em;
+-  background: rgba(34, 197, 94, 0.8);
++  background: #5eead4;
+   margin-left: 2px;
+   animation: cursor-blink 1s steps(1) infinite;
+ }
+ 
+ @keyframes cursor-blink {
+   50% { opacity: 0; }
+ }
+ 
+@@ -1591,9 +1890,17 @@
+ 
+   .term-prompt-inline {
+     font-size: 11px;
+   }
+ 
+   .term-input-field {
+     font-size: 11px;
+   }
+-}
+\ No newline at end of file
++}
++
++/* Skills hover-dim */
++.skillblk[data-active] .rl:not(.on) { opacity: .22; }
++.skillblk[data-active] .rl.on { background: linear-gradient(90deg, rgba(139,92,246,.16), transparent); border-radius: 8px; }
++.skillblk[data-active] svg .pt:not(.on) { opacity: .15; }
++.skillblk[data-active] svg .axline:not(.on) { opacity: .15; }
++.rl, .pt, .axline { transition: opacity .18s, background .18s; }
++@media (prefers-reduced-motion: reduce) { .rl, .pt, .axline { transition: none; } }
+\ No newline at end of file
+diff --git a/webpage/app/lib/content-constants.ts b/webpage/app/lib/content-constants.ts
+new file mode 100644
+index 0000000..659d2c9
+--- /dev/null
++++ b/webpage/app/lib/content-constants.ts
+@@ -0,0 +1,46 @@
++// Client-safe content constants and types (no server imports)
++
++export type ConceptKey = 'web' | 'net' | 'recon' | 'ad' | 'rev' | 'crypto';
++
++export interface ProjectC {
++  slug: string; name: string; desc: string;
++  status: 'done' | 'beta' | 'dev'; ac: string;
++  tags: string[]; web?: string; shot?: string;
++}
++export interface SkillC {
++  name: string; value: number; color: string; tools: string; conceptKey: ConceptKey;
++}
++export interface SocialC {
++  k: string; v: string; color: string; url: string; initials: string;
++}
++export interface HomeC { heroTitle: string; heroSubtitle: string; }
++
++export const DEFAULT_PROJECTS: ProjectC[] = [
++  { slug: 'file-meet', name: 'file-meet', desc: 'P2P file sharing CLI in Go. Zero config, end-to-end encrypted transfers.', status: 'done', ac: '#00add8', tags: ['Go', 'WebRTC', 'CLI'], web: 'https://github.com/s7lver2/file-meet', shot: '/projects/file-meet.png' },
++  { slug: 'ZephyrOS', name: 'ZephyrOS', desc: 'Minimal security-focused Linux distro for old systems and edge computing.', status: 'beta', ac: '#a3e635', tags: ['Linux', 'Bash', 'Arch'], web: 'https://github.com/s7lver2/ZephyrOS', shot: '/projects/ZephyrOS.png' },
++  { slug: 'tsuki', name: 'tsuki', desc: 'Arduino compiler & toolchain — tiny language to optimized AVR code.', status: 'dev', ac: '#dea584', tags: ['Rust', 'LLVM', 'Embedded'] },
++  { slug: 'CodeDotJS', name: 'CodeDotJS', desc: 'Reactive JS framework, no vDOM, <5kb.', status: 'dev', ac: '#3178c6', tags: ['TypeScript', 'Vite'], web: 'https://CodeDotjs.vercel.app', shot: '/projects/CodeDotJS.png' },
++];
++
++export const DEFAULT_SKILLS: SkillC[] = [
++  { name: 'Web Exploit', value: 0.92, color: '#f87171', tools: 'Burp · SQLMap · Wfuzz', conceptKey: 'web' },
++  { name: 'Network',     value: 0.85, color: '#22d3ee', tools: 'Nmap · Wireshark · tcpdump', conceptKey: 'net' },
++  { name: 'Recon',       value: 0.80, color: '#a3e635', tools: 'Amass · Subfinder · OSINT', conceptKey: 'recon' },
++  { name: 'Active Dir',  value: 0.75, color: '#8b5cf6', tools: 'BloodHound · Impacket', conceptKey: 'ad' },
++  { name: 'Reversing',   value: 0.68, color: '#f472b6', tools: 'Ghidra · gdb · radare2', conceptKey: 'rev' },
++  { name: 'Crypto',      value: 0.60, color: '#fde047', tools: 'hashcat · John', conceptKey: 'crypto' },
++];
++
++export const DEFAULT_SOCIALS: SocialC[] = [
++  { k: 'github', v: 'github.com/s7lver2', color: '#6e5494', url: 'https://github.com/s7lver2', initials: 'GH' },
++  { k: 'discord', v: '@s7lver', color: '#5865f2', url: '#', initials: 'DC' },
++  { k: 'twitter', v: 'x.com/s7lver', color: '#1d9bf0', url: 'https://x.com/s7lver', initials: 'X' },
++  { k: 'tiktok', v: '@s7lver', color: '#ff0050', url: '#', initials: 'TT' },
++  { k: 'instagram', v: '@s7lver', color: '#e1306c', url: '#', initials: 'IG' },
++  { k: 'htb', v: 'app.hackthebox.com/s7lver', color: '#9fef00', url: '#', initials: 'HTB' },
++];
++
++export const DEFAULT_HOME: HomeC = {
++  heroTitle: "Hi, I'm s7lver",
++  heroSubtitle: 'Developer & Cybersecurity Student',
++};
+diff --git a/webpage/app/lib/content.ts b/webpage/app/lib/content.ts
+index 49766f5..c42dd80 100644
+--- a/webpage/app/lib/content.ts
++++ b/webpage/app/lib/content.ts
+@@ -1,57 +1,31 @@
+ import { kvGetJSON, kvSetJSON } from './redis';
+-
+-export type ConceptKey = 'web' | 'net' | 'recon' | 'ad' | 'rev' | 'crypto';
+-
+-export interface ProjectC {
+-  slug: string; name: string; desc: string;
+-  status: 'done' | 'beta' | 'dev'; ac: string;
+-  tags: string[]; web?: string; shot?: string;
+-}
+-export interface SkillC {
+-  name: string; value: number; color: string; tools: string; conceptKey: ConceptKey;
+-}
+-export interface SocialC {
+-  k: string; v: string; color: string; url: string; initials: string;
+-}
+-export interface HomeC { heroTitle: string; heroSubtitle: string; }
++import {
++  DEFAULT_PROJECTS,
++  DEFAULT_SKILLS,
++  DEFAULT_SOCIALS,
++  DEFAULT_HOME,
++} from './content-constants';
++
++// Re-export types and constants from content-constants for compatibility
++export {
++  type ConceptKey,
++  type ProjectC,
++  type SkillC,
++  type SocialC,
++  type HomeC,
++  DEFAULT_PROJECTS,
++  DEFAULT_SKILLS,
++  DEFAULT_SOCIALS,
++  DEFAULT_HOME,
++} from './content-constants';
+ 
+ export type ContentType = 'projects' | 'skills' | 'socials' | 'home';
+ 
+-export const DEFAULT_PROJECTS: ProjectC[] = [
+-  { slug: 'file-meet', name: 'file-meet', desc: 'P2P file sharing CLI in Go. Zero config, end-to-end encrypted transfers.', status: 'done', ac: '#00add8', tags: ['Go', 'WebRTC', 'CLI'], web: 'https://github.com/s7lver2/file-meet', shot: '/projects/file-meet.png' },
+-  { slug: 'ZephyrOS', name: 'ZephyrOS', desc: 'Minimal security-focused Linux distro for old systems and edge computing.', status: 'beta', ac: '#a3e635', tags: ['Linux', 'Bash', 'Arch'], web: 'https://github.com/s7lver2/ZephyrOS', shot: '/projects/ZephyrOS.png' },
+-  { slug: 'tsuki', name: 'tsuki', desc: 'Arduino compiler & toolchain — tiny language to optimized AVR code.', status: 'dev', ac: '#dea584', tags: ['Rust', 'LLVM', 'Embedded'] },
+-  { slug: 'CodeDotJS', name: 'CodeDotJS', desc: 'Reactive JS framework, no vDOM, <5kb.', status: 'dev', ac: '#3178c6', tags: ['TypeScript', 'Vite'], web: 'https://CodeDotjs.vercel.app', shot: '/projects/CodeDotJS.png' },
+-];
+-
+-export const DEFAULT_SKILLS: SkillC[] = [
+-  { name: 'Web Exploit', value: 0.92, color: '#f87171', tools: 'Burp · SQLMap · Wfuzz', conceptKey: 'web' },
+-  { name: 'Network',     value: 0.85, color: '#22d3ee', tools: 'Nmap · Wireshark · tcpdump', conceptKey: 'net' },
+-  { name: 'Recon',       value: 0.80, color: '#a3e635', tools: 'Amass · Subfinder · OSINT', conceptKey: 'recon' },
+-  { name: 'Active Dir',  value: 0.75, color: '#8b5cf6', tools: 'BloodHound · Impacket', conceptKey: 'ad' },
+-  { name: 'Reversing',   value: 0.68, color: '#f472b6', tools: 'Ghidra · gdb · radare2', conceptKey: 'rev' },
+-  { name: 'Crypto',      value: 0.60, color: '#fde047', tools: 'hashcat · John', conceptKey: 'crypto' },
+-];
+-
+-export const DEFAULT_SOCIALS: SocialC[] = [
+-  { k: 'github', v: 'github.com/s7lver2', color: '#6e5494', url: 'https://github.com/s7lver2', initials: 'GH' },
+-  { k: 'discord', v: '@s7lver', color: '#5865f2', url: '#', initials: 'DC' },
+-  { k: 'twitter', v: 'x.com/s7lver', color: '#1d9bf0', url: 'https://x.com/s7lver', initials: 'X' },
+-  { k: 'tiktok', v: '@s7lver', color: '#ff0050', url: '#', initials: 'TT' },
+-  { k: 'instagram', v: '@s7lver', color: '#e1306c', url: '#', initials: 'IG' },
+-  { k: 'htb', v: 'app.hackthebox.com/s7lver', color: '#9fef00', url: '#', initials: 'HTB' },
+-];
+-
+-export const DEFAULT_HOME: HomeC = {
+-  heroTitle: "Hi, I'm s7lver",
+-  heroSubtitle: 'Developer & Cybersecurity Student',
+-};
+-
+ const DEFAULTS: Record<ContentType, unknown> = {
+   projects: DEFAULT_PROJECTS, skills: DEFAULT_SKILLS, socials: DEFAULT_SOCIALS, home: DEFAULT_HOME,
+ };
+ 
+ export function isContentType(t: string): t is ContentType {
+   return t === 'projects' || t === 'skills' || t === 'socials' || t === 'home';
+ }
+ 
