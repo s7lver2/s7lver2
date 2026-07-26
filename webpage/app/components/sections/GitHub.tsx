@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import { colorFor } from '@/lib/lang-colors';
 
 type Lang = { name: string; pct: number };
 type Data = {
@@ -13,18 +14,6 @@ type Data = {
   totalStars: number;
   languages: Lang[];
 };
-
-const LANG_COLORS: Record<string, string> = {
-  TypeScript: '#3178c6',
-  JavaScript: '#f1e05a',
-  Rust: '#dea584',
-  Go: '#00add8',
-  Python: '#3572A5',
-  C: '#555555',
-  'C++': '#f34b7d',
-  Shell: '#89e051',
-};
-const colorFor = (name: string) => LANG_COLORS[name] || '#a371f7';
 
 const HEAT_COLORS = [
   'rgba(139, 92, 246, .05)',  // 0: casi invisible

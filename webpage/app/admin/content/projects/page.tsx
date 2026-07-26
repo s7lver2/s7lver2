@@ -201,6 +201,18 @@ export default function ProjectsPage() {
               </div>
               <div>
                 <div style={{ ...S, fontSize: 10, color: 'rgba(139,92,246,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>
+                  repo (owner/name)
+                </div>
+                <input
+                  type="text"
+                  value={proj.repo ?? ''}
+                  onChange={e => handleChange(idx, 'repo', e.target.value)}
+                  placeholder="s7lver2/mi-proyecto"
+                  style={{ width: '100%', ...Input }}
+                />
+              </div>
+              <div>
+                <div style={{ ...S, fontSize: 10, color: 'rgba(139,92,246,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>
                   screenshot
                 </div>
                 <input
