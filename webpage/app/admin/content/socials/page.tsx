@@ -4,6 +4,7 @@ import type { CSSProperties } from 'react'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import type { SocialC } from '@/app/lib/content'
+import { useDirty } from '@/app/admin/components/ui'
 
 const S: CSSProperties = { fontFamily: 'var(--font-body)' }
 
@@ -42,6 +43,21 @@ export default function SocialsPage() {
   const [socials, setSocials] = useState<SocialC[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [saveResult, setSaveResult] = useState<'ok' | 'error' | null>(null)
+  const { dirty, setDirty } = useDirty()
+
+  useEffect(() => {
+    if (!dirty) return
+    const h = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', h)
+    return () => window.removeEventListener('beforeunload', h)
+  }, [dirty])
+
+  const isValidUrl = (u: string) => {
+    if (u === '#') return true
+    try { new URL(u); return true } catch { return false }
+  }
+  const invalidIdx = socials.findIndex((s) => !isValidUrl(s.url))
 
   useEffect(() => {
     const load = async () => {
@@ -61,6 +77,7 @@ export default function SocialsPage() {
     const newSocials = [...socials]
     ;(newSocials[idx][key] as unknown) = value
     setSocials(newSocials)
+    setDirty(true)
   }
 
   const handleAdd = () => {
@@ -71,14 +88,22 @@ export default function SocialsPage() {
       url: '#',
       initials: 'NW',
     }])
+    setDirty(true)
   }
 
   const handleRemove = (idx: number) => {
     setSocials(socials.filter((_, i) => i !== idx))
+    setDirty(true)
   }
 
   const handleSave = async () => {
+    if (invalidIdx >= 0) {
+      setSaveResult('error')
+      setTimeout(() => setSaveResult(null), 4000)
+      return
+    }
     setSaving(true)
+    setSaveResult(null)
     try {
       const r = await fetch('/api/admin/content/socials', {
         method: 'PUT',
@@ -86,9 +111,13 @@ export default function SocialsPage() {
         body: JSON.stringify(socials),
       })
       if (r.status === 401) { router.push('/admin/login'); return }
-      if (!r.ok) return
-    } catch { }
+      setSaveResult(r.ok ? 'ok' : 'error')
+      if (r.ok) setDirty(false)
+    } catch {
+      setSaveResult('error')
+    }
     setSaving(false)
+    setTimeout(() => setSaveResult(null), 4000)
   }
 
   if (loading) return (
@@ -179,8 +208,11 @@ export default function SocialsPage() {
                 value={social.url}
                 onChange={e => handleChange(idx, 'url', e.target.value)}
                 placeholder="https://…"
-                style={{ width: '100%', ...Input }}
+                style={{ width: '100%', ...Input, borderColor: !isValidUrl(social.url) ? '#f87171' : undefined }}
               />
+              {!isValidUrl(social.url) && (
+                <div style={{ ...S, fontSize: 11, color: '#f87171', marginTop: 4 }}>url inválida</div>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: 8 }}>
@@ -219,6 +251,8 @@ export default function SocialsPage() {
         >
           {saving ? 'saving…' : 'save'}
         </button>
+        {saveResult === 'ok' && <span style={{ ...S, fontSize: 12, color: '#5eead4' }}>✓ guardado</span>}
+        {saveResult === 'error' && <span style={{ ...S, fontSize: 12, color: '#f87171' }}>✕ no se pudo guardar</span>}
       </div>
     </div>
   )

@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation'
 import type { FeaturedRepo } from '@/app/lib/featured'
 import { repoName } from '@/app/lib/featured'
 import { colorFor } from '@/app/lib/lang-colors'
-import { Panel, SectionHead, Btn, T } from '@/app/admin/components/ui'
+import { Panel, SectionHead, Btn, T, useDirty } from '@/app/admin/components/ui'
 import type { AdminRepo } from '@/app/api/admin/github/repos/route'
+
+const REPO_RE = /^[\w.-]+\/[\w.-]+$/
 
 function timeAgo(iso: string): string {
   const s = Math.round((Date.now() - new Date(iso).getTime()) / 1000)
@@ -24,7 +26,9 @@ export default function ProjectsPage() {
   const [saving, setSaving] = useState(false)
   const [search, setSearch] = useState('')
   const [flash, setFlash] = useState<string | null>(null)
+  const [saveResult, setSaveResult] = useState<'ok' | 'error' | null>(null)
   const dragIdx = useRef<number | null>(null)
+  const { dirty, setDirty } = useDirty()
 
   useEffect(() => {
     const load = async () => {
@@ -59,14 +63,17 @@ export default function ProjectsPage() {
     } else {
       setFeatured((prev) => [...prev, { repo: repo.fullName, status: 'dev' }])
     }
+    setDirty(true)
   }
 
   const updateEntry = (idx: number, patch: Partial<FeaturedRepo>) => {
     setFeatured((prev) => prev.map((f, i) => (i === idx ? { ...f, ...patch } : f)))
+    setDirty(true)
   }
 
   const removeEntry = (idx: number) => {
     setFeatured((prev) => prev.filter((_, i) => i !== idx))
+    setDirty(true)
   }
 
   const onDragStart = (idx: number) => { dragIdx.current = idx }
@@ -81,10 +88,31 @@ export default function ProjectsPage() {
       next.splice(idx, 0, moved)
       return next
     })
+    setDirty(true)
   }
 
+  // Every entry's repo comes from the GitHub picker, so it should always be
+  // well-formed — validated anyway as a defence against a future manual
+  // editing path, and because every status must be one of the three literals.
+  const invalidIdx = featured.findIndex(
+    (f) => !REPO_RE.test(f.repo) || !['done', 'beta', 'dev'].includes(f.status)
+  )
+
+  useEffect(() => {
+    if (!dirty) return
+    const h = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', h)
+    return () => window.removeEventListener('beforeunload', h)
+  }, [dirty])
+
   const handleSave = async () => {
+    if (invalidIdx >= 0) {
+      setSaveResult('error')
+      setTimeout(() => setSaveResult(null), 4000)
+      return
+    }
     setSaving(true)
+    setSaveResult(null)
     try {
       const r = await fetch('/api/admin/content/featured', {
         method: 'PUT',
@@ -92,8 +120,13 @@ export default function ProjectsPage() {
         body: JSON.stringify(featured),
       })
       if (r.status === 401) { router.push('/admin/login'); return }
-    } catch { }
+      setSaveResult(r.ok ? 'ok' : 'error')
+      if (r.ok) setDirty(false)
+    } catch {
+      setSaveResult('error')
+    }
     setSaving(false)
+    setTimeout(() => setSaveResult(null), 4000)
   }
 
   useEffect(() => {
@@ -237,10 +270,21 @@ export default function ProjectsPage() {
         </Panel>
       </div>
 
-      <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <Btn tone="accent" onClick={handleSave} disabled={saving}>
           {saving ? 'guardando…' : 'guardar'}
         </Btn>
+        {invalidIdx >= 0 && (
+          <span style={{ fontFamily: T.mono, fontSize: 11.5, color: '#f87171' }}>
+            repo inválido: {featured[invalidIdx]?.repo}
+          </span>
+        )}
+        {saveResult === 'ok' && (
+          <span style={{ fontFamily: T.mono, fontSize: 11.5, color: T.active }}>✓ guardado</span>
+        )}
+        {saveResult === 'error' && invalidIdx < 0 && (
+          <span style={{ fontFamily: T.mono, fontSize: 11.5, color: '#f87171' }}>✕ no se pudo guardar</span>
+        )}
       </div>
 
       <style>{`
