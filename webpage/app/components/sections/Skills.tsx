@@ -62,11 +62,12 @@ export default function SkillsSection({ machinesEnabled = true }: Props) {
   }, [reveal]);
 
   return (
-    <section id="skills" className="section py-24 px-4">
+    <section id="skills" className="sec">
       <div className="wrap">
         <div ref={reveal} className="reveal skillblk" data-active={activeConcept ?? undefined}>
+          <span className="seclabel">Skills</span>
           <div className="eyebrow">cat skills.md</div>
-          <h2 className="text-3xl md:text-4xl font-bold mb-8"><ScrambleText text="Security skills" /></h2>
+          <h2 className="h2"><ScrambleText text="Security skills" /></h2>
 
           <div className="radarwrap">
             <svg viewBox="0 0 300 300" width="100%" style={{ maxWidth: '340px' }} ref={svgRef}>
@@ -121,13 +122,13 @@ export default function SkillsSection({ machinesEnabled = true }: Props) {
                   onMouseLeave={() => setActiveConcept(null)}
                   style={{ cursor: 'pointer' }}
                 >
-                  <animate attributeName="r" values="3.5;6.5;3.5" dur="2s" begin={`${0.6 + i * 0.14}s`} repeatCount="indefinite" />
+                  <animate attributeName="r" values="3.5;5;3.5" dur="2s" begin={`${0.6 + i * 0.33}s`} repeatCount="indefinite" />
                 </circle>
               ))}
 
-              <g fontFamily="monospace" fontSize="9" fill="#9ca3af">
+              <g fontFamily="monospace" fontSize="11" fill="#9ca3af">
                 {axes.map((axis, i) => {
-                  const [x, y] = polarToCartesian(i, 133, axes.length);
+                  const [x, y] = polarToCartesian(i, 140, axes.length);
                   let textAnchor: 'start' | 'middle' | 'end' = 'middle';
                   if (i === 1 || i === 2) textAnchor = 'start';
                   if (i === 4 || i === 5) textAnchor = 'end';

@@ -25,6 +25,25 @@ const HEAT_COLORS = [
   '#a78bfa',                   // 4: intenso
 ];
 
+const HEATMAP_WEEKS = 53;
+const HEATMAP_CELLS = HEATMAP_WEEKS * 7; // 371 — a real year, unlike the old 196
+
+// Deterministic pseudo-random so SSR and the client produce the same grid.
+function demoHeatmap(): number[] {
+  const out: number[] = [];
+  let seed = 1337;
+  for (let i = 0; i < HEATMAP_CELLS; i++) {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    out.push(seed % 5);
+  }
+  return out;
+}
+
+function toYear(cells: number[]): number[] {
+  if (cells.length >= HEATMAP_CELLS) return cells.slice(cells.length - HEATMAP_CELLS);
+  return [...Array(HEATMAP_CELLS - cells.length).fill(0), ...cells];
+}
+
 type GitHubData = {
   repos: number;
   stars: number;
@@ -46,7 +65,6 @@ function CountKpi({ label, value, accent }: { label: string; value: number; acce
 
 export default function GitHubSection() {
   const [data, setData] = useState<GitHubData | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const reveal = useReveal<HTMLDivElement>();
   const kpiReveal = useReveal<HTMLDivElement>();
   const bentoReveal = useReveal<HTMLDivElement>();
@@ -67,10 +85,10 @@ export default function GitHubSection() {
     return () => obs.unobserve(node);
   }, [langReveal]);
 
-  // Heatmap demo solo si el API no devuelve datos reales
-  const generateHeatmap = useMemo(() => {
-    return Array.from({ length: 196 }, () => Math.floor(Math.random() * 5));
-  }, []);
+  // Heatmap demo solo si el API no devuelve datos reales.
+  // Deterministic (not Math.random) so SSR and the client agree — otherwise
+  // React logs a hydration mismatch on every load.
+  const generateHeatmap = useMemo(() => demoHeatmap(), []);
 
   useEffect(() => {
     fetch('/api/github')
@@ -91,7 +109,7 @@ export default function GitHubSection() {
             followers: apiData.followers || 0,
             commitsPerYear: apiData.commitsPerYear ?? 0,
             languages,
-            heatmap: apiData.heatmap?.length ? apiData.heatmap : generateHeatmap,
+            heatmap: apiData.heatmap?.length ? toYear(apiData.heatmap) : generateHeatmap,
           });
         } else {
           // Si no hay API, mostrar datos demo
@@ -127,18 +145,6 @@ export default function GitHubSection() {
         });
       });
   }, [generateHeatmap]);
-
-  if (error) {
-    return (
-      <section id="github" className="sec">
-        <div className="wrap">
-          <p className="mono" style={{ color: 'var(--dim)', marginTop: '8px' }}>
-            Error: {error}
-          </p>
-        </div>
-      </section>
-    );
-  }
 
   if (!data) {
     return (
@@ -226,12 +232,6 @@ export default function GitHubSection() {
               ))}
             </div>
           </div>
-
-          {/* KPI tiles alrededor del heatmap */}
-          <CountKpi label="Repos" value={data.repos} />
-          <CountKpi label="Stars" value={data.stars} accent />
-          <CountKpi label="Followers" value={data.followers} />
-          <CountKpi label="Commits/yr" value={data.commitsPerYear} />
         </div>
       </div>
     </section>
