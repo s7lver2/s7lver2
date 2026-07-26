@@ -147,36 +147,6 @@
     will-change: opacity;
   }
 
-  .bgGlow {
-    background: transparent;
-  }
-
-  .orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(70px);
-    will-change: transform;
-    pointer-events: none;
-  }
-  .orb1 {
-    width: 62vw; height: 54vw; left: -6%; top: -8%;
-    background: radial-gradient(circle, rgba(139,92,246,.30), transparent 62%);
-    animation: orbDrift1 36s ease-in-out infinite;
-  }
-  .orb2 {
-    width: 56vw; height: 52vw; right: -8%; top: 12%;
-    background: radial-gradient(circle, rgba(59,130,246,.26), transparent 64%);
-    animation: orbDrift2 44s ease-in-out infinite;
-  }
-  @keyframes orbDrift1 {
-    0%,100% { transform: translate(0,0) scale(1); }
-    50%     { transform: translate(48px,36px) scale(1.10); }
-  }
-  @keyframes orbDrift2 {
-    0%,100% { transform: translate(0,0) scale(1.05); }
-    50%     { transform: translate(-44px,28px) scale(.94); }
-  }
-
   .scrolldown {
     position: absolute;
     left: 50%; bottom: 26px;
@@ -205,13 +175,12 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .orb { animation: none; }
     .scrolldown .mouse::before { animation: none; }
   }
 
   #wave {
     display: block;
-    opacity: 0;
+    opacity: 1;
   }
 
   .veil {
