@@ -1711,6 +1711,12 @@
 }
 
 /* ── Projects graph ── */
+/* Wider than the site's shared 1080px .wrap: the donut nodes need the extra
+   room to read clearly, and the section was explicitly asked to feel bigger. */
+#projects .wrap {
+  max-width: 1280px;
+}
+
 .gstage {
   position: relative;
   background: #090a0e;
@@ -1719,7 +1725,7 @@
 .gcanvas {
   display: block;
   width: 100%;
-  height: 440px;
+  height: 480px;
   cursor: grab;
   touch-action: none;
 }
