@@ -5,7 +5,7 @@ import Navbar          from '@/components/Navbar';
 import HeroSection     from '@/components/sections/Hero';
 import SkillsSection   from '@/components/sections/Skills';
 import LanguagesSection from '@/components/sections/Languages';
-import ProjectsSection from '@/components/sections/Projects';
+import ProjectsGraphSection from '@/components/sections/ProjectsGraph';
 import HTBSection      from '@/components/sections/HTB';
 import GitHubSection   from '@/components/sections/GitHub';
 import SocialSection   from '@/components/sections/Social';
@@ -167,7 +167,7 @@ export default function Home() {
           <HeroSection     onOpenTerminal={openTerminal} />
           <SkillsSection   machinesEnabled={flags.machines} />
           <LanguagesSection />
-          <ProjectsSection />
+          <ProjectsGraphSection />
           <HTBSection      />
           <GitHubSection   />
           <SocialSection   />
