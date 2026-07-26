@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { colorFor } from '@/lib/lang-colors';
 import { useReveal } from '@/lib/reveal';
 import { useCountUp } from '@/lib/countup';
+import LocCounter from './LocCounter';
 
 type Lang = { name: string; pct: number };
 type Data = {
@@ -232,6 +233,8 @@ export default function GitHubSection() {
               ))}
             </div>
           </div>
+
+          <LocCounter />
         </div>
       </div>
     </section>
