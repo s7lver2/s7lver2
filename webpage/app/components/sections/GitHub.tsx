@@ -73,6 +73,9 @@ export default function GitHubSection() {
   const [langsIn, setLangsIn] = useState(false);
 
   useEffect(() => {
+    // .langbar only exists once `data` is loaded, so this must re-run when
+    // data arrives — deps of just [langReveal] never change (it's a stable
+    // ref object) and the effect would fire once against a still-null node.
     const node = langReveal.current;
     if (!node) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -84,7 +87,7 @@ export default function GitHubSection() {
     }, { threshold: 0.25 });
     obs.observe(node);
     return () => obs.unobserve(node);
-  }, [langReveal]);
+  }, [langReveal, data]);
 
   // Heatmap demo solo si el API no devuelve datos reales.
   // Deterministic (not Math.random) so SSR and the client agree — otherwise
@@ -147,10 +150,14 @@ export default function GitHubSection() {
       });
   }, [generateHeatmap]);
 
+  // This wrap stays mounted across the loading -> loaded transition so its
+  // ref is a single stable DOM node — useReveal's IntersectionObserver is
+  // set up once on mount and must keep observing the same element, or it
+  // never fires and the section stays permanently opacity:0 (invisible).
   if (!data) {
     return (
       <section id="github" className="sec">
-        <div className="wrap">
+        <div className="wrap reveal" ref={reveal}>
           <p className="mono" style={{ color: 'var(--dim)', marginTop: '8px' }}>
             Loading…
           </p>

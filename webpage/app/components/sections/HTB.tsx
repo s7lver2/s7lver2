@@ -68,10 +68,14 @@ export default function HTB() {
       .catch(() => setLoading(false));
   }, []);
 
+  // The wrap below stays mounted in every state (loading / empty / data) so
+  // its ref is a single stable DOM node — useReveal's IntersectionObserver is
+  // set up once on mount and must keep observing the same element, or it
+  // never fires and the section stays permanently opacity:0.
   if (loading) {
     return (
       <section id="htb" className="sec">
-        <div className="wrap">
+        <div className="wrap reveal" ref={reveal}>
           <span className="seclabel">HackTheBox</span>
           <p className="mono" style={{ color: 'var(--dim)', marginTop: 12 }}>Loading…</p>
         </div>
