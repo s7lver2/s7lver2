@@ -1,280 +1,251 @@
 'use client'
 
-import type { CSSProperties } from 'react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import type { ProjectC } from '@/app/lib/content'
+import type { FeaturedRepo } from '@/app/lib/featured'
+import { repoName } from '@/app/lib/featured'
+import { colorFor } from '@/app/lib/lang-colors'
+import { Panel, SectionHead, Btn, T } from '@/app/admin/components/ui'
+import type { AdminRepo } from '@/app/api/admin/github/repos/route'
 
-const S: CSSProperties = { fontFamily: 'var(--font-body)' }
-
-const Card: CSSProperties = {
-  background: 'rgba(5,0,10,0.97)',
-  border: '1px solid rgba(139,92,246,0.35)',
-  borderRadius: 8,
-  padding: '16px',
-}
-
-const Input: CSSProperties = {
-  background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(139,92,246,0.2)',
-  borderRadius: 6,
-  padding: '8px 10px',
-  color: '#e9d5ff',
-  fontFamily: 'Space Mono, monospace',
-  fontSize: 12,
-  fontWeight: 400,
-}
-
-const Button: CSSProperties = {
-  background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-  border: 'none',
-  borderRadius: 6,
-  color: '#fff',
-  fontFamily: 'Space Mono, monospace',
-  fontSize: 11,
-  padding: '7px 12px',
-  cursor: 'pointer',
-  fontWeight: 500,
-  transition: 'opacity 0.2s',
+function timeAgo(iso: string): string {
+  const s = Math.round((Date.now() - new Date(iso).getTime()) / 1000)
+  if (s < 60) return `${s}s`
+  if (s < 3600) return `${Math.floor(s / 60)}m`
+  if (s < 86400) return `${Math.floor(s / 3600)}h`
+  return `${Math.floor(s / 86400)}d`
 }
 
 export default function ProjectsPage() {
   const router = useRouter()
-  const [projects, setProjects] = useState<ProjectC[]>([])
+  const [available, setAvailable] = useState<AdminRepo[]>([])
+  const [featured, setFeatured] = useState<FeaturedRepo[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [search, setSearch] = useState('')
+  const [flash, setFlash] = useState<string | null>(null)
+  const dragIdx = useRef<number | null>(null)
 
   useEffect(() => {
     const load = async () => {
       try {
-        const r = await fetch('/api/admin/content/projects')
-        if (r.status === 401) { router.push('/admin/login'); return }
-        if (!r.ok) return
-        const data = await r.json() as ProjectC[]
-        setProjects(data)
+        const [repoRes, featRes] = await Promise.all([
+          fetch('/api/admin/github/repos'),
+          fetch('/api/admin/content/featured'),
+        ])
+        if (repoRes.status === 401 || featRes.status === 401) { router.push('/admin/login'); return }
+        const repoData = repoRes.ok ? await repoRes.json() : { repos: [] }
+        const featData = featRes.ok ? await featRes.json() : []
+        setAvailable(repoData.repos ?? [])
+        setFeatured(Array.isArray(featData) ? featData : [])
       } catch { }
       setLoading(false)
     }
     load()
+
+    const flashId = sessionStorage.getItem('admin:flash')
+    if (flashId) {
+      sessionStorage.removeItem('admin:flash')
+      setFlash(flashId)
+      setTimeout(() => setFlash(null), 1200)
+    }
   }, [router])
 
-  const handleChange = (idx: number, key: keyof ProjectC, value: unknown) => {
-    const newProjects = [...projects]
-    if (key === 'tags' && typeof value === 'string') {
-      newProjects[idx][key] = value.split(',').map(t => t.trim()).filter(t => t) as string[]
+  const isSelected = (fullName: string) => featured.some((f) => f.repo === fullName)
+
+  const toggle = (repo: AdminRepo) => {
+    if (isSelected(repo.fullName)) {
+      setFeatured((prev) => prev.filter((f) => f.repo !== repo.fullName))
     } else {
-      (newProjects[idx][key] as unknown) = value
+      setFeatured((prev) => [...prev, { repo: repo.fullName, status: 'dev' }])
     }
-    setProjects(newProjects)
   }
 
-  const handleAdd = () => {
-    setProjects([...projects, {
-      slug: `project-${Date.now()}`,
-      name: 'New Project',
-      desc: '',
-      status: 'dev',
-      ac: '#8b5cf6',
-      tags: [],
-    }])
+  const updateEntry = (idx: number, patch: Partial<FeaturedRepo>) => {
+    setFeatured((prev) => prev.map((f, i) => (i === idx ? { ...f, ...patch } : f)))
   }
 
-  const handleRemove = (idx: number) => {
-    setProjects(projects.filter((_, i) => i !== idx))
+  const removeEntry = (idx: number) => {
+    setFeatured((prev) => prev.filter((_, i) => i !== idx))
+  }
+
+  const onDragStart = (idx: number) => { dragIdx.current = idx }
+  const onDragOver = (e: React.DragEvent) => { e.preventDefault() }
+  const onDrop = (idx: number) => {
+    const from = dragIdx.current
+    dragIdx.current = null
+    if (from === null || from === idx) return
+    setFeatured((prev) => {
+      const next = [...prev]
+      const [moved] = next.splice(from, 1)
+      next.splice(idx, 0, moved)
+      return next
+    })
   }
 
   const handleSave = async () => {
     setSaving(true)
     try {
-      const r = await fetch('/api/admin/content/projects', {
+      const r = await fetch('/api/admin/content/featured', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(projects),
+        body: JSON.stringify(featured),
       })
       if (r.status === 401) { router.push('/admin/login'); return }
-      if (!r.ok) return
     } catch { }
     setSaving(false)
   }
 
-  if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', ...S, fontSize: 12, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em' }}>
-      loading…
-    </div>
-  )
+  useEffect(() => {
+    const onExternalSave = () => { void handleSave() }
+    window.addEventListener('admin:save', onExternalSave)
+    return () => window.removeEventListener('admin:save', onExternalSave)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [featured])
+
+  const filtered = available.filter((r) => {
+    const q = search.toLowerCase()
+    return r.name.toLowerCase().includes(q) || (r.language ?? '').toLowerCase().includes(q)
+  })
+
+  if (loading) {
+    return (
+      <div style={{ ...({ fontFamily: T.mono } as React.CSSProperties), fontSize: 12, color: T.mut, padding: 40, textAlign: 'center' }}>
+        cargando…
+      </div>
+    )
+  }
 
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 26, color: '#fff', marginBottom: 2 }}>
-          proyectos
-        </div>
-        <div style={{ ...S, fontSize: 12, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-          edit and manage projects
-        </div>
-      </div>
+    <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <SectionHead kicker="admin --projects" title="Proyectos" />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
-        {projects.map((proj, idx) => (
-          <div key={idx} style={Card}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-              <div>
-                <div style={{ ...S, fontSize: 10, color: 'rgba(139,92,246,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>
-                  name
-                </div>
-                <input
-                  type="text"
-                  value={proj.name}
-                  onChange={e => handleChange(idx, 'name', e.target.value)}
-                  style={{ width: '100%', ...Input }}
-                />
-              </div>
-              <div>
-                <div style={{ ...S, fontSize: 10, color: 'rgba(139,92,246,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>
-                  slug
-                </div>
-                <input
-                  type="text"
-                  value={proj.slug}
-                  onChange={e => handleChange(idx, 'slug', e.target.value)}
-                  style={{ width: '100%', ...Input }}
-                />
-              </div>
-            </div>
-
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ ...S, fontSize: 10, color: 'rgba(139,92,246,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>
-                description
-              </div>
-              <textarea
-                value={proj.desc}
-                onChange={e => handleChange(idx, 'desc', e.target.value)}
-                style={{ width: '100%', minHeight: 60, ...Input, fontFamily: 'Space Mono, monospace', resize: 'none' }}
-              />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
-              <div>
-                <div style={{ ...S, fontSize: 10, color: 'rgba(139,92,246,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>
-                  status
-                </div>
-                <select
-                  value={proj.status}
-                  onChange={e => handleChange(idx, 'status', e.target.value as 'done' | 'beta' | 'dev')}
-                  style={{ width: '100%', ...Input, appearance: 'none' }}
-                >
-                  <option value="done">done</option>
-                  <option value="beta">beta</option>
-                  <option value="dev">dev</option>
-                </select>
-              </div>
-              <div>
-                <div style={{ ...S, fontSize: 10, color: 'rgba(139,92,246,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>
-                  color
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <input
-                    type="color"
-                    value={proj.ac}
-                    onChange={e => handleChange(idx, 'ac', e.target.value)}
-                    style={{ width: 40, height: 36, border: 'none', borderRadius: 6, cursor: 'pointer' }}
-                  />
-                  <input
-                    type="text"
-                    value={proj.ac}
-                    onChange={e => handleChange(idx, 'ac', e.target.value)}
-                    style={{ flex: 1, ...Input }}
-                  />
-                </div>
-              </div>
-              <div>
-                <div style={{ ...S, fontSize: 10, color: 'rgba(139,92,246,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>
-                  web
-                </div>
-                <input
-                  type="text"
-                  value={proj.web ?? ''}
-                  onChange={e => handleChange(idx, 'web', e.target.value)}
-                  placeholder="https://…"
-                  style={{ width: '100%', ...Input }}
-                />
-              </div>
-              <div>
-                <div style={{ ...S, fontSize: 10, color: 'rgba(139,92,246,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>
-                  repo (owner/name)
-                </div>
-                <input
-                  type="text"
-                  value={proj.repo ?? ''}
-                  onChange={e => handleChange(idx, 'repo', e.target.value)}
-                  placeholder="s7lver2/mi-proyecto"
-                  style={{ width: '100%', ...Input }}
-                />
-              </div>
-              <div>
-                <div style={{ ...S, fontSize: 10, color: 'rgba(139,92,246,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>
-                  screenshot
-                </div>
-                <input
-                  type="text"
-                  value={proj.shot ?? ''}
-                  onChange={e => handleChange(idx, 'shot', e.target.value)}
-                  placeholder="/projects/…"
-                  style={{ width: '100%', ...Input }}
-                />
-              </div>
-            </div>
-
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ ...S, fontSize: 10, color: 'rgba(139,92,246,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>
-                tags (comma-separated)
-              </div>
-              <input
-                type="text"
-                value={(proj.tags ?? []).join(', ')}
-                onChange={e => handleChange(idx, 'tags', e.target.value)}
-                placeholder="Go, CLI, WebRTC"
-                style={{ width: '100%', ...Input }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                onClick={() => handleRemove(idx)}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 20 }} className="proj-grid">
+        <Panel label="repos disponibles">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="buscar por nombre o lenguaje…"
+            style={{
+              width: '100%', boxSizing: 'border-box', padding: '8px 11px', marginBottom: 12,
+              background: T.deep, border: `1px solid ${T.line}`, borderRadius: 8,
+              color: T.text, fontFamily: T.mono, fontSize: 12.5, outline: 'none',
+            }}
+          />
+          <div style={{ maxHeight: 460, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {filtered.map((repo) => (
+              <label
+                key={repo.fullName}
                 style={{
-                  ...Button,
-                  background: 'rgba(239,68,68,0.15)',
-                  color: '#fca5a5',
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px',
+                  borderRadius: 8, border: `1px solid ${T.line}`, cursor: 'pointer',
+                  background: isSelected(repo.fullName) ? 'rgba(94,234,212,.06)' : 'transparent',
                 }}
-                onMouseOver={e => e.currentTarget.style.opacity = '0.8'}
-                onMouseOut={e => e.currentTarget.style.opacity = '1'}
               >
-                remove
-              </button>
-            </div>
+                <input type="checkbox" checked={isSelected(repo.fullName)} onChange={() => toggle(repo)} />
+                <span style={{ fontFamily: T.mono, fontSize: 12.5, color: T.text, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {repo.name}
+                </span>
+                {repo.language && (
+                  <span style={{
+                    fontFamily: T.mono, fontSize: 10, padding: '2px 7px', borderRadius: 999,
+                    color: colorFor(repo.language), border: `1px solid ${colorFor(repo.language)}55`,
+                  }}>
+                    {repo.language}
+                  </span>
+                )}
+                <span style={{ fontFamily: T.mono, fontSize: 11, color: T.mut }}>★{repo.stars}</span>
+                <span style={{ fontFamily: T.mono, fontSize: 11, color: T.dim }}>{timeAgo(repo.updatedAt)}</span>
+              </label>
+            ))}
+            {filtered.length === 0 && (
+              <div style={{ fontFamily: T.mono, fontSize: 12, color: T.dim, padding: 12 }}>sin resultados</div>
+            )}
           </div>
-        ))}
+        </Panel>
+
+        <Panel label="seleccionados">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {featured.map((f, idx) => (
+              <div
+                key={f.repo}
+                draggable
+                onDragStart={() => onDragStart(idx)}
+                onDragOver={onDragOver}
+                onDrop={() => onDrop(idx)}
+                data-flash={flash === f.repo ? 'true' : undefined}
+                style={{
+                  border: `1px solid ${flash === f.repo ? T.active : T.line}`,
+                  borderRadius: 10, padding: '10px 12px',
+                  transition: 'border-color 1.2s ease, background 1.2s ease',
+                  background: flash === f.repo ? 'rgba(94,234,212,.08)' : 'transparent',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <span style={{ cursor: 'grab', color: T.dim }}>⠿</span>
+                  <span style={{ fontFamily: T.mono, fontSize: 12.5, color: T.text, flex: 1 }}>
+                    {repoName(f.repo)}
+                  </span>
+                  <select
+                    value={f.status}
+                    onChange={(e) => updateEntry(idx, { status: e.target.value as FeaturedRepo['status'] })}
+                    style={{
+                      background: T.deep, border: `1px solid ${T.line}`, borderRadius: 6,
+                      color: T.text, fontFamily: T.mono, fontSize: 11, padding: '4px 6px',
+                    }}
+                  >
+                    <option value="done">done</option>
+                    <option value="beta">beta</option>
+                    <option value="dev">dev</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => removeEntry(idx)}
+                    style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontFamily: T.mono, fontSize: 12 }}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <input
+                  value={f.nameOverride ?? ''}
+                  onChange={(e) => updateEntry(idx, { nameOverride: e.target.value || undefined })}
+                  placeholder="nombre override (opcional)"
+                  style={{
+                    width: '100%', boxSizing: 'border-box', marginBottom: 6, padding: '6px 9px',
+                    background: T.deep, border: `1px solid ${T.line}`, borderRadius: 6,
+                    color: T.text, fontFamily: T.mono, fontSize: 11.5, outline: 'none',
+                  }}
+                />
+                <input
+                  value={f.descOverride ?? ''}
+                  onChange={(e) => updateEntry(idx, { descOverride: e.target.value || undefined })}
+                  placeholder="descripción override (opcional)"
+                  style={{
+                    width: '100%', boxSizing: 'border-box', padding: '6px 9px',
+                    background: T.deep, border: `1px solid ${T.line}`, borderRadius: 6,
+                    color: T.text, fontFamily: T.mono, fontSize: 11.5, outline: 'none',
+                  }}
+                />
+              </div>
+            ))}
+            {featured.length === 0 && (
+              <div style={{ fontFamily: T.mono, fontSize: 12, color: T.dim, padding: 12 }}>
+                selecciona repos de la lista de la izquierda
+              </div>
+            )}
+          </div>
+        </Panel>
       </div>
 
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button
-          onClick={handleAdd}
-          style={Button}
-          onMouseOver={e => e.currentTarget.style.opacity = '0.8'}
-          onMouseOut={e => e.currentTarget.style.opacity = '1'}
-        >
-          + add project
-        </button>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          style={{ ...Button, opacity: saving ? 0.5 : 1, cursor: saving ? 'not-allowed' : 'pointer' }}
-          onMouseOver={e => !saving && (e.currentTarget.style.opacity = '0.8')}
-          onMouseOut={e => !saving && (e.currentTarget.style.opacity = '1')}
-        >
-          {saving ? 'saving…' : 'save'}
-        </button>
+      <div>
+        <Btn tone="accent" onClick={handleSave} disabled={saving}>
+          {saving ? 'guardando…' : 'guardar'}
+        </Btn>
       </div>
+
+      <style>{`
+        @media (max-width: 900px) { .proj-grid { grid-template-columns: 1fr !important; } }
+      `}</style>
     </div>
   )
 }
