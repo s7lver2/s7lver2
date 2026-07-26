@@ -2,11 +2,19 @@
 
 import { useRef, useEffect } from 'react';
 
-export function useReveal() {
-  const ref = useRef<HTMLDivElement>(null);
+export function useReveal<T extends HTMLElement = HTMLDivElement>() {
+  const ref = useRef<T>(null);
 
   useEffect(() => {
-    if (!ref.current) return;
+    // Capture the node — reading ref.current in cleanup is a stale-ref bug,
+    // React may have nulled it by then.
+    const node = ref.current;
+    if (!node) return;
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      node.classList.add('revealed');
+      return;
+    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -18,13 +26,8 @@ export function useReveal() {
       { threshold: 0.1 }
     );
 
-    observer.observe(ref.current);
-
-    return () => {
-      if (ref.current) {
-        observer.unobserve(ref.current);
-      }
-    };
+    observer.observe(node);
+    return () => observer.unobserve(node);
   }, []);
 
   return ref;

@@ -5,6 +5,7 @@ import { useGraph } from '@/components/graph/useGraph';
 import type { GraphNode } from '@/components/graph/engine';
 import type { GraphPayload } from '@/lib/graph-types';
 import Readme from '@/components/graph/Readme';
+import { useReveal } from '@/lib/reveal';
 
 type ReadmeState =
   | { status: 'idle' }
@@ -16,6 +17,7 @@ export default function ProjectsGraph() {
   const [payload, setPayload] = useState<GraphPayload | null>(null);
   const [failed, setFailed] = useState(false);
   const zoomLabelRef = useRef<HTMLSpanElement>(null);
+  const reveal = useReveal<HTMLDivElement>();
 
   useEffect(() => {
     fetch('/api/projects/graph')
@@ -58,7 +60,7 @@ export default function ProjectsGraph() {
 
   return (
     <section id="projects" className="sec">
-      <div className="wrap">
+      <div className="wrap reveal" ref={reveal}>
         <span className="seclabel">Projects</span>
         <div className="eyebrow">graph ~/projects --link-by=language</div>
         <h2 className="h2">Selected <span className="grad">work</span></h2>

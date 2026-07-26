@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { colorFor } from '@/lib/lang-colors';
+import { useReveal } from '@/lib/reveal';
 
 type Lang = { name: string; pct: number };
 type Data = {
@@ -35,6 +36,9 @@ type GitHubData = {
 export default function GitHubSection() {
   const [data, setData] = useState<GitHubData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const reveal = useReveal<HTMLDivElement>();
+  const kpiReveal = useReveal<HTMLDivElement>();
+  const bentoReveal = useReveal<HTMLDivElement>();
 
   // Heatmap demo solo si el API no devuelve datos reales
   const generateHeatmap = useMemo(() => {
@@ -123,13 +127,13 @@ export default function GitHubSection() {
 
   return (
     <section id="github" className="sec">
-      <div className="wrap">
+      <div className="wrap reveal" ref={reveal}>
         <span className="seclabel">GitHub</span>
         <div className="eyebrow mono">git log --stat</div>
         <h2 className="h2">GitHub activity</h2>
 
         {/* KPI tiles row */}
-        <div className="row4">
+        <div className="row4 reveal reveal-stagger" ref={kpiReveal}>
           <div className="kpi">
             <div className="lab">Repos</div>
             <div className="val">{data.repos}</div>
@@ -149,7 +153,7 @@ export default function GitHubSection() {
         </div>
 
         {/* Bento con heatmap + lenguajes + KPIs */}
-        <div className="ghbento">
+        <div className="ghbento reveal reveal-stagger" ref={bentoReveal}>
           <div className="card heatbig">
             <div className="cap">Contributions · last year</div>
 

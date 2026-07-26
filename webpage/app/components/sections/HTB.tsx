@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useReveal } from '@/lib/reveal';
 
 type HTBProfile = {
   id: number;
@@ -38,6 +39,9 @@ export default function HTB() {
   const [profile, setProfile] = useState<HTBProfile | null>(null);
   const [progress, setProgress] = useState<{ machine_difficulties: DiffStat[]; machine_os: OSStat[] } | null>(null);
   const [loading, setLoading] = useState(true);
+  const reveal = useReveal<HTMLDivElement>();
+  const kpiReveal = useReveal<HTMLDivElement>();
+  const barsReveal = useReveal<HTMLDivElement>();
 
   useEffect(() => {
     fetch('/api/htb')
@@ -104,13 +108,13 @@ export default function HTB() {
 
   return (
     <section id="htb" className="sec">
-      <div className="wrap">
+      <div className="wrap reveal" ref={reveal}>
         <span className="seclabel">HackTheBox</span>
         <div className="eyebrow">htb --stats</div>
         <h2 className="h2">HackTheBox</h2>
 
         {/* KPI tiles */}
-        <div className="row4">
+        <div className="row4 reveal reveal-stagger" ref={kpiReveal}>
           <div className="kpi">
             <div className="lab">Rank</div>
             <div className="val g">{profile.rank}</div>
@@ -134,7 +138,7 @@ export default function HTB() {
         </div>
 
         {/* Bar cards */}
-        <div className="row2">
+        <div className="row2 reveal reveal-stagger" ref={barsReveal}>
           <div className="card">
             <div className="cap">Owns by difficulty</div>
             {[
