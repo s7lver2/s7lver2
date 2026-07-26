@@ -3,8 +3,19 @@
 import type { CSSProperties } from 'react'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useRef } from 'react'
 import type { SocialC } from '@/app/lib/content'
-import { useDirty } from '@/app/admin/components/ui'
+import { useDirty, Panel, T } from '@/app/admin/components/ui'
+
+type Net = { k: string; label: string; auto?: string }
+const NETS: Net[] = [
+  { k: 'github', label: 'GitHub', auto: 'auto · github.com/s7lver2.png' },
+  { k: 'discord', label: 'Discord', auto: 'auto · Lanyard (Discord ID)' },
+  { k: 'twitter', label: 'Twitter / X' },
+  { k: 'tiktok', label: 'TikTok' },
+  { k: 'instagram', label: 'Instagram' },
+  { k: 'htb', label: 'HackTheBox' },
+]
 
 const S: CSSProperties = { fontFamily: 'var(--font-body)' }
 
@@ -58,6 +69,52 @@ export default function SocialsPage() {
     try { new URL(u); return true } catch { return false }
   }
   const invalidIdx = socials.findIndex((s) => !isValidUrl(s.url))
+
+  // Folded in from the deleted /admin/profiles page (Task 15) — only its UI
+  // moved, both /api/admin/settings and /api/admin/upload stay as-is.
+  const [avatars, setAvatars] = useState<Record<string, string>>({})
+  const [discordId, setDiscordId] = useState('')
+  const [avatarsLoaded, setAvatarsLoaded] = useState(false)
+  const [avatarBusy, setAvatarBusy] = useState<string | null>(null)
+  const [avatarMsg, setAvatarMsg] = useState('')
+  const [avatarSaving, setAvatarSaving] = useState(false)
+  const fileRefs = useRef<Record<string, HTMLInputElement | null>>({})
+
+  useEffect(() => {
+    fetch('/api/admin/settings').then(r => r.json()).then(d => {
+      setAvatars(d.avatars ?? {})
+      setDiscordId(d.discordId ?? '')
+      setAvatarsLoaded(true)
+    }).catch(() => setAvatarsLoaded(true))
+  }, [])
+
+  async function uploadAvatar(net: string, file: File) {
+    setAvatarBusy(net)
+    const fd = new FormData(); fd.append('file', file)
+    try {
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+      const d = await res.json()
+      if (res.ok && d.url) setAvatars(a => ({ ...a, [net]: d.url }))
+      else setAvatarMsg(d.error ?? 'Upload failed')
+    } catch (e) { setAvatarMsg(String(e)) }
+    setAvatarBusy(null)
+  }
+
+  async function saveAvatars() {
+    setAvatarSaving(true); setAvatarMsg('')
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatars, discordId }),
+      })
+      if (res.ok) setAvatarMsg('Saved!')
+      else { const d = await res.json(); setAvatarMsg(d.error ?? 'Error') }
+    } catch (e) { setAvatarMsg(String(e)) }
+    setAvatarSaving(false)
+    setTimeout(() => setAvatarMsg(''), 3000)
+  }
+
+  const previewSrc = (net: string) => `/api/avatar/${net}?t=${encodeURIComponent(avatars[net] || discordId || '')}`
 
   useEffect(() => {
     const load = async () => {
@@ -232,6 +289,59 @@ export default function SocialsPage() {
           </div>
         ))}
       </div>
+
+      <Panel label="avatares" style={{ marginBottom: 20 }}>
+        <p style={{ fontFamily: T.mono, fontSize: 12, color: T.mut, marginTop: 0, marginBottom: 14 }}>
+          Avatares de la sección &quot;Find me online&quot;, servidos como ASCII. GitHub es automático; Discord usa Lanyard;
+          el resto súbelos o pega una URL.
+        </p>
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontFamily: T.mono, fontSize: 10.5, letterSpacing: '.16em', textTransform: 'uppercase', color: T.mut, marginBottom: 6 }}>
+            discord user id
+          </div>
+          <input value={discordId} onChange={e => setDiscordId(e.target.value.replace(/[^0-9]/g, ''))}
+            style={{ width: '100%', boxSizing: 'border-box', ...Input }} placeholder="123456789012345678" inputMode="numeric" />
+        </div>
+        {!avatarsLoaded ? (
+          <div style={{ fontFamily: T.mono, fontSize: 12, color: T.dim }}>cargando…</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {NETS.map(net => (
+              <div key={net.k} style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <img
+                  src={previewSrc(net.k)} alt="" width={40} height={40}
+                  style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0, background: T.deep, border: `1px solid ${T.line}` }}
+                  onError={e => { (e.currentTarget as HTMLImageElement).style.opacity = '0.25' }}
+                />
+                <div style={{ flex: 1, minWidth: 160 }}>
+                  <div style={{ fontFamily: T.mono, fontSize: 12, color: T.text, marginBottom: 5, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {net.label}
+                    {net.auto && <span style={{ fontSize: 10, color: T.dim }}>{net.auto}</span>}
+                  </div>
+                  <input
+                    value={avatars[net.k] ?? ''}
+                    onChange={e => setAvatars(a => ({ ...a, [net.k]: e.target.value }))}
+                    style={{ width: '100%', boxSizing: 'border-box', ...Input, fontSize: 11.5, padding: '6px 9px' }}
+                    placeholder={net.auto ? 'override URL (opcional)…' : 'pega una URL o sube una imagen…'}
+                  />
+                </div>
+                <button type="button" onClick={() => fileRefs.current[net.k]?.click()} disabled={avatarBusy === net.k}
+                  style={{ ...Button, background: 'transparent', border: `1px solid ${T.line}`, color: T.mut }}>
+                  {avatarBusy === net.k ? '…' : 'subir'}
+                </button>
+                <input ref={el => { fileRefs.current[net.k] = el }} type="file" accept="image/*" style={{ display: 'none' }}
+                  onChange={e => { const f = e.target.files?.[0]; if (f) uploadAvatar(net.k, f) }} />
+              </div>
+            ))}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <button type="button" onClick={saveAvatars} disabled={avatarSaving} style={Button}>
+                {avatarSaving ? 'guardando…' : 'guardar avatares'}
+              </button>
+              {avatarMsg && <span style={{ fontFamily: T.mono, fontSize: 12, color: avatarMsg === 'Saved!' ? T.active : '#f87171' }}>{avatarMsg}</span>}
+            </div>
+          </div>
+        )}
+      </Panel>
 
       <div style={{ display: 'flex', gap: 8 }}>
         <button
