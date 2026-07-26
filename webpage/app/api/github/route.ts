@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const USER = process.env.GITHUB_USER || 's7lver2';
+const GH_USER = process.env.GITHUB_USER || process.env.GITHUB_USERNAME || 's7lver2';
 export const revalidate = 3600; // cache 1h
 
 // level (0-4) → rough count when per-day tooltip is unavailable
@@ -84,7 +84,7 @@ async function getProfile(user: string) {
 
 export async function GET() {
   try {
-    const [days, profile] = await Promise.all([getContributions(USER), getProfile(USER)]);
+    const [days, profile] = await Promise.all([getContributions(GH_USER), getProfile(GH_USER)]);
 
     const total = days.reduce((s, d) => s + d.count, 0);
 

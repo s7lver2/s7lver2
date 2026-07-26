@@ -22,8 +22,13 @@ export async function GET(_req: NextRequest) {
   const token  = process.env.HTB_API_TOKEN;
   const userId = process.env.HTB_USER_ID;
 
+  // Not configured is not an error — mirror app/api/htb/machines/route.ts and
+  // let the client render an empty state instead of a status code.
   if (!token || !userId) {
-    return NextResponse.json({ error: 'missing_env' }, { status: 503 });
+    return NextResponse.json(
+      { profile: null, progress: null, configured: false },
+      { headers: { 'Cache-Control': 'public, s-maxage=300' } }
+    );
   }
 
   const id = parseInt(userId, 10);
@@ -73,7 +78,7 @@ export async function GET(_req: NextRequest) {
     }
 
     return NextResponse.json(
-      { profile, progress },
+      { profile, progress, configured: true },
       { headers: { 'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=3600' } }
     );
   } catch (err) {

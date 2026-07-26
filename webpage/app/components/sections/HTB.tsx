@@ -26,39 +26,45 @@ type OSStat = {
 };
 
 type HTBResponse = {
-  profile: HTBProfile;
+  profile: HTBProfile | null;
   progress: {
     machine_difficulties: DiffStat[];
     machine_os: OSStat[];
-  };
+  } | null;
+  configured?: boolean;
 };
 
 export default function HTB() {
   const [profile, setProfile] = useState<HTBProfile | null>(null);
   const [progress, setProgress] = useState<{ machine_difficulties: DiffStat[]; machine_os: OSStat[] } | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch('/api/htb')
-      .then(r => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((data: HTBResponse) => {
-        setProfile(data.profile);
-        setProgress(data.progress);
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: HTBResponse | null) => {
+        if (data?.profile && data?.progress) {
+          setProfile(data.profile);
+          setProgress(data.progress);
+        }
         setLoading(false);
       })
-      .catch(e => {
-        setError(e.message);
-        setLoading(false);
-      });
+      .catch(() => setLoading(false));
   }, []);
 
-  if (loading) return <section className="sec"><div className="wrap"><p>Loading...</p></div></section>;
-  if (error) return <section className="sec"><div className="wrap"><p>Error: {error}</p></div></section>;
-  if (!profile || !progress) return <section className="sec"><div className="wrap"><p>No data</p></div></section>;
+  if (loading) {
+    return (
+      <section id="htb" className="sec">
+        <div className="wrap">
+          <span className="seclabel">HackTheBox</span>
+          <p className="mono" style={{ color: 'var(--dim)', marginTop: 12 }}>Loading…</p>
+        </div>
+      </section>
+    );
+  }
+
+  // Not configured, or upstream unavailable: render nothing rather than an error.
+  if (!profile || !progress) return null;
 
   // Mapear dificultades del API a nuestro formato
   const diffMap: Record<string, keyof typeof diffData> = {};
