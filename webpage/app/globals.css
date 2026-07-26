@@ -2021,3 +2021,34 @@
 @media (max-width: 760px) {
   .gcanvas { height: 300px; }
 }
+
+.gleg {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 9.5px;
+  color: rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+}
+
+.gleg i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.gbtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.gbtn:disabled:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.5);
+}

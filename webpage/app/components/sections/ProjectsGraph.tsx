@@ -19,7 +19,7 @@ export default function ProjectsGraph() {
       .catch(() => setFailed(true));
   }, []);
 
-  const { canvasRef, ready, mode, setMode, fit, reset } = useGraph({
+  const { canvasRef, ready, mode, setMode, fit, reset, autoRotate, setAutoRotate } = useGraph({
     payload,
     bandFraction: 1,
     zoomLabelRef,
@@ -41,6 +41,16 @@ export default function ProjectsGraph() {
               <button type="button" className="kbadge gbtn" data-on={mode === '3d'} onClick={() => setMode('3d')}>3D esfera</button>
               <button type="button" className="kbadge gbtn" onClick={fit}>⊡ fit</button>
               <button type="button" className="kbadge gbtn" onClick={reset}>⟲ reset</button>
+              <button
+                type="button"
+                className="kbadge gbtn"
+                data-on={autoRotate}
+                onClick={() => setAutoRotate(!autoRotate)}
+                disabled={mode !== '3d'}
+                title={mode === '3d' ? 'rotación automática' : 'solo en modo 3D'}
+              >
+                ◐ auto-rot
+              </button>
             </div>
           </div>
 
@@ -48,6 +58,10 @@ export default function ProjectsGraph() {
             <canvas ref={canvasRef} className="gcanvas" />
             {!ready && !failed && <div className="gmsg mono">Loading graph…</div>}
             {failed && <div className="gmsg mono">Graph unavailable.</div>}
+            <div className="gleg mono">
+              <span><i style={{ background: '#00add8' }} />proyecto</span>
+              <span><i style={{ background: 'rgba(255,255,255,.3)' }} />lenguaje</span>
+            </div>
           </div>
 
           <div className="gsl">
