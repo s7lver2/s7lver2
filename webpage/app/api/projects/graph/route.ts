@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { kvGetJSON, kvSetJSON } from '@/lib/redis';
-import { getContent, type ProjectC } from '@/lib/content';
+import { getContent } from '@/lib/content';
 import { colorFor } from '@/lib/lang-colors';
+import { repoName, initialsFor, accentsFor, type FeaturedRepo } from '@/lib/featured';
 import type { GraphPayload, GraphNodeWire, GraphLinkWire } from '@/lib/graph-types';
 
 const CACHE_KEY = 'projects:graph';
@@ -43,39 +44,87 @@ function toPercentages(bytes: Record<string, number>): Record<string, number> {
   return out;
 }
 
-async function buildPayload(projects: ProjectC[]): Promise<GraphPayload> {
+/** Name, description and stars for one repo. Null on any failure. */
+async function fetchRepoMeta(repo: string): Promise<
+  { name: string; desc: string; stars: number } | null
+> {
+  try {
+    const headers: HeadersInit = {
+      Accept: 'application/vnd.github+json',
+      'User-Agent': 's7lver-portfolio',
+    };
+    if (process.env.GITHUB_TOKEN) {
+      headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+    }
+    const r = await fetch(`https://api.github.com/repos/${repo}`, {
+      headers,
+      next: { revalidate: 3600 },
+    });
+    if (!r.ok) return null;
+    const j = (await r.json()) as {
+      name?: string; description?: string | null; stargazers_count?: number;
+    };
+    return {
+      name: j.name || repoName(repo),
+      desc: j.description || '',
+      stars: j.stargazers_count ?? 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function buildPayload(featured: FeaturedRepo[]): Promise<GraphPayload> {
   const nodes: GraphNodeWire[] = [];
   const links: GraphLinkWire[] = [];
   const degree: Record<string, number> = {};
   const languageNodes = new Set<string>();
 
-  const langsBySlug: Record<string, Record<string, number>> = {};
+  const langsByRepo: Record<string, Record<string, number>> = {};
+  const metaByRepo: Record<string, { name: string; desc: string; stars: number }> = {};
 
-  // Sequential rather than Promise.all: four repos is not worth burning four
-  // concurrent rate-limit slots, and a partial failure is easier to reason about.
-  for (const p of projects) {
-    if (!p.repo) continue;
-    const bytes = await fetchLanguages(p.repo);
-    if (bytes) langsBySlug[p.slug] = toPercentages(bytes);
+  // Sequential rather than Promise.all: a handful of repos is not worth
+  // burning concurrent rate-limit slots, and a partial failure is easier to
+  // reason about.
+  for (const f of featured) {
+    const bytes = await fetchLanguages(f.repo);
+    if (bytes) langsByRepo[f.repo] = toPercentages(bytes);
+    const meta = await fetchRepoMeta(f.repo);
+    if (meta) metaByRepo[f.repo] = meta;
   }
 
-  for (const p of projects) {
-    const langs = langsBySlug[p.slug] || {};
+  const repos = featured.map((f) => f.repo);
+  const primaryLangs: Record<string, string | null> = {};
+  for (const repo of repos) {
+    const langs = langsByRepo[repo] || {};
+    const top = Object.entries(langs).sort((a, b) => b[1] - a[1])[0];
+    primaryLangs[repo] = top ? top[0] : null;
+  }
+  const accents = accentsFor(repos, primaryLangs);
+  const initials = initialsFor(repos);
+
+  for (const f of featured) {
+    const langs = langsByRepo[f.repo] || {};
+    const meta = metaByRepo[f.repo];
+    const slug = repoName(f.repo);
     nodes.push({
-      id: p.slug,
+      id: slug,
       kind: 'project',
-      color: p.ac,
+      color: accents[f.repo],
       degree: 0,
-      slug: p.slug,
-      repo: p.repo ?? null,
-      desc: p.desc,
-      status: p.status,
+      slug,
+      repo: f.repo,
+      desc: f.descOverride || meta?.desc || '',
+      status: f.status,
       langs,
+      initials: initials[f.repo],
+      stars: meta?.stars ?? 0,
+      noLanguage: Object.keys(langs).length === 0,
     });
     for (const [lang, pct] of Object.entries(langs)) {
       languageNodes.add(lang);
-      links.push({ source: p.slug, target: lang, weight: pct });
-      degree[p.slug] = (degree[p.slug] || 0) + 1;
+      links.push({ source: slug, target: lang, weight: pct });
+      degree[slug] = (degree[slug] || 0) + 1;
       degree[lang] = (degree[lang] || 0) + 1;
     }
   }
@@ -83,16 +132,13 @@ async function buildPayload(projects: ProjectC[]): Promise<GraphPayload> {
   for (const lang of languageNodes) {
     nodes.push({ id: lang, kind: 'language', color: colorFor(lang), degree: 0 });
   }
-
   for (const n of nodes) n.degree = degree[n.id] || 0;
 
   return { nodes, links, fetchedAt: Date.now() };
 }
 
 export async function GET() {
-  // getContent owns the `content:projects` / `content-projects.json` key pair —
-  // do not re-derive those strings here, they would drift.
-  const projects = await getContent<ProjectC[]>('projects');
+  const featured = await getContent<FeaturedRepo[]>('featured');
   const cached = await kvGetJSON<GraphPayload | null>(CACHE_KEY, CACHE_FILE, null);
 
   const fresh = cached && Date.now() - cached.fetchedAt < TTL_MS;
@@ -102,7 +148,7 @@ export async function GET() {
     });
   }
 
-  const built = await buildPayload(projects);
+  const built = await buildPayload(featured);
 
   // If every language fetch failed but we have a previous payload, that payload
   // is strictly better than an edgeless graph — serve it and mark it stale.

@@ -15,6 +15,12 @@ export interface GraphNodeWire {
   status?: 'done' | 'beta' | 'dev';
   /** Language name -> percentage of the repo, rounded. Projects only. */
   langs?: Record<string, number>;
+  /** Two or three characters drawn in the donut's centre. Projects only. */
+  initials?: string;
+  /** GitHub stargazers. Projects only. */
+  stars?: number;
+  /** True when GitHub reports no language — the renderer dashes the ring. */
+  noLanguage?: boolean;
 }
 
 export interface GraphLinkWire {
