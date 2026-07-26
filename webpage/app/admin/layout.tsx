@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import AdminSidebar from './components/AdminSidebar';
 import { DirtyProvider } from './components/ui';
-import StatusLine from './components/StatusLine';
+import PaletteHost from './components/PaletteHost';
 import ToastHost from './components/ToastHost';
 
 export const metadata: Metadata = {
@@ -26,7 +26,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         }}>
           {children}
         </main>
-        <StatusLine commandCount={0} />
+        <PaletteHost />
         <ToastHost />
         <style>{`
           @media (max-width: 768px) {
