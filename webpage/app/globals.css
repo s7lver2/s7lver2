@@ -2108,3 +2108,43 @@
 @media (prefers-reduced-motion: reduce) {
   .locbar > span { transition: none; }
 }
+
+/* ── Task 7: public-site animations ── */
+
+@keyframes heat-shimmer {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .55; }
+}
+/* Opacity oscillates against the cell's own colour, so intensity survives. */
+.heat > span {
+  animation: heat-shimmer 3.4s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 7ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .heat > span { animation: none; }
+}
+
+/* Cards scale up slightly as they arrive. */
+.reveal .card { transform: scale(.96); transition: transform .62s cubic-bezier(.16,1,.3,1); }
+.reveal.revealed .card { transform: scale(1); }
+
+/* Section headings wipe in from the left. */
+.reveal .h2 {
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path .72s cubic-bezier(.16,1,.3,1);
+}
+.reveal.revealed .h2 { clip-path: inset(0 0 0 0); }
+
+/* Body copy resolves out of a blur. */
+.reveal p { filter: blur(6px); transition: filter .6s ease; }
+.reveal.revealed p { filter: blur(0); }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal .card, .reveal.revealed .card { transform: none; transition: none; }
+  .reveal .h2, .reveal.revealed .h2 { clip-path: none; transition: none; }
+  .reveal p, .reveal.revealed p { filter: none; transition: none; }
+}
+
+/* Parallax background layers (app/lib/parallax.ts). Transform-only, never
+   intercepts scroll. */
+.parallax-layer { will-change: transform; }

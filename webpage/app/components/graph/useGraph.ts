@@ -62,6 +62,7 @@ export function useGraph({ payload, bandFraction, zoomLabelRef, onOpenProject }:
   const [autoRotate, setAutoRotate] = useState(false);
   const autoRotRef = useRef(false);
   const reduced = useRef(false);
+  const entranceT0 = useRef(0);
 
   useEffect(() => { bandRef.current = bandFraction; }, [bandFraction]);
   useEffect(() => { autoRotRef.current = autoRotate; }, [autoRotate]);
@@ -93,6 +94,7 @@ export function useGraph({ payload, bandFraction, zoomLabelRef, onOpenProject }:
     const g = buildGraph(payload);
     settle(g, '2d', SETTLE_ITERATIONS);
     graphRef.current = g;
+    entranceT0.current = performance.now();
     setReady(true);
   }, [payload]);
 
@@ -148,9 +150,15 @@ export function useGraph({ payload, bandFraction, zoomLabelRef, onOpenProject }:
         }
 
         const { w, h } = sizeRef.current;
+        const now = performance.now();
+        const entrance = reduced.current
+          ? 1
+          : Math.min(1, (now - entranceT0.current) / 700);
+        const entranceEased = 1 - Math.pow(1 - entrance, 3);
         drawGraph(ctx, {
           graph: g, mode: modeRef.current, cam: camRef.current, w, h,
           lit: litRef.current, selected: selRef.current,
+          t: now, reduced: reduced.current, entrance: entranceEased,
         });
 
         if (zoomLabelRef?.current) {

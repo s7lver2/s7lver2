@@ -13,6 +13,7 @@ import Footer          from '@/components/sections/Footer';
 import CommandPalette  from '@/components/CommandPalette';
 import ProgressRail    from '@/components/ProgressRail';
 import { track } from '@/lib/track';
+import { useParallax } from '@/lib/parallax';
 
 interface Flags {
   terminal: boolean;
@@ -29,6 +30,12 @@ const THEMES: Record<string, { color1: string; color2: string }> = {
 };
 
 export default function Home() {
+  // Depth cue only: translate-only, rAF-throttled, disabled under
+  // prefers-reduced-motion. Rejected in v5 over motion-sickness risk; the
+  // user explicitly chose it back in for v6, constrained to these two
+  // decorative (non-text, non-interactive) blob layers only.
+  const parallax1 = useParallax(0.08);
+  const parallax2 = useParallax(0.16);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [paletteTab, setPaletteTab] = useState<'nav' | 'term'>('nav');
   const [trackedSections, setTrackedSections] = useState(new Set<string>());
@@ -159,8 +166,8 @@ export default function Home() {
       <main className="min-h-screen">
         {/* Background ambient blobs */}
         <div className="fixed inset-0 pointer-events-none opacity-30">
-          <div className="absolute top-1/4  left-1/4  w-96 h-96 bg-primary-purple/10 rounded-full blur-[120px]" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary-blue/10  rounded-full blur-[120px]" />
+          <div ref={parallax1} className="parallax-layer absolute top-1/4  left-1/4  w-96 h-96 bg-primary-purple/10 rounded-full blur-[120px]" />
+          <div ref={parallax2} className="parallax-layer absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary-blue/10  rounded-full blur-[120px]" />
         </div>
 
         <div className="relative z-10">

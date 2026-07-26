@@ -184,7 +184,10 @@ export default function GitHubSection() {
               {data.heatmap.map((intensity, i) => (
                 <span
                   key={i}
-                  style={{ background: HEAT_COLORS[Math.min(intensity, 4)] }}
+                  style={{
+                    background: HEAT_COLORS[Math.min(intensity, 4)],
+                    ['--i' as string]: i,
+                  }}
                 />
               ))}
             </div>

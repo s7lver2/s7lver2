@@ -9,6 +9,12 @@ export interface RenderState {
   /** Node driving the highlight (hover takes precedence over selection). */
   lit: GraphNode | null;
   selected: GraphNode | null;
+  /** rAF timestamp, ms. Drives idle oscillation, edge dash flow and the entrance. */
+  t: number;
+  /** prefers-reduced-motion, read once on mount. */
+  reduced: boolean;
+  /** Entrance progress in [0, 1], 1 once settled. 1 immediately when reduced. */
+  entrance: number;
 }
 
 const TEAL = '#5eead4';
@@ -20,22 +26,32 @@ function depthFactor(mode: Mode, s: number): number {
 }
 
 export function drawGraph(ctx: CanvasRenderingContext2D, st: RenderState): void {
-  const { graph, mode, cam, w, h, lit, selected } = st;
+  const { graph, mode, cam, w, h, lit, selected, entrance } = st;
   ctx.clearRect(0, 0, w, h);
+
+  const cx = w / 2, cy = h / 2;
 
   // Project once; reused by edges, nodes and depth sorting.
   const P = new Map<string, { sx: number; sy: number; s: number; z: number }>();
   for (const n of graph.nodes) {
     const b = baseProject(n, mode, cam);
-    P.set(n.id, {
-      sx: w / 2 + b.x * cam.zoom + cam.px,
-      sy: h / 2 + b.y * cam.zoom + cam.py,
-      s: b.s,
-      z: b.z,
-    });
+    let sx = cx + b.x * cam.zoom + cam.px;
+    let sy = cy + b.y * cam.zoom + cam.py;
+    if (entrance < 1) {
+      // Entrance: nodes fly outward from centre into their settled positions.
+      // Interpolating the projected screen position rather than n.x/n.y keeps
+      // the simulation itself untouched.
+      sx = cx + (sx - cx) * entrance;
+      sy = cy + (sy - cy) * entrance;
+    }
+    P.set(n.id, { sx, sy, s: b.s, z: b.z });
   }
 
   // ── edges ──
+  if (!st.reduced) {
+    ctx.setLineDash([5, 7]);
+    ctx.lineDashOffset = -(st.t / 90) % 12;
+  }
   for (const l of graph.links) {
     const a = P.get(l.s.id)!;
     const b = P.get(l.t.id)!;
@@ -50,6 +66,7 @@ export function drawGraph(ctx: CanvasRenderingContext2D, st: RenderState): void 
     ctx.lineWidth = (on && lit ? 1.6 : 1) * (mode === '3d' ? Math.max(0.55, a.s * 0.85) : 1);
     ctx.stroke();
   }
+  ctx.setLineDash([]); // leaked dash would dash the donut rings too
   ctx.globalAlpha = 1;
 
   // ── nodes, painted back to front so nearer glyphs win ──
@@ -61,7 +78,10 @@ export function drawGraph(ctx: CanvasRenderingContext2D, st: RenderState): void 
     const on = !lit || n === lit || graph.adjacency[lit.id][n.id];
     const dep = depthFactor(mode, p.s);
     const alpha = (on ? 1 : DIM_ALPHA) * dep;
-    const rr = n.r * (mode === '3d' ? p.s * 0.9 : 1) * cam.zoom;
+    const osc = st.reduced
+      ? 1
+      : 1 + 0.03 * Math.sin((st.t / 4000) * Math.PI * 2 + n.phase * Math.PI * 2);
+    const rr = n.r * osc * (mode === '3d' ? p.s * 0.9 : 1) * cam.zoom;
 
     ctx.globalAlpha = alpha;
 
@@ -129,7 +149,8 @@ export function drawGraph(ctx: CanvasRenderingContext2D, st: RenderState): void 
     }
 
     if (n === selected && isProject) {
-      ctx.globalAlpha = alpha * 0.6;
+      const pulse = st.reduced ? 1 : 0.6 + 0.4 * Math.sin(st.t / 480);
+      ctx.globalAlpha = alpha * 0.6 * pulse;
       ctx.strokeStyle = TEAL;
       ctx.lineWidth = 1;
       ctx.beginPath();
