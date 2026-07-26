@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useGraph } from '@/components/graph/useGraph';
 import type { GraphNode } from '@/components/graph/engine';
 import type { GraphPayload } from '@/lib/graph-types';
+import Readme from '@/components/graph/Readme';
 
 type ReadmeState =
   | { status: 'idle' }
@@ -128,9 +129,11 @@ export default function ProjectsGraph() {
                   )}
 
                   {readme.status === 'ok' && (
-                    <div className="grdbody">
-                      <pre>{readme.markdown}</pre>
-                    </div>
+                    <Readme
+                      markdown={readme.markdown}
+                      repo={readme.repo}
+                      accent={selected?.color ?? '#8b5cf6'}
+                    />
                   )}
                 </>
               )}

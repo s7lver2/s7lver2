@@ -2144,3 +2144,114 @@
 @media (max-width: 760px) {
   .grd { width: 100%; }
 }
+
+.grdbody.md h1 {
+  font-family: 'Sora', sans-serif;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: #fff;
+  margin: 0 0 6px;
+}
+
+.grdbody.md h2 {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 18px 0 7px;
+  font-weight: 400;
+}
+
+.grdbody.md h3 { font-size: 13px; color: rgba(255, 255, 255, 0.82); margin: 14px 0 6px; }
+.grdbody.md p { margin: 0 0 9px; }
+.grdbody.md ul, .grdbody.md ol { margin: 0 0 10px; padding-left: 17px; }
+.grdbody.md li { margin-bottom: 3px; }
+
+.grdbody.md code {
+  font-family: var(--mono);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-size: 11px;
+  color: #c4b5fd;
+}
+
+.grdbody.md pre {
+  font-family: var(--mono);
+  background: #090a0e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 2px solid var(--ac, #8b5cf6);
+  border-radius: 8px;
+  padding: 11px 13px;
+  margin: 0 0 10px;
+  overflow-x: auto;
+  font-size: 11px;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.72);
+  white-space: pre;
+  word-break: normal;
+}
+
+.grdbody.md pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+}
+
+.grdbody.md a {
+  color: #8b5cf6;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.35);
+}
+
+.grdbody.md blockquote {
+  margin: 0 0 10px;
+  padding: 2px 0 2px 12px;
+  border-left: 2px solid rgba(139, 92, 246, 0.4);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* READMEs carry fixed width attributes and oversized SVG; contain them or
+   they break the panel layout. */
+.grdbody.md img,
+.grdbody.md svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.grdbody.md table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 0 0 10px;
+  font-size: 11px;
+  max-width: 100%;
+}
+
+.grdbody.md th,
+.grdbody.md td {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 5px 9px;
+  text-align: left;
+}
+
+.grdbody.md th { color: rgba(255, 255, 255, 0.8); background: rgba(255, 255, 255, 0.03); }
+
+.grdbody.md details {
+  margin: 0 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 8px 11px;
+}
+
+.grdbody.md summary { cursor: pointer; color: rgba(255, 255, 255, 0.8); }
+
+.grdbody.md hr {
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 14px 0;
+}
