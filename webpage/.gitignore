@@ -40,3 +40,6 @@ next-env.d.ts
 .sdd/task-*-brief.md
 .sdd/task-*-report.md
 .sdd/task-*-review.md
+
+# superpowers brainstorm sessions
+.superpowers/
