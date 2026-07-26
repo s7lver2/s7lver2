@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import AdminSidebar from './components/AdminSidebar';
 import { DirtyProvider } from './components/ui';
 import StatusLine from './components/StatusLine';
+import ToastHost from './components/ToastHost';
 
 export const metadata: Metadata = {
   title: { default: 'admin • s7lver', template: '%s • admin' },
@@ -26,6 +27,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           {children}
         </main>
         <StatusLine commandCount={0} />
+        <ToastHost />
         <style>{`
           @media (max-width: 768px) {
             .admin-main { margin-left: 0 !important; padding: 64px 14px 40px !important; padding-bottom: 30px !important; }

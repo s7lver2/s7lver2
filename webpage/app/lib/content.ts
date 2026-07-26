@@ -21,16 +21,19 @@ export {
 } from './content-constants';
 export { DEFAULT_FEATURED, type FeaturedRepo } from './featured';
 
-export type ContentType = 'projects' | 'skills' | 'socials' | 'home' | 'featured';
+export interface AdminPrefs { renderer: 'dots' | 'braille' | 'svg'; }
+export const DEFAULT_PREFS: AdminPrefs = { renderer: 'dots' };
+
+export type ContentType = 'projects' | 'skills' | 'socials' | 'home' | 'featured' | 'adminPrefs';
 
 const DEFAULTS: Record<ContentType, unknown> = {
   projects: DEFAULT_PROJECTS, skills: DEFAULT_SKILLS, socials: DEFAULT_SOCIALS,
-  home: DEFAULT_HOME, featured: DEFAULT_FEATURED,
+  home: DEFAULT_HOME, featured: DEFAULT_FEATURED, adminPrefs: DEFAULT_PREFS,
 };
 
 export function isContentType(t: string): t is ContentType {
   return t === 'projects' || t === 'skills' || t === 'socials'
-    || t === 'home' || t === 'featured';
+    || t === 'home' || t === 'featured' || t === 'adminPrefs';
 }
 
 export async function getContent<T = unknown>(type: ContentType): Promise<T> {
