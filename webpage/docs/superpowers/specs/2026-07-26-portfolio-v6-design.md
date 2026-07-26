@@ -208,7 +208,9 @@ All GitHub calls attach `Authorization: Bearer ${GITHUB_TOKEN}` when the variabl
 
 # Phase B — Admin panel
 
-Five workstreams. Phase B may ship incrementally; nothing in Phase A depends on it beyond the seeded `featured` list.
+Nine workstreams. Phase B may ship incrementally; nothing in Phase A depends on it beyond the seeded `featured` list.
+
+The visual direction was settled across five iterated mockups, ending at `admin-v6-final.html`. It is a **TUI + editorial hybrid**: the chrome, statusline, monospace type and box-drawing rules of a terminal UI, with editorial typography (Sora, large numbers, generous whitespace) for the content itself. The rejected alternative was a conventional card dashboard — the user asked explicitly for "un diseño menos convencional de dashboard y más atrevido".
 
 ## B1 · GitHub repo picker
 
@@ -216,13 +218,74 @@ The feature Phase A needs. `GET /api/admin/github/repos` (auth-gated) lists the 
 
 This replaces the current hand-editing of project fields. The existing `repo` text input from v5 becomes redundant and is removed.
 
-## B2 · Visual redesign
+## B2 · Visual redesign — TUI + editorial
 
 The admin currently uses inline style objects with `Space Mono` and purple-tinted cards (`rgba(5,0,10,0.97)`, `rgba(139,92,246,0.35)` borders) — a different visual language from the public site, which uses neutral glass and white 8% borders.
 
-Unify on the site's real tokens: `--glass` surfaces, `--line` borders, JetBrains Mono, purple as accent only, `.seclabel`-style section headers. Extract the repeated inline `Card`/`Input`/`Button` objects into a shared module so the styling lives in one place instead of being re-declared in every admin page.
+Unify on the site's real tokens: `--glass` surfaces, `--line` borders, JetBrains Mono, purple as accent only, `.seclabel`-style section headers, teal `#5eead4` for active state. Extract the repeated inline `Card`/`Input`/`Button` objects into a shared module so the styling lives in one place instead of being re-declared in every admin page.
 
-## B3 · Editing experience
+The TUI layer on top of those tokens:
+
+- **A persistent statusline** across the bottom: current section path, dirty/saved state, the active chart renderer, the command count and the ⌘K hint. It is the panel's single source of truth for "what state am I in".
+- **Box-drawing rules and bracket labels** (`[ analytics ]`, `└──`) instead of card shadows, so panels are delimited by 1px lines and typography rather than by elevation.
+- **Editorial content inside the TUI chrome**: one hero number per panel at Sora 800 display size, secondary KPIs in mono at 11px with `0.18em` tracking, and real whitespace between blocks.
+
+## B3 · Charts — canvas dots, with braille and SVG selectable
+
+The user asked for braille charts (`btop`-style). **Braille cannot be the default and the reason is measured, not aesthetic.** Character advance widths under the site's fonts:
+
+| Font | `M` advance | `⣿` advance | Match? |
+|---|---|---|---|
+| JetBrains Mono | 9.600px | 12.055px | No — glyph substituted from a fallback font |
+| Consolas | identical failure | | No |
+| generic `monospace` | identical failure | | No |
+| Cascadia Code | 9.375px | 9.375px | Yes |
+
+JetBrains Mono has no U+2800–U+28FF coverage, so the browser substitutes a fallback face at a different advance and the chart grid shears. Requiring Cascadia Code would make the panel's charts depend on a font the visitor may not have.
+
+**Resolution: three renderers behind one interface, `dots` by default.**
+
+1. **`dots` (default).** A canvas 2D dot matrix — the same 2×4-per-cell visual language as braille, drawn as actual dots at computed positions. Font-independent, DPR-aware, pixel-exact at any size.
+2. **`braille`.** Real U+2800–U+28FF text characters. Offered because the user likes the look and may install a covering font. **Feature-detected at runtime** by comparing the advance of `⣿` against `M` in the resolved font; on mismatch it **falls back to `dots` automatically and shows a toast explaining why**, rather than rendering a sheared grid.
+3. **`svg`.** An area/line chart in SVG — the conventional fallback, for anyone who wants a normal chart.
+
+All three consume one data contract and render into the same box, so the selector swaps them live with no relayout.
+
+**Responsiveness is a hard requirement, not a nicety.** The charts must fill their container at any viewport width:
+
+- Measure the container, derive the column count from it, and **resample the series to fit**: `max` on downsample so peaks survive, linear interpolation on upsample. A naive `slice` would silently hide the spikes that make the chart worth showing.
+- Re-render on `ResizeObserver`, not on window resize alone.
+- For `braille` only, measure the character advance from a hidden span (so `letter-spacing` is included) and gate the first draw on `document.fonts.ready` — drawing before font load measures the fallback face and produces the wrong grid.
+
+## B4 · Configuration section
+
+**The configuration section returns to the admin.** It was deleted earlier in this project when the user asked to remove web-editing options; it comes back with different content — panel preferences, not site content. It exists because the renderer choice in §B3 needs somewhere to live.
+
+Contents:
+
+- **Chart renderer**: `dots` / `braille` / `svg`, each with a live inline preview of the same series so the choice is made by looking rather than by reading. `dots` is marked recommended; `braille` is labelled *requiere fuente*.
+- **Refresh LOC cache** (§A4.4).
+
+Persisted per-admin in KV as a new `adminPrefs` content type. Applying a change redraws every chart on the page immediately and flips the statusline to `GUARDADO` in teal.
+
+## B5 · Navigation — sidebar and ⌘K together
+
+Both, not either. The sidebar is for discovery and orientation; ⌘K is for speed once you know the panel.
+
+**Sidebar.** Persistent, grouped, with a **teal indicator that slides** between entries — animating `top` and `height` over 340ms rather than cutting — so the eye tracks the move.
+
+**⌘K executes actions, it does not only navigate.** This was an explicit request: "que el Ctrl + k también pueda hacer acciones como edit project… que también puedas hacer acciones sin tener que pulsar los botones". Two groups:
+
+- **Ir a** — every section.
+- **Acciones** — `Editar proyecto…`, `Marcar / desmarcar repo…`, `Renderer de gráficos…`, `Guardar cambios`, `Refrescar caché de líneas`, `Nuevo usuario`, `Exportar audit a CSV`, `Cerrar sesión`.
+
+Actions that need a target **push a second level** listing real data — `Editar proyecto…` lists the featured repos, `Renderer de gráficos…` lists the three renderers. Arrow keys move, `↵` executes, `esc` pops one level before it closes the palette. Every action that mutates state also **navigates to where the change is visible and flashes the affected row in teal**, so the user sees what happened instead of trusting that it did.
+
+## B6 · Login screen
+
+The login page gets the **hero's ASCII flow-field effect as its background** — the same `HeroBackground` component and the same field function, at lower alpha behind the form. Explicitly requested. It is the same code, not a reimplementation, and it honours `prefers-reduced-motion` identically.
+
+## B7 · Editing experience
 
 Concrete gaps in the current panel:
 
@@ -231,7 +294,7 @@ Concrete gaps in the current panel:
 - **No validation.** A malformed `repo` value or empty slug saves happily. Validate before submit with inline field errors.
 - **No reordering.** Projects render in array order with no way to change it. Add drag-to-reorder.
 
-## B4 · Consolidate redundant sections
+## B8 · Consolidate redundant sections
 
 Audited by data source, not by opinion:
 
@@ -247,9 +310,29 @@ Audited by data source, not by opinion:
 
 Overview, Traffic and Live are **679 lines across three pages reading one endpoint**. Consolidate into a single `/admin` Analytics page with **tabs** — Overview, Traffic, Live — sharing one fetch of `/api/admin/stats` instead of three. Tabs rather than stacked sections, because the three views show the same metrics at different granularities and stacking them would repeat the same numbers three times down one page. This is the single largest simplification available in the admin.
 
-## B5 · General polish
+## B9 · Animations
 
-A "refresh LOC cache" action (§A4.4), consistent page headers, keyboard focus states, and loading skeletons instead of bare `loading…` text.
+The user reviewed an earlier mockup and said "me faltan animaciones". This is the full inventory, all of it disabled under `prefers-reduced-motion`. **Text animations are called out specifically** — the request was for "animaciones con texto, fluidas", so numbers and labels animate, not just containers.
+
+| # | Animation | Detail |
+|---|---|---|
+| 1 | Page enter | Content arrives at `blur(6px) scale(0.985)` and resolves to sharp over 420ms |
+| 2 | Sidebar indicator | Teal bar slides `top`/`height` between entries over 340ms |
+| 3 | Panel stagger | Panels enter in 90ms cascade via `nth-child` transition-delay (same CSS-only mechanism as the public site's v5 reveals) |
+| 4 | Chart draw-in | Columns appear left-to-right; the **last column keeps pulsing** to mark live data |
+| 5 | Hero count-up | The panel's headline number counts from zero, reusing `app/lib/countup.ts` |
+| 6 | Scramble | Secondary KPIs cycle random glyphs before settling on their value |
+| 7 | Typewriter | The kicker line and the statusline path type in character by character |
+| 8 | Growing bars | Bar rows grow from zero, staggered |
+| 9 | Log stagger | Audit/log rows enter translated, in a 45ms cascade |
+| 10 | Palette open | Backdrop blur 0→7px, panel `scale(0.965)`→1, rows stagger in |
+| 11 | Teal row flash | A row mutated by a ⌘K action flashes teal so the change is visible (§B5) |
+
+A `▶ reanimar` control replays them, so the animations can be reviewed without a page reload.
+
+## B10 · General polish
+
+Consistent page headers, keyboard focus states, and loading skeletons instead of bare `loading…` text.
 
 ---
 
@@ -264,6 +347,14 @@ A "refresh LOC cache" action (§A4.4), consistent page headers, keyboard focus s
 **Why parallax is in despite the earlier objection.** Flagged in v5, rejected then, explicitly requested now. It is the user's call; the design constrains it to transform-only, reduced-motion-aware layer movement rather than anything that interferes with scrolling.
 
 **Why `featured` is a new content type rather than a rewrite of `projects`.** The graph needs repo identity plus one manual field; the existing `projects` shape carries seven fields the graph no longer uses. A separate, smaller contract keeps the admin picker simple and leaves the old data intact during migration.
+
+**Why canvas dots and not braille, when braille was what was asked for.** Not taste — measurement. JetBrains Mono has no U+2800–U+28FF coverage, so the browser substitutes a fallback face whose advance is 12.055px against the Latin 9.600px, and the chart grid shears. Only Cascadia Code matched. Canvas dots reproduce the same 2×4 visual language with no font dependency, so braille survives as an opt-in with runtime detection and automatic fallback rather than as a default that breaks on most machines.
+
+**Why the configuration section comes back after being deleted.** It was removed when the user asked to strip web-editing options from the admin, and that removal was correct — it held site content. It returns holding panel preferences instead. The renderer choice has to live somewhere, and burying a display preference inside an unrelated page would be worse than restoring the section it belongs in.
+
+**Why sidebar and ⌘K rather than choosing one.** They serve different users of the same panel: the sidebar answers "what is in here", ⌘K answers "get me there now". Dropping the sidebar for a palette-only panel makes the admin undiscoverable; dropping the palette gives up the speed. Explicitly requested as both.
+
+**Why ⌘K actions navigate and flash instead of acting silently.** An action executed from a palette happens off-screen from wherever its effect lands. Without the navigate-and-flash, the user has to go find the row and verify it — which is slower than just clicking the button, defeating the point.
 
 **Why the LOC cache serves stale before refreshing.** A cold ghloc pass over 25 repos costs 30–140 seconds. Any design where a visitor can trigger a synchronous refresh is a design where a visitor can wait two minutes.
 
@@ -283,6 +374,10 @@ Phase A:
 Phase B:
 
 7. **Picker** — repos list with search; checking one adds it to the graph after reload; status dropdown persists; drag-reorder persists.
-8. **Redesign** — admin surfaces use neutral glass and white borders, not purple cards; no page re-declares its own Card/Input/Button styles.
-9. **Editing** — saving shows success or failure; a dirty form warns before navigation; invalid input blocks submit with an inline message.
-10. **Consolidation** — one Analytics page replaces Overview, Traffic and Live; Engagement, Users and Audit still work; Profiles is reachable from Redes.
+8. **Redesign** — admin surfaces use neutral glass and white borders, not purple cards; no page re-declares its own Card/Input/Button styles; the statusline shows section, dirty state and renderer.
+9. **Charts** — at 1440px, 900px and 375px wide the chart fills its container with no overflow and no empty gutter; narrowing the window preserves the peak values (resampled by `max`, not sliced); switching renderer redraws in place with no relayout; selecting `braille` without a covering font falls back to dots and shows the toast.
+10. **Configuration** — the section exists, the renderer preference persists across reload, and applying it flips the statusline to `GUARDADO`.
+11. **Navigation** — the sidebar indicator slides between entries; ⌘K opens with both groups; `Editar proyecto…` drills into a real repo list; executing it navigates to Proyectos and flashes the row; `esc` pops one level before closing.
+12. **Login** — the ASCII flow field animates behind the form and is static under `prefers-reduced-motion`.
+13. **Animations** — all eleven in §B9 are observable, `▶ reanimar` replays them, and every one is static under `prefers-reduced-motion`.
+14. **Consolidation** — one Analytics page replaces Overview, Traffic and Live; Engagement, Users and Audit still work; Profiles is reachable from Redes.
