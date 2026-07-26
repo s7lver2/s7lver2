@@ -1719,7 +1719,7 @@
 .gcanvas {
   display: block;
   width: 100%;
-  height: 376px;
+  height: 440px;
   cursor: grab;
   touch-action: none;
 }

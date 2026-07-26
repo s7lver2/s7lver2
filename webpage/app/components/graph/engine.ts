@@ -1,4 +1,5 @@
 import type { GraphPayload } from '@/lib/graph-types';
+import { colorFor } from '@/lib/lang-colors';
 
 export type Mode = '2d' | '3d';
 
@@ -16,6 +17,14 @@ export interface GraphNode {
   vx: number; vy: number; vz: number;
   /** Layout radius in model units. Drives collision, hit testing and glyph size. */
   r: number;
+  /** Drawn in the donut centre. Empty for language nodes. */
+  initials: string;
+  /** GitHub reported no language — the ring is dashed rather than filled. */
+  noLanguage: boolean;
+  /** Ring segments in descending percentage order. Projects only. */
+  ringSegments: Array<{ color: string; frac: number }>;
+  /** Per-node phase offset so idle oscillation is not in unison (Task 7). */
+  phase: number;
 }
 
 export interface GraphLink { s: GraphNode; t: GraphNode; weight: number; }
@@ -62,7 +71,7 @@ const FLATTEN_K_2D = 0.14;
 const COLLISION_PUSH = 0.42;
 
 function radiusFor(kind: 'project' | 'language', degree: number): number {
-  return kind === 'project' ? 9 + degree * 1.4 : 3.4 + degree * 1.3;
+  return kind === 'project' ? 9 + degree * 1.4 : 6 + degree * 2.0;
 }
 
 /** Distribute nodes over a sphere using a golden-angle spiral. Deterministic. */
@@ -80,7 +89,7 @@ export function seedSphere(nodes: GraphNode[], radius: number): void {
 
 export function buildGraph(payload: GraphPayload): Graph {
   const byId: Record<string, GraphNode> = {};
-  const nodes: GraphNode[] = payload.nodes.map((w) => {
+  const nodes: GraphNode[] = payload.nodes.map((w, i) => {
     const n: GraphNode = {
       id: w.id,
       kind: w.kind,
@@ -93,6 +102,13 @@ export function buildGraph(payload: GraphPayload): Graph {
       langs: w.langs,
       x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0,
       r: radiusFor(w.kind, w.degree),
+      initials: w.initials ?? '',
+      noLanguage: w.noLanguage ?? false,
+      ringSegments: Object.entries(w.langs ?? {})
+        .sort((a, b) => b[1] - a[1])
+        .map(([name, pct]) => ({ color: colorFor(name), frac: pct / 100 })),
+      // Golden-ratio stride: deterministic, and adjacent nodes never share a phase.
+      phase: (i * 0.618033988749895) % 1,
     };
     byId[n.id] = n;
     return n;

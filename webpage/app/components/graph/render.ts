@@ -11,8 +11,6 @@ export interface RenderState {
   selected: GraphNode | null;
 }
 
-const GLYPH_PROJECT = '◆';
-const GLYPH_LANGUAGE = '○';
 const TEAL = '#5eead4';
 const LABEL_ZOOM_THRESHOLD = 1.2;
 const DIM_ALPHA = 0.12;
@@ -65,18 +63,70 @@ export function drawGraph(ctx: CanvasRenderingContext2D, st: RenderState): void 
     const alpha = (on ? 1 : DIM_ALPHA) * dep;
     const rr = n.r * (mode === '3d' ? p.s * 0.9 : 1) * cam.zoom;
 
-    // The node IS the glyph — mirrors the text-shadow already on .batlogo.
     ctx.globalAlpha = alpha;
-    ctx.font = `${(rr * (isProject ? 2.9 : 2.5)).toFixed(1)}px "JetBrains Mono", monospace`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = isProject ? n.color : 'rgba(255,255,255,.42)';
-    if (isProject && on) {
-      ctx.shadowColor = n.color;
-      ctx.shadowBlur = 13;
+
+    if (isProject) {
+      const thickness = Math.max(4, rr * 0.34);
+      const ringR = rr - thickness / 2;
+
+      // Bloom behind the node on hover or selection.
+      if (n === lit || n === selected) {
+        const g = ctx.createRadialGradient(p.sx, p.sy, 0, p.sx, p.sy, rr * 1.7);
+        g.addColorStop(0, n.color);
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.globalAlpha = alpha * 0.16;
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(p.sx, p.sy, rr * 1.7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = alpha;
+      }
+
+      if (n.noLanguage) {
+        // Show the missing data rather than disguising it.
+        ctx.setLineDash([3, 3]);
+        ctx.strokeStyle = 'rgba(255,255,255,.16)';
+        ctx.lineWidth = thickness;
+        ctx.beginPath();
+        ctx.arc(p.sx, p.sy, ringR, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      } else {
+        // Clockwise from 12 o'clock, descending percentage.
+        let a0 = -Math.PI / 2;
+        ctx.lineWidth = thickness;
+        ctx.lineCap = 'butt';
+        for (const seg of n.ringSegments) {
+          const a1 = a0 + seg.frac * Math.PI * 2;
+          ctx.strokeStyle = seg.color;
+          ctx.beginPath();
+          ctx.arc(p.sx, p.sy, ringR, a0, a1);
+          ctx.stroke();
+          a0 = a1;
+        }
+      }
+
+      // Centre disc, so edges passing behind do not show through the initials.
+      ctx.fillStyle = '#0b0b12';
+      ctx.beginPath();
+      ctx.arc(p.sx, p.sy, Math.max(0, ringR - thickness / 2), 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(255,255,255,.92)';
+      ctx.font = `600 ${(rr * 0.62).toFixed(1)}px "JetBrains Mono", monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(n.initials, p.sx, p.sy);
+    } else {
+      // Language node: hollow circle, 2px ring in the language colour.
+      ctx.fillStyle = '#090a0e';
+      ctx.beginPath();
+      ctx.arc(p.sx, p.sy, rr, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = n.color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
     }
-    ctx.fillText(isProject ? GLYPH_PROJECT : GLYPH_LANGUAGE, p.sx, p.sy);
-    ctx.shadowBlur = 0; // must reset or it bleeds into every later draw
 
     if (n === selected && isProject) {
       ctx.globalAlpha = alpha * 0.6;
