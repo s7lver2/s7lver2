@@ -5,6 +5,7 @@ import {
   DEFAULT_SOCIALS,
   DEFAULT_HOME,
 } from './content-constants';
+import { DEFAULT_FEATURED, type FeaturedRepo } from './featured';
 
 // Re-export types and constants from content-constants for compatibility
 export {
@@ -18,15 +19,18 @@ export {
   DEFAULT_SOCIALS,
   DEFAULT_HOME,
 } from './content-constants';
+export { DEFAULT_FEATURED, type FeaturedRepo } from './featured';
 
-export type ContentType = 'projects' | 'skills' | 'socials' | 'home';
+export type ContentType = 'projects' | 'skills' | 'socials' | 'home' | 'featured';
 
 const DEFAULTS: Record<ContentType, unknown> = {
-  projects: DEFAULT_PROJECTS, skills: DEFAULT_SKILLS, socials: DEFAULT_SOCIALS, home: DEFAULT_HOME,
+  projects: DEFAULT_PROJECTS, skills: DEFAULT_SKILLS, socials: DEFAULT_SOCIALS,
+  home: DEFAULT_HOME, featured: DEFAULT_FEATURED,
 };
 
 export function isContentType(t: string): t is ContentType {
-  return t === 'projects' || t === 'skills' || t === 'socials' || t === 'home';
+  return t === 'projects' || t === 'skills' || t === 'socials'
+    || t === 'home' || t === 'featured';
 }
 
 export async function getContent<T = unknown>(type: ContentType): Promise<T> {
