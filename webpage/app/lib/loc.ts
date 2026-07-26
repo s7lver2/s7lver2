@@ -1,6 +1,4 @@
 import { kvGetJSON, kvSetJSON } from '@/lib/redis';
-import { getContent } from '@/lib/content';
-import type { FeaturedRepo } from '@/lib/featured';
 import { colorFor } from '@/lib/lang-colors';
 import {
   langForExt, GHLOC_FILTER, BYTES_PER_LINE, DEFAULT_BYTES_PER_LINE,
@@ -111,13 +109,37 @@ export async function readLocCache(): Promise<LocPayload | null> {
   return kvGetJSON<LocPayload | null>(LOC_CACHE_KEY, LOC_CACHE_FILE, null);
 }
 
+// Same resolution order as app/api/github/route.ts and the admin repo picker,
+// so all three never disagree about which account they're reading.
+const GH_USER = process.env.GITHUB_USER || process.env.GITHUB_USERNAME || 's7lver2';
+
+/**
+ * Every non-fork repo on the account, as "owner/name".
+ *
+ * The line counter reflects real coding activity across the whole account —
+ * not just the handful of repos featured on the Projects graph. A repo like
+ * `tsuki` (Rust) can be real, substantial work without ever being featured.
+ */
+async function listAccountRepos(): Promise<string[]> {
+  try {
+    const r = await fetch(
+      `https://api.github.com/users/${GH_USER}/repos?per_page=100&sort=updated`,
+      { headers: ghHeaders() }
+    );
+    if (!r.ok) return [];
+    const j = (await r.json()) as Array<{ full_name: string; fork: boolean }>;
+    return j.filter((repo) => !repo.fork).map((repo) => repo.full_name);
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Recompute and cache. Exported so the admin's refresh action (Task 10) warms
  * the same cache through the same code path.
  */
 export async function refreshLoc(): Promise<LocPayload> {
-  const featured = await getContent<FeaturedRepo[]>('featured');
-  const repos = featured.map((f) => f.repo);
+  const repos = await listAccountRepos();
   const built = (await buildFromGhloc(repos)) ?? (await buildFromBytes(repos));
   await kvSetJSON(LOC_CACHE_KEY, LOC_CACHE_FILE, built);
   return built;
