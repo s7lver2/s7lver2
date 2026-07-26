@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { colorFor } from '@/lib/lang-colors';
 import { useReveal } from '@/lib/reveal';
+import { useCountUp } from '@/lib/countup';
 
 type Lang = { name: string; pct: number };
 type Data = {
@@ -33,12 +34,38 @@ type GitHubData = {
   heatmap: number[];
 };
 
+function CountKpi({ label, value, accent }: { label: string; value: number; accent?: boolean }) {
+  const { ref, value: shown } = useCountUp(value);
+  return (
+    <div className="kpi" ref={ref}>
+      <div className="lab">{label}</div>
+      <div className={accent ? 'val g' : 'val'}>{shown.toLocaleString()}</div>
+    </div>
+  );
+}
+
 export default function GitHubSection() {
   const [data, setData] = useState<GitHubData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const reveal = useReveal<HTMLDivElement>();
   const kpiReveal = useReveal<HTMLDivElement>();
   const bentoReveal = useReveal<HTMLDivElement>();
+  const langReveal = useReveal<HTMLDivElement>();
+  const [langsIn, setLangsIn] = useState(false);
+
+  useEffect(() => {
+    const node = langReveal.current;
+    if (!node) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setLangsIn(true);
+      return;
+    }
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { setLangsIn(true); obs.unobserve(e.target); }
+    }, { threshold: 0.25 });
+    obs.observe(node);
+    return () => obs.unobserve(node);
+  }, [langReveal]);
 
   // Heatmap demo solo si el API no devuelve datos reales
   const generateHeatmap = useMemo(() => {
@@ -134,22 +161,10 @@ export default function GitHubSection() {
 
         {/* KPI tiles row */}
         <div className="row4 reveal reveal-stagger" ref={kpiReveal}>
-          <div className="kpi">
-            <div className="lab">Repos</div>
-            <div className="val">{data.repos}</div>
-          </div>
-          <div className="kpi">
-            <div className="lab">Stars</div>
-            <div className="val g">{data.stars}</div>
-          </div>
-          <div className="kpi">
-            <div className="lab">Followers</div>
-            <div className="val">{data.followers}</div>
-          </div>
-          <div className="kpi">
-            <div className="lab">Commits/yr</div>
-            <div className="val">{data.commitsPerYear}</div>
-          </div>
+          <CountKpi label="Repos" value={data.repos} />
+          <CountKpi label="Stars" value={data.stars} accent />
+          <CountKpi label="Followers" value={data.followers} />
+          <CountKpi label="Commits/yr" value={data.commitsPerYear} />
         </div>
 
         {/* Bento con heatmap + lenguajes + KPIs */}
@@ -171,12 +186,12 @@ export default function GitHubSection() {
             <div className="cap" style={{ marginTop: '20px' }}>
               Top languages
             </div>
-            <div className="langbar">
+            <div className="langbar" ref={langReveal}>
               {data.languages.map((lang) => (
                 <span
                   key={lang.name}
                   style={{
-                    width: `${lang.percentage}%`,
+                    width: langsIn ? `${lang.percentage}%` : 0,
                     background: lang.color,
                   }}
                 />
@@ -213,22 +228,10 @@ export default function GitHubSection() {
           </div>
 
           {/* KPI tiles alrededor del heatmap */}
-          <div className="kpi">
-            <div className="lab">Repos</div>
-            <div className="val">{data.repos}</div>
-          </div>
-          <div className="kpi">
-            <div className="lab">Stars</div>
-            <div className="val g">{data.stars}</div>
-          </div>
-          <div className="kpi">
-            <div className="lab">Followers</div>
-            <div className="val">{data.followers}</div>
-          </div>
-          <div className="kpi">
-            <div className="lab">Commits/yr</div>
-            <div className="val">{data.commitsPerYear}</div>
-          </div>
+          <CountKpi label="Repos" value={data.repos} />
+          <CountKpi label="Stars" value={data.stars} accent />
+          <CountKpi label="Followers" value={data.followers} />
+          <CountKpi label="Commits/yr" value={data.commitsPerYear} />
         </div>
       </div>
     </section>

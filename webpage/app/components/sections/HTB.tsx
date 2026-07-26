@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useReveal } from '@/lib/reveal';
+import { useCountUp } from '@/lib/countup';
 
 type HTBProfile = {
   id: number;
@@ -34,6 +35,17 @@ type HTBResponse = {
   } | null;
   configured?: boolean;
 };
+
+function CountKpi({ label, value, sub }: { label: string; value: number; sub?: string }) {
+  const { ref, value: shown } = useCountUp(value);
+  return (
+    <div className="kpi" ref={ref}>
+      <div className="lab">{label}</div>
+      <div className="val">{shown.toLocaleString()}</div>
+      {sub && <div className="dd">{sub}</div>}
+    </div>
+  );
+}
 
 export default function HTB() {
   const [profile, setProfile] = useState<HTBProfile | null>(null);
@@ -120,21 +132,9 @@ export default function HTB() {
             <div className="val g">{profile.rank}</div>
             <div className="dd">▲ top 4%</div>
           </div>
-          <div className="kpi">
-            <div className="lab">User owns</div>
-            <div className="val">{profile.user_owns}</div>
-            <div className="dd">+6 week</div>
-          </div>
-          <div className="kpi">
-            <div className="lab">System owns</div>
-            <div className="val">{profile.system_owns}</div>
-            <div className="dd">+4 week</div>
-          </div>
-          <div className="kpi">
-            <div className="lab">Points</div>
-            <div className="val">{profile.points}</div>
-            <div className="dd">▲ climbing</div>
-          </div>
+          <CountKpi label="User owns" value={profile.user_owns} sub="+6 week" />
+          <CountKpi label="System owns" value={profile.system_owns} sub="+4 week" />
+          <CountKpi label="Points" value={profile.points} sub="▲ climbing" />
         </div>
 
         {/* Bar cards */}
