@@ -79,8 +79,22 @@ export default function HTB() {
     );
   }
 
-  // Not configured, or upstream unavailable: render nothing rather than an error.
-  if (!profile || !progress) return null;
+  // Not configured, or upstream unavailable. Show the section with an empty
+  // state — never a status code, and never nothing at all.
+  if (!profile || !progress) {
+    return (
+      <section id="htb" className="sec">
+        <div className="wrap reveal" ref={reveal}>
+          <span className="seclabel">HackTheBox</span>
+          <div className="eyebrow mono">htb --stats</div>
+          <h2 className="h2">HackTheBox</h2>
+          <p className="mono" style={{ color: 'var(--dim)', marginTop: 14 }}>
+            ◌ Sin datos por ahora.
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   // Mapear dificultades del API a nuestro formato
   const diffMap: Record<string, keyof typeof diffData> = {};

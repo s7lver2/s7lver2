@@ -89,6 +89,11 @@ portfolio/
 ### Opcionales
 - **GITHUB_TOKEN** - Token de acceso personal de GitHub (Fine-grained tokens recomendado). Aumenta el límite de rate limit de la API de GitHub de 60 a 5000 requests/hora. [Crear token](https://github.com/settings/tokens)
 
+- `GITHUB_USER` — **must be `s7lver2`** in Vercel. A stale `GITHUB_USERNAME=s7lver`
+  points at an account with 0 public repos and every GitHub KPI reads zero.
+- `HTB_API_TOKEN`, `HTB_USER_ID` — optional. Absent, the HackTheBox section
+  renders its empty state instead of disappearing.
+
 Crear archivo `.env.local` en la raíz del proyecto:
 ```
 GITHUB_USERNAME=tu_usuario_github
