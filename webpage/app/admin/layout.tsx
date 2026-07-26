@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import AdminSidebar from './components/AdminSidebar';
+import { DirtyProvider } from './components/ui';
+import StatusLine from './components/StatusLine';
 
 export const metadata: Metadata = {
   title: { default: 'admin • s7lver', template: '%s • admin' },
@@ -15,19 +17,22 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (isLogin) return <>{children}</>;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', position: 'relative', zIndex: 1, background: '#05000a' }}>
-      <AdminSidebar />
-      <main className="admin-main" style={{
-        flex: 1, minWidth: 0, marginLeft: 200, padding: '24px', overflowX: 'hidden',
-      }}>
-        {children}
-      </main>
-      <style>{`
-        @media (max-width: 768px) {
-          .admin-main { margin-left: 0 !important; padding: 64px 14px 40px !important; }
-          .admin-sidebar-desktop { display: none !important; }
-        }
-      `}</style>
-    </div>
+    <DirtyProvider>
+      <div style={{ display: 'flex', minHeight: '100vh', position: 'relative', zIndex: 1, background: '#05000a' }}>
+        <AdminSidebar />
+        <main className="admin-main" style={{
+          flex: 1, minWidth: 0, marginLeft: 200, padding: '24px', paddingBottom: 30, overflowX: 'hidden',
+        }}>
+          {children}
+        </main>
+        <StatusLine commandCount={0} />
+        <style>{`
+          @media (max-width: 768px) {
+            .admin-main { margin-left: 0 !important; padding: 64px 14px 40px !important; padding-bottom: 30px !important; }
+            .admin-sidebar-desktop { display: none !important; }
+          }
+        `}</style>
+      </div>
+    </DirtyProvider>
   );
 }
