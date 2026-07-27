@@ -22,7 +22,13 @@ const INTERACTIVE_SELECTOR =
 export default function CustomCursor() {
   const dotRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>();
-  const pos = useRef({ x: -9999, y: -9999 });
+  // Target (raw mouse) and displayed (eased) position are tracked
+  // separately. A cursor that snaps 1:1 to the mouse every frame reads as
+  // mechanical; lerping the displayed position a fraction of the remaining
+  // distance each frame gives it a small, natural trailing feel instead —
+  // still tight enough (0.35/frame at 60fps) to never feel like lag.
+  const target = useRef({ x: -9999, y: -9999 });
+  const shown = useRef({ x: -9999, y: -9999 });
   const hoveringRef = useRef(false);
 
   useEffect(() => {
@@ -33,20 +39,30 @@ export default function CustomCursor() {
 
     document.documentElement.classList.add('custom-cursor-active');
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const EASE = 0.35;
 
     const render = () => {
+      if (reduced) {
+        // No easing under reduced motion — the cursor should track the
+        // real pointer with no independent motion of its own.
+        shown.current.x = target.current.x;
+        shown.current.y = target.current.y;
+      } else {
+        shown.current.x += (target.current.x - shown.current.x) * EASE;
+        shown.current.y += (target.current.y - shown.current.y) * EASE;
+      }
       const scale = !reduced && hoveringRef.current ? 1.6 : 1;
       el.style.transform =
-        `translate3d(${pos.current.x}px, ${pos.current.y}px, 0) translate(-50%, -50%) scale(${scale})`;
+        `translate3d(${shown.current.x}px, ${shown.current.y}px, 0) translate(-50%, -50%) scale(${scale})`;
       rafRef.current = requestAnimationFrame(render);
     };
 
     const handleMove = (e: MouseEvent) => {
-      pos.current.x = e.clientX;
-      pos.current.y = e.clientY;
+      target.current.x = e.clientX;
+      target.current.y = e.clientY;
       if (el.style.opacity !== '1') el.style.opacity = '1';
-      const target = e.target as Element | null;
-      const nowHovering = !!target?.closest(INTERACTIVE_SELECTOR);
+      const targetEl = e.target as Element | null;
+      const nowHovering = !!targetEl?.closest(INTERACTIVE_SELECTOR);
       if (nowHovering !== hoveringRef.current) {
         hoveringRef.current = nowHovering;
         el.classList.toggle('is-hovering', nowHovering);
