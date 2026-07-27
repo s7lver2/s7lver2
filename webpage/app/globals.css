@@ -2175,48 +2175,23 @@
    intercepts scroll. */
 .parallax-layer { will-change: transform; }
 
-/* ── Approved exception to "no scroll hijacking": ONE Apple-style pinned
-   handoff, hero->skills only (see Global Constraints in the v6 design
-   spec). Pure position:sticky + z-index stacking — hero sticks to the top
-   of the viewport while skills (higher z-index, opaque) slides up over it
-   in normal document flow. No JS scroll interception, no preventDefault,
-   no forced scrollTop: native wheel/touch/keyboard scrolling is untouched
-   throughout. Disabled entirely on narrow viewports and under
-   prefers-reduced-motion, where sections just stack normally like every
-   other layout on this site.
+/* ── Real position:sticky pinning (hero->skills) was tried and reverted.
+   Root cause: this site's <body> already has overflow-x: hidden (unrelated,
+   pre-existing). Per the CSS overflow computation rules, setting only one
+   axis to a non-visible value can promote the other axis's used value to
+   `auto` in some engines — combined with a position:sticky child whose
+   min-height is 100vh, that can make <body> its own scroll container,
+   decoupling window.scrollY from what actually scrolls on screen. The
+   visible symptom was exactly what it sounds like: the page reads as stuck.
+   No pinning anywhere on this site now — every section boundary uses the
+   subtle, non-pinning .amp-fade transition below instead.
 
-   Deliberately NOT reused for every section boundary: chaining multiple
-   pinned sections back to back risks several ending up visually stacked
-   at once while scrolling through a run of them. Every other boundary
-   uses the softer, non-pinning .amp-fade transition below instead. */
-.pin-sec {
-  position: relative;
-  z-index: var(--pin-z, 1);
-}
-
-@media (min-width: 901px) {
-  .pin-sec {
-    position: sticky;
-    top: 0;
-    min-height: 100vh;
-    background: #000;
-    will-change: transform;
-  }
-}
-
-@media (max-width: 900px) {
-  .pin-sec { position: relative; min-height: 0; background: none; will-change: auto; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pin-sec { position: relative; min-height: 0; background: none; will-change: auto; }
-}
-
-/* ── Softer, non-pinning "amplified fade" transition (app/lib/ampFade.ts)
-   used for every section boundary except hero->skills. Opacity/blur/scale
-   are written per scroll frame (rAF-throttled, passive scroll listener,
-   transform+opacity+filter only — never layout, never preventDefault, never
-   forced scrollTop). The short linear transition below only smooths the
+   ── "Amplified fade" transition (app/lib/ampFade.ts), every section
+   boundary. Opacity/blur are written per scroll frame (rAF-throttled,
+   passive scroll listener, transform+opacity+filter only — never layout,
+   never preventDefault, never forced scrollTop). Tuned deliberately subtle
+   per explicit feedback: opacity only dips to .75, blur caps at 3px, no
+   scale change. The short linear transition below only smooths the
    per-frame jumps between rAF ticks; it never blocks or delays scrolling
    itself. No-ops (hook never touches these elements' inline styles) under
    prefers-reduced-motion or at <=900px, so this CSS block never applies in

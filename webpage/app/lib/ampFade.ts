@@ -3,18 +3,18 @@
 import { useEffect, useRef } from 'react';
 
 /**
- * Softer, non-pinning section transition: as a section's center passes the
- * viewport's center, it fades/blurs/scales down toward the edges. This is
- * the "amplified cross-fade" alternative demoed alongside real pinning
- * (see .superpowers/brainstorm/1177-1785110170/content/scroll-transitions-v3.html,
- * mode 'amplified') and chosen for every section boundary EXCEPT the
- * hero->skills handoff, which uses real position:sticky pinning instead
- * (see .pin-sec in globals.css) — chaining pinned sections back to back was
- * explicitly rejected because several could end up visually stacked at once
- * while scrolling through a run of them.
+ * Subtle, non-pinning section transition: as a section's center passes the
+ * viewport's center, it fades/blurs slightly toward the edges. Real
+ * position:sticky pinning was tried for the hero->skills handoff and
+ * reverted — it broke normal window scrolling on this site (see the note
+ * above .amp-fade in globals.css for the exact mechanism). Every section
+ * boundary now uses this same transition, deliberately tuned subtle per
+ * explicit feedback rather than the first, much stronger pass (see
+ * .superpowers/brainstorm/1177-1785110170/content/subtle-and-cursor.html
+ * for the approved feel).
  *
  * Purely passive: reads scroll position (passive listener, never
- * preventDefault) and rAF-throttles writes of opacity/filter/transform
+ * preventDefault) and rAF-throttles writes of opacity/filter
  * (transform+opacity+filter only — no layout properties). Never touches
  * scrollTop. No-ops entirely under prefers-reduced-motion or at narrow
  * (<=900px) viewports, matching the site's existing parallax/.prail
@@ -41,9 +41,12 @@ export function useAmpFade<T extends HTMLElement = HTMLDivElement>() {
       const clamped = Math.max(-1, Math.min(1, progress));
       const abs = Math.abs(clamped);
 
-      const opacity = Math.max(0, 1 - Math.min(1, abs * 2.2));
-      const scale = 1 - abs * 0.14;
-      const blur = abs * 14;
+      // Tuned down from the first pass (opacity floor was 0, blur up to
+      // 14px, scale down to .86) after explicit feedback that it read as
+      // too strong — this should be felt, not seen.
+      const opacity = Math.max(0.75, 1 - abs * 0.25);
+      const scale = 1;
+      const blur = abs * 3;
 
       el.style.opacity = String(opacity);
       el.style.filter = blur > 0.05 ? `blur(${blur.toFixed(1)}px)` : 'none';

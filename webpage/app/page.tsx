@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
 
 import Navbar          from '@/components/Navbar';
 import HeroSection     from '@/components/sections/Hero';
@@ -23,12 +23,6 @@ interface Flags {
   maintenance: boolean;
 }
 
-// Helper for the --pin-z custom property driving .pin-sec z-index stacking
-// (see globals.css) — CSSProperties doesn't type custom props natively.
-function pinZ(z: number): CSSProperties {
-  return { ['--pin-z' as string]: z } as CSSProperties;
-}
-
 const THEMES: Record<string, { color1: string; color2: string }> = {
   morado: { color1: '#8b5cf6', color2: '#3b82f6' },
   azul: { color1: '#3b82f6', color2: '#06b6d4' },
@@ -43,8 +37,11 @@ export default function Home() {
   // decorative (non-text, non-interactive) blob layers only.
   const parallax1 = useParallax(0.08);
   const parallax2 = useParallax(0.16);
-  // Softer "amplified fade" transitions for every section boundary that
-  // isn't the hero->skills pinned handoff (see .pin-sec below + useAmpFade).
+  // Subtle scroll-linked fade for every section boundary — no pinning
+  // anywhere (see the note above the JSX for why real sticky pinning was
+  // reverted), transform/opacity/filter only.
+  const fadeHero       = useAmpFade<HTMLDivElement>();
+  const fadeSkills     = useAmpFade<HTMLDivElement>();
   const fadeLanguages = useAmpFade<HTMLDivElement>();
   const fadeProjects  = useAmpFade<HTMLDivElement>();
   const fadeHTB        = useAmpFade<HTMLDivElement>();
@@ -186,18 +183,19 @@ export default function Home() {
         </div>
 
         <div className="relative z-10">
-          {/* Apple-style pinned handoff, hero->skills ONLY: pure
-              position:sticky + z-index (see .pin-sec in globals.css),
-              disabled on narrow viewports and under
-              prefers-reduced-motion. Approved exception to the "no scroll
-              hijacking" rule — explicitly demoed and chosen by the user.
-              Every other section boundary intentionally does NOT chain
-              another pinned section (several pinned sections in a row can
-              end up visually stacked at once) — those get the softer
-              "amplified fade" scroll-linked transition instead
-              (useAmpFade / .amp-fade), which never pins or stacks. */}
-          <div className="pin-sec" style={pinZ(1)}><HeroSection     onOpenTerminal={openTerminal} /></div>
-          <div className="pin-sec" style={pinZ(2)}><SkillsSection   machinesEnabled={flags.machines} /></div>
+          {/* Real position:sticky pinning was tried for the hero->skills
+              handoff and reverted: on this site's body (overflow-x: hidden
+              already set, unrelated to this feature) combining
+              position:sticky with a min-height:100vh child promotes body
+              into its own scroll container in some engines, decoupling
+              window.scrollY from what the user actually sees scroll — the
+              page reads as stuck. Every boundary now uses the same subtle,
+              non-pinning amplified-fade transition (useAmpFade / .amp-fade):
+              transform/opacity/filter only, never touches scrollTop, never
+              preventDefault. Tuned down from the first pass per explicit
+              request ("mucho más sutil"). */}
+          <div ref={fadeHero}      className="amp-fade"><HeroSection     onOpenTerminal={openTerminal} /></div>
+          <div ref={fadeSkills}    className="amp-fade"><SkillsSection   machinesEnabled={flags.machines} /></div>
           <div ref={fadeLanguages} className="amp-fade"><LanguagesSection /></div>
           <div ref={fadeProjects}  className="amp-fade"><ProjectsGraphSection /></div>
           <div ref={fadeHTB}       className="amp-fade"><HTBSection      /></div>
