@@ -27,32 +27,66 @@ type OSStat = {
   completion_percentage: number;
 };
 
+type RecentOwn = { name: string; kind: 'user' | 'system' | 'both'; when: string };
+
 type HTBResponse = {
   profile: HTBProfile | null;
   progress: {
+    machine_owns: { solved: number; total: number; completion_percentage: number };
     machine_difficulties: DiffStat[];
     machine_os: OSStat[];
   } | null;
+  recentOwns?: RecentOwn[];
   configured?: boolean;
 };
 
-function CountKpi({ label, value, sub }: { label: string; value: number; sub?: string }) {
+function CountKpi({ label, value }: { label: string; value: number }) {
   const { ref, value: shown } = useCountUp(value);
   return (
-    <div className="kpi" ref={ref}>
-      <div className="lab">{label}</div>
-      <div className="val">{shown.toLocaleString()}</div>
-      {sub && <div className="dd">{sub}</div>}
+    <div className="htbkv" ref={ref}>
+      <span className="k">{label}</span>
+      <span className="v">{shown.toLocaleString()}</span>
+    </div>
+  );
+}
+
+function relDate(iso: string): string {
+  const days = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000));
+  if (days === 0) return 'hoy';
+  if (days === 1) return 'ayer';
+  return `hace ${days}d`;
+}
+
+const KIND_LABEL: Record<RecentOwn['kind'], string> = {
+  both: 'user+system owned',
+  system: 'system owned',
+  user: 'user owned',
+};
+const KIND_COLOR: Record<RecentOwn['kind'], string> = {
+  both: '#22c55e',
+  system: '#5eead4',
+  user: '#eab308',
+};
+
+/** A single terminal-style line that types itself in via CSS width/steps. */
+function TermLine({ own, i }: { own: RecentOwn; i: number }) {
+  const text = `▸ ${own.name} — ${KIND_LABEL[own.kind]} · ${relDate(own.when)}`;
+  return (
+    <div
+      className="htbterm-line"
+      style={{ '--chars': text.length, animationDelay: `${i * 260}ms` } as React.CSSProperties}
+    >
+      <span style={{ color: KIND_COLOR[own.kind] }}>{text}</span>
     </div>
   );
 }
 
 export default function HTB() {
   const [profile, setProfile] = useState<HTBProfile | null>(null);
-  const [progress, setProgress] = useState<{ machine_difficulties: DiffStat[]; machine_os: OSStat[] } | null>(null);
+  const [progress, setProgress] = useState<HTBResponse['progress']>(null);
+  const [recentOwns, setRecentOwns] = useState<RecentOwn[]>([]);
   const [loading, setLoading] = useState(true);
   const reveal = useReveal<HTMLDivElement>();
-  const kpiReveal = useReveal<HTMLDivElement>();
   const barsReveal = useReveal<HTMLDivElement>();
 
   useEffect(() => {
@@ -62,6 +96,7 @@ export default function HTB() {
         if (data?.profile && data?.progress) {
           setProfile(data.profile);
           setProgress(data.progress);
+          setRecentOwns(data.recentOwns ?? []);
         }
         setLoading(false);
       })
@@ -100,15 +135,7 @@ export default function HTB() {
     );
   }
 
-  // Mapear dificultades del API a nuestro formato
-  const diffMap: Record<string, keyof typeof diffData> = {};
-  let diffData = {
-    easy: 0,
-    medium: 0,
-    hard: 0,
-    insane: 0,
-  };
-
+  const diffData = { easy: 0, medium: 0, hard: 0, insane: 0 };
   progress.machine_difficulties.forEach((d) => {
     const key = d.name.toLowerCase();
     if (key.includes('easy')) diffData.easy = d.owned_machines;
@@ -117,14 +144,7 @@ export default function HTB() {
     else if (key.includes('insane')) diffData.insane = d.owned_machines;
   });
 
-  // Mapear OSs
-  let osData = {
-    linux: 0,
-    windows: 0,
-    freebsd: 0,
-    macos: 0,
-  };
-
+  const osData = { linux: 0, windows: 0, freebsd: 0, macos: 0 };
   progress.machine_os.forEach((o) => {
     const key = o.name.toLowerCase();
     if (key.includes('linux')) osData.linux = o.owned_machines;
@@ -136,6 +156,15 @@ export default function HTB() {
   const totalDiff = diffData.easy + diffData.medium + diffData.hard + diffData.insane;
   const totalOS = osData.linux + osData.windows + osData.freebsd + osData.macos;
 
+  // Ring: real % of the machine catalog owned (machine_owns.completion_percentage),
+  // not a fabricated "progress to next rank" — HTB doesn't expose rank
+  // thresholds through the API, so the ring only ever shows a number we can
+  // actually stand behind.
+  const pct = Math.min(100, progress.machine_owns.completion_percentage);
+  const R = 46;
+  const CIRC = 2 * Math.PI * R;
+  const offset = CIRC - (pct / 100) * CIRC;
+
   return (
     <section id="htb" className="sec">
       <div className="wrap reveal" ref={reveal}>
@@ -143,16 +172,36 @@ export default function HTB() {
         <div className="eyebrow">htb --stats</div>
         <h2 className="h2">HackTheBox</h2>
 
-        {/* KPI tiles */}
-        <div className="row4 reveal reveal-stagger" ref={kpiReveal}>
-          <div className="kpi">
-            <div className="lab">Rank</div>
-            <div className="val g">{profile.rank}</div>
-            <div className="dd">▲ top 4%</div>
+        {/* Hero: progress ring + inline KPIs, and the recent-owns terminal feed */}
+        <div className="htbhero reveal reveal-stagger" style={{ marginTop: 24 }}>
+          <div className="htbring-wrap">
+            <svg className="htbring" width="120" height="120" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r={R} fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="8" />
+              <circle
+                className="prog"
+                cx="60" cy="60" r={R} fill="none" stroke="#9fef00" strokeWidth="8"
+                strokeLinecap="round" transform="rotate(-90 60 60)"
+                style={{ strokeDasharray: CIRC, '--offset': `${offset}px` } as React.CSSProperties}
+              />
+              <text x="60" y="56" textAnchor="middle" className="rank">{profile.rank}</text>
+              <text x="60" y="74" textAnchor="middle" className="pct">{pct}% owned</text>
+            </svg>
+            <div className="htbkvs">
+              <CountKpi label="User owns" value={profile.user_owns} />
+              <CountKpi label="System owns" value={profile.system_owns} />
+              <CountKpi label="Points" value={profile.points} />
+            </div>
           </div>
-          <CountKpi label="User owns" value={profile.user_owns} sub="+6 week" />
-          <CountKpi label="System owns" value={profile.system_owns} sub="+4 week" />
-          <CountKpi label="Points" value={profile.points} sub="▲ climbing" />
+
+          <div className="htbterm">
+            <div className="htbterm-head"><span className="dot r" /><span className="dot y" /><span className="dot g" /><span>htb --recent-owns</span></div>
+            <div className="htbterm-body">
+              {recentOwns.length > 0
+                ? recentOwns.map((o, i) => <TermLine key={`${o.name}-${o.when}`} own={o} i={i} />)
+                : <div className="htbterm-line" style={{ '--chars': 20 } as React.CSSProperties}>▸ sin actividad reciente</div>}
+              <span className="htbterm-cursor">▍</span>
+            </div>
+          </div>
         </div>
 
         {/* Bar cards */}

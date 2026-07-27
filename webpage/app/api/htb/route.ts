@@ -9,6 +9,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const BASE = 'https://labs.hackthebox.com/api/v4';
+// The recent-activity feed lives under v5, not v4 - confirmed by reading
+// app.hackthebox.com's own frontend bundle (its activity call sets
+// enableV5Api). There is no v4 equivalent.
+const BASE_V5 = 'https://labs.hackthebox.com/api/v5';
 
 function h(token: string): HeadersInit {
   return {
@@ -89,8 +93,47 @@ export async function GET(_req: NextRequest) {
       };
     }
 
+    // ── Actividad reciente (para el feed estilo terminal) ─────────
+    // Best-effort: the widget works fine without it, so a failure here never
+    // throws — recentOwns just comes back empty.
+    type ActivityEntry = { type: 'root' | 'user'; id: number; name: string; ownDate: string };
+    let recentOwns: { name: string; kind: 'user' | 'system' | 'both'; when: string }[] = [];
+    try {
+      const actRes = await fetch(`${BASE_V5}/user/profile/activity/${id}`, {
+        headers: h(token), next: { revalidate: 1800 },
+      });
+      if (actRes.ok) {
+        const actData = await actRes.json();
+        const entries: ActivityEntry[] = Array.isArray(actData?.data) ? actData.data : [];
+        // Machine root+user owns arrive as two separate entries with the same
+        // id/name; merge same-day pairs into one "both" row instead of
+        // showing the same machine twice in a row.
+        const byMachine = new Map<number, { name: string; kinds: Set<'user' | 'system'>; when: string }>();
+        for (const e of entries) {
+          const kind = e.type === 'root' ? 'system' : 'user';
+          const existing = byMachine.get(e.id);
+          if (existing) {
+            existing.kinds.add(kind);
+            if (e.ownDate > existing.when) existing.when = e.ownDate;
+          } else {
+            byMachine.set(e.id, { name: e.name, kinds: new Set([kind]), when: e.ownDate });
+          }
+        }
+        recentOwns = [...byMachine.values()]
+          .sort((a, b) => b.when.localeCompare(a.when))
+          .slice(0, 6)
+          .map((m) => ({
+            name: m.name,
+            kind: m.kinds.size === 2 ? 'both' : m.kinds.has('system') ? 'system' : 'user',
+            when: m.when,
+          }));
+      }
+    } catch {
+      // recentOwns stays empty
+    }
+
     return NextResponse.json(
-      { profile, progress, configured: true },
+      { profile, progress, recentOwns, configured: true },
       { headers: { 'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=3600' } }
     );
   } catch (err) {

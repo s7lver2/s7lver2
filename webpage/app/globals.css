@@ -2154,3 +2154,94 @@
 /* Parallax background layers (app/lib/parallax.ts). Transform-only, never
    intercepts scroll. */
 .parallax-layer { will-change: transform; }
+
+/* ── HTB widget: progress ring + terminal feed ── */
+
+.htbhero {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+
+.htbring-wrap {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 0 0 auto;
+}
+
+.htbring circle.prog {
+  stroke-dashoffset: var(--offset, 0);
+  transition: stroke-dashoffset 1.1s cubic-bezier(.16,1,.3,1);
+}
+/* Draw from empty on reveal, same curve as the rest of the site's growth
+   animations (.locbar, .bar .track .fill). */
+.reveal .htbring circle.prog { stroke-dashoffset: 289px; }
+.reveal.revealed .htbring circle.prog { stroke-dashoffset: var(--offset, 0); }
+
+.htbring .rank {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+  fill: #fff;
+}
+.htbring .pct {
+  font-family: var(--mono);
+  font-size: 9px;
+  fill: rgba(255,255,255,.5);
+}
+
+.htbkvs { display: flex; flex-direction: column; gap: 8px; }
+.htbkv { display: flex; gap: 8px; align-items: baseline; font-family: var(--mono); font-size: 12px; }
+.htbkv .k { color: var(--mut); }
+.htbkv .v { color: #fff; font-weight: 600; }
+
+.htbterm {
+  flex: 1 1 320px;
+  min-width: 280px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #090a0e;
+  overflow: hidden;
+}
+.htbterm-head {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 12px; border-bottom: 1px solid var(--line);
+  font-family: var(--mono); font-size: 11px; color: var(--dim);
+}
+.htbterm-head .dot { width: 8px; height: 8px; border-radius: 50%; }
+.htbterm-head .dot.r { background: #ff5f57; }
+.htbterm-head .dot.y { background: #febc2e; }
+.htbterm-head .dot.g { background: #28c840; }
+.htbterm-body { padding: 12px 14px; font-family: var(--mono); font-size: 12px; line-height: 1.9; }
+
+.htbterm-line {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  width: 0;
+}
+/* animation-delay comes from the inline style set per-line in HTB.tsx (each
+   line's own --chars stagger), not from CSS — this rule only fires it. */
+.reveal.revealed .htbterm-line {
+  animation: htb-typewriter .6s steps(30, end) forwards;
+}
+@keyframes htb-typewriter {
+  from { width: 0; }
+  to   { width: calc(var(--chars, 20) * 1ch); }
+}
+
+.htbterm-cursor {
+  color: #5eead4;
+  animation: htb-blink 1s step-end infinite;
+}
+@keyframes htb-blink { 50% { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .htbring circle.prog { transition: none; }
+  .reveal .htbring circle.prog { stroke-dashoffset: var(--offset, 0); }
+  .htbterm-line { width: calc(var(--chars, 20) * 1ch); animation: none; }
+  .htbterm-cursor { animation: none; }
+}
