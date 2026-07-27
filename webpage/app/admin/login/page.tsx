@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import HeroBackground from '@/app/components/HeroBackground'
 
 type Mode = 'password' | 'webauthn'
 
@@ -210,19 +211,31 @@ export default function AdminLogin() {
   }
 
   return (
-    <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#05000a', padding: 20 }}>
+    <main style={{ minHeight: '100vh', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#05000a', padding: 20, overflow: 'hidden' }}>
+      {/* The hero's own ASCII flow field, dimmer, behind the form. HeroBackground
+          measures a `.hero`-classed parent, so this wrapper gives it one that
+          fills the viewport rather than forking the component. */}
+      <div className="hero" style={{
+        position: 'fixed', inset: 0, zIndex: 0, opacity: .45, pointerEvents: 'none',
+      }}>
+        <HeroBackground />
+      </div>
+
       <div key={shake} style={{
-        width: '100%', maxWidth: 340, background: 'rgba(139,92,246,0.04)', backdropFilter: 'blur(24px)',
-        border: '1px solid rgba(139,92,246,0.2)', borderRadius: 24, padding: 36,
+        position: 'relative', zIndex: 1,
+        width: '100%', maxWidth: 340, background: 'rgba(21,21,29,.7)', backdropFilter: 'blur(24px)',
+        border: '1px solid rgba(255,255,255,.08)', borderRadius: 24, padding: 36,
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22,
         animation: shake > 0 ? 'lg-shake 0.4s ease' : 'lg-in 0.5s ease',
       }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ width: 48, height: 48, borderRadius: '50%', margin: '0 auto 12px', background: 'linear-gradient(135deg,#8b5cf6,#3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
+          {/* Bare mark, no tile behind it — an icon-in-a-gradient-circle
+              reads as a component-kit default, not a designed mark. */}
+          <div style={{ fontSize: 28, color: '#5eead4', margin: '0 auto 12px' }}>
             ◈
           </div>
           <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 22, color: '#fff', marginBottom: 4 }}>control panel</div>
-          <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(139,92,246,0.6)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>s7lver • admin</div>
+          <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(255,255,255,.5)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>s7lver • admin</div>
         </div>
 
         {/* Mode tabs */}

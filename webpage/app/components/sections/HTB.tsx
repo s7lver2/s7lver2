@@ -229,10 +229,10 @@ export default function HTB() {
           <div className="card">
             <div className="cap">Owns by OS</div>
             {[
-              { label: 'Linux', value: osData.linux, color: 'linear-gradient(90deg, #8b5cf6, #3b82f6)', total: totalOS },
-              { label: 'Windows', value: osData.windows, color: 'linear-gradient(90deg, #8b5cf6, #3b82f6)', total: totalOS },
-              { label: 'FreeBSD', value: osData.freebsd, color: 'linear-gradient(90deg, #8b5cf6, #3b82f6)', total: totalOS },
-              { label: 'macOS', value: osData.macos, color: 'linear-gradient(90deg, #8b5cf6, #3b82f6)', total: totalOS },
+              { label: 'Linux', value: osData.linux, color: '#5eead4', total: totalOS },
+              { label: 'Windows', value: osData.windows, color: '#60a5fa', total: totalOS },
+              { label: 'FreeBSD', value: osData.freebsd, color: '#f59e0b', total: totalOS },
+              { label: 'macOS', value: osData.macos, color: '#9ca3af', total: totalOS },
             ].map(b => (
               <div key={b.label} className="bar">
                 <div className="t">

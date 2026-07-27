@@ -43,13 +43,13 @@ export default function HeroSection({ onOpenTerminal = () => {} }: HeroProps) {
               className="btn btn-p"
               onClick={() => document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' })}
             >
-              View Projects →
+              View Projects ↗
             </button>
             <button
-              className="btn btn-d"
+              className="btn-cmd"
               onClick={onOpenTerminal}
             >
-              $ start hacking
+              <span className="pfx">$</span> start hacking
             </button>
           </div>
         </div>
