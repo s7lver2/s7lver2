@@ -12,6 +12,7 @@ import SocialSection   from '@/components/sections/Social';
 import Footer          from '@/components/sections/Footer';
 import CommandPalette  from '@/components/CommandPalette';
 import ProgressRail    from '@/components/ProgressRail';
+import CustomCursor    from '@/components/CustomCursor';
 import { track } from '@/lib/track';
 import { useParallax } from '@/lib/parallax';
 import { useAmpFade } from '@/lib/ampFade';
@@ -172,6 +173,7 @@ export default function Home() {
 
   return (
     <>
+      <CustomCursor />
       <Navbar onOpenTerminal={openTerminal} />
       {flags.timeline && <ProgressRail />}
 
