@@ -87,6 +87,7 @@ export default function HTB() {
   const [recentOwns, setRecentOwns] = useState<RecentOwn[]>([]);
   const [loading, setLoading] = useState(true);
   const reveal = useReveal<HTMLDivElement>();
+  const heroReveal = useReveal<HTMLDivElement>();
   const barsReveal = useReveal<HTMLDivElement>();
 
   useEffect(() => {
@@ -173,7 +174,7 @@ export default function HTB() {
         <h2 className="h2">HackTheBox</h2>
 
         {/* Hero: progress ring + inline KPIs, and the recent-owns terminal feed */}
-        <div className="htbhero reveal reveal-stagger" style={{ marginTop: 24 }}>
+        <div className="htbhero reveal reveal-stagger" style={{ marginTop: 24 }} ref={heroReveal}>
           <div className="htbring-wrap">
             <svg className="htbring" width="120" height="120" viewBox="0 0 120 120">
               <circle cx="60" cy="60" r={R} fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="8" />

@@ -259,11 +259,28 @@ export default function GitHubSection() {
                     }}
                     onMouseEnter={() => {
                       if (!cell.date) return;
-                      setTip(
-                        cell.repos && cell.repos.length
-                          ? `${relDate(cell.date)} · ${cell.count} commits · ${cell.repos.join(', ')}`
-                          : `${relDate(cell.date)} · ${cell.count} commits · sin datos de atribución todavía`
-                      );
+                      if (!cell.repos || !cell.repos.length) {
+                        setTip(`${relDate(cell.date)} · ${cell.count} commits · sin datos de atribución todavía`);
+                        return;
+                      }
+                      // We only know which repos were touched that day, not the
+                      // real line-level diff per repo — so this is a share of
+                      // that day's REPOS per language, not a byte-precise
+                      // share of lines. Labelled "repos" in the tooltip so it
+                      // never overclaims a precision we don't have.
+                      const tally: Record<string, number> = {};
+                      cell.repos.forEach((r) => {
+                        const l = data.repoLangs[r];
+                        if (l) tally[l] = (tally[l] || 0) + 1;
+                      });
+                      const entries = Object.entries(tally);
+                      const langPct = entries.length
+                        ? ' · ' + entries
+                            .sort((a, b) => b[1] - a[1])
+                            .map(([l, n]) => `${l} ${Math.round((n / cell.repos!.length) * 100)}%`)
+                            .join(', ')
+                        : '';
+                      setTip(`${relDate(cell.date)} · ${cell.count} commits · ${cell.repos.join(', ')}${langPct}`);
                     }}
                     onMouseLeave={() => setTip('')}
                   />

@@ -45,10 +45,10 @@ export default function DonutChart({ slices, size = 120, thickness = 14, centerL
           position: 'absolute', inset: 0, display: 'flex',
           flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         }}>
-          <span style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 20, color: '#fff', lineHeight: 1 }}>
+          <span style={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 700, fontSize: 20, color: '#fff', lineHeight: 1 }}>
             {centerLabel.value}
           </span>
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', marginTop: 3 }}>
+          <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 10.5, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.14em', marginTop: 4 }}>
             {centerLabel.sub}
           </span>
         </div>

@@ -7,7 +7,10 @@ import DonutChart from './components/DonutChart'
 import Chart from './components/charts/Chart'
 import { Panel, SectionHead, T } from './components/ui'
 
-const PIE_COLORS = ['#8b5cf6', '#3b82f6', '#a78bfa', '#60a5fa', '#7c3aed', '#2563eb']
+// A restrained, tonal set anchored on the panel's real accent (teal) instead
+// of the old all-purple-and-blue rotation, which read as one undifferentiated
+// gradient family rather than distinct categories.
+const PIE_COLORS = ['#5eead4', '#9ca3af', '#60a5fa', '#f59e0b', '#a78bfa', '#f87171']
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
 const TABS = ['overview', 'traffic', 'live'] as const

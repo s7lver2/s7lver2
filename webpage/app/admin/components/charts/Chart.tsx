@@ -44,12 +44,9 @@ export default function Chart({ series, rows = 6, label }: ChartProps) {
     return () => { alive = false; };
   }, [renderer, notify]);
 
-  const values = (() => {
-    if (cols === 0) return [];
-    const fitted = resample(series, cols);
-    const max = Math.max(...fitted, 1);
-    return fitted.map((v) => v / max);
-  })();
+  const fitted = cols === 0 ? [] : resample(series, cols);
+  const max = Math.max(...fitted, 1);
+  const values = fitted.map((v) => v / max);
 
   const active = renderer === 'braille' && brailleOk === false ? 'dots' : renderer;
 
@@ -66,7 +63,7 @@ export default function Chart({ series, rows = 6, label }: ChartProps) {
       {values.length > 0 && (
         active === 'braille' ? <BrailleChart values={values} rows={rows} />
         : active === 'svg' ? <SvgChart values={values} rows={rows} />
-        : <DotsChart values={values} rows={rows} animate={!reduced} />
+        : <DotsChart values={values} rawValues={fitted} rows={rows} animate={!reduced} />
       )}
     </div>
   );

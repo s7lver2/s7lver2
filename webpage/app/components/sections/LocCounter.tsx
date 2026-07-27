@@ -11,6 +11,7 @@ function CountTo({ value }: { value: number }) {
 
 export default function LocCounter() {
   const [data, setData] = useState<LocPayload | null>(null);
+  const [tip, setTip] = useState('');
 
   useEffect(() => {
     let alive = true;
@@ -24,12 +25,24 @@ export default function LocCounter() {
   if (!data || data.totalLines === 0) return null;
 
   const top = data.byLanguage.slice(0, 6);
+  const breakdown = top.map((l) => `${l.name} ${l.pct}%`).join(' · ');
 
   return (
     <div className="card locbig reveal">
-      <div className="cap">Lines of code · featured repos</div>
+      <div className="cap" style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+        <span>Lines of code · every repo</span>
+        <span className="mono" style={{ color: 'var(--dim)', fontSize: 11, minHeight: 14 }}>{tip}</span>
+      </div>
 
-      <div className="locnum">
+      {/* Hover the total to see the same kind of breakdown the heatmap
+          cells show on hover — here it's the language share of all lines,
+          not a single day's repos. */}
+      <div
+        className="locnum"
+        onMouseEnter={() => setTip(breakdown)}
+        onMouseLeave={() => setTip('')}
+        style={{ cursor: 'default' }}
+      >
         {/* `~` only when the number is a byte-derived estimate. */}
         <span className="grad">
           {data.source === 'estimate' ? '~' : ''}

@@ -1,17 +1,22 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { T } from '../ui';
 
 const DOT = 2;      // dot diameter in CSS px
 const PITCH_X = 4;  // horizontal dot spacing
 const PITCH_Y = 4;  // vertical dot spacing
 
-export default function DotsChart({ values, rows, animate }: {
+export default function DotsChart({ values, rawValues, rows, animate }: {
   /** Already resampled to the column count, normalised to 0..1. */
-  values: number[]; rows: number; animate: boolean;
+  values: number[];
+  /** Same length as values, unnormalised — what the hover tooltip shows. */
+  rawValues: number[];
+  rows: number;
+  animate: boolean;
 }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
+  const [hover, setHover] = useState<{ x: number; y: number; col: number } | null>(null);
 
   useEffect(() => {
     const cv = ref.current;
@@ -63,5 +68,34 @@ export default function DotsChart({ values, rows, animate }: {
     return () => { if (raf) cancelAnimationFrame(raf); };
   }, [values, rows, animate]);
 
-  return <canvas ref={ref} style={{ display: 'block' }} />;
+  const handleMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const cv = ref.current;
+    if (!cv || values.length === 0) return;
+    const rect = cv.getBoundingClientRect();
+    const colWidth = rect.width / values.length;
+    const col = Math.min(values.length - 1, Math.max(0, Math.floor((e.clientX - rect.left) / colWidth)));
+    setHover({ x: e.clientX - rect.left, y: e.clientY - rect.top, col });
+  };
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <canvas
+        ref={ref}
+        style={{ display: 'block', cursor: 'crosshair' }}
+        onMouseMove={handleMove}
+        onMouseLeave={() => setHover(null)}
+      />
+      {hover && (
+        <div style={{
+          position: 'absolute', left: hover.x, top: hover.y - 10,
+          transform: 'translate(-50%, -100%)', pointerEvents: 'none',
+          background: T.surface, border: `1px solid ${T.line}`, borderRadius: 6,
+          padding: '4px 8px', fontFamily: T.mono, fontSize: 11, color: T.text,
+          whiteSpace: 'nowrap', zIndex: 10,
+        }}>
+          {Math.round(rawValues[hover.col] ?? 0).toLocaleString()}
+        </div>
+      )}
+    </div>
+  );
 }

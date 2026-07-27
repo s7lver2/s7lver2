@@ -47,7 +47,7 @@ export default function ProjectsGraph() {
   const closeReadme = useCallback(() => setReadme({ status: 'idle' }), []);
 
   const { canvasRef, ready, mode, setMode, hovered, selected, setSelected,
-          autoRotate, setAutoRotate, fit, reset } = useGraph({
+          autoRotate, setAutoRotate, reset } = useGraph({
     payload,
     bandFraction: open ? 0.42 : 1,
     zoomLabelRef,
@@ -69,11 +69,26 @@ export default function ProjectsGraph() {
           <div className="winbar">
             <div className="dots"><i className="r" /><i className="y" /><i className="g" /></div>
             <div className="wintitle"><b>s7lver@portfolio</b>:~$ graph</div>
+            {/* Trimmed from 5 buttons to 3: 2D/3D was two separate toggle
+                buttons for one binary choice, now one; fit and reset were
+                nearly always used together, now one action. */}
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-              <button type="button" className="kbadge gbtn" data-on={mode === '2d'} onClick={() => setMode('2d')}>2D</button>
-              <button type="button" className="kbadge gbtn" data-on={mode === '3d'} onClick={() => setMode('3d')}>3D esfera</button>
-              <button type="button" className="kbadge gbtn" onClick={fit}>⊡ fit</button>
-              <button type="button" className="kbadge gbtn" onClick={reset}>⟲ reset</button>
+              <button
+                type="button"
+                className="kbadge gbtn"
+                onClick={() => setMode(mode === '2d' ? '3d' : '2d')}
+                title="Cambiar entre grafo 2D y esfera 3D"
+              >
+                {mode === '2d' ? '◫ 2D' : '◉ 3D esfera'}
+              </button>
+              <button
+                type="button"
+                className="kbadge gbtn"
+                onClick={reset}
+                title="Reiniciar cámara"
+              >
+                ⟲ reset
+              </button>
               <button
                 type="button"
                 className="kbadge gbtn"
@@ -91,10 +106,10 @@ export default function ProjectsGraph() {
             <canvas ref={canvasRef} className="gcanvas" />
             {!ready && !failed && <div className="gmsg mono">Loading graph…</div>}
             {failed && <div className="gmsg mono">Graph unavailable.</div>}
-            <div className="gleg mono">
-              <span><i style={{ background: '#00add8' }} />proyecto</span>
-              <span><i style={{ background: 'rgba(255,255,255,.3)' }} />lenguaje</span>
-            </div>
+            {/* The always-on "proyecto/lenguaje" legend was dropped — the
+                donut-vs-hollow-ring shapes plus each project's initials
+                already read as distinct without a permanent label overlay
+                competing for attention. */}
 
             <aside className={`grd${open ? ' open' : ''}`} aria-hidden={!open}>
               {readme.status !== 'idle' && (
