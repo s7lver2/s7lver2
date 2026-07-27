@@ -31,6 +31,18 @@ export async function GET(_req: NextRequest) {
     );
   }
 
+  // HTB_USER_ID must be the plain numeric account id (find it via the API's
+  // own /user/info, or the "sub" claim of the API token's JWT) — NOT the SSO
+  // UUID some account pages show. parseInt(uuid) used to silently truncate
+  // "019ca455-..." down to 19, quietly pointing every request at a
+  // completely different account for months. Fail loudly instead.
+  if (!/^\d+$/.test(userId)) {
+    console.error(`[HTB] HTB_USER_ID is not a plain integer: "${userId}"`);
+    return NextResponse.json(
+      { profile: null, progress: null, configured: false },
+      { headers: { 'Cache-Control': 'public, s-maxage=300' } }
+    );
+  }
   const id = parseInt(userId, 10);
 
   try {
