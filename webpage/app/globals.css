@@ -2168,6 +2168,14 @@
   .ghbento.revealed .heat > span { animation: none; }
 }
 
+/* The language-hover cross-highlight (GitHub.tsx's highlightLang) sets each
+   cell's opacity with `!important` from JS, not a plain inline write — a
+   plain write is silently beaten by the running cell-in/heat-shimmer
+   animations above (per the CSS cascade, animations outrank normal inline
+   styles; even pausing an animation doesn't relinquish that, it only
+   freezes its current value). `!important` is the one thing that outranks
+   an animation. */
+
 /* Cards scale up slightly as they arrive. */
 .reveal .card { transform: scale(.96); transition: transform .62s cubic-bezier(.16,1,.3,1); }
 .reveal.revealed .card { transform: scale(1); }
@@ -2317,25 +2325,29 @@ html.custom-cursor-active * {
   cursor: none !important;
 }
 
+/* A bare dot, not a ring — smaller and quieter after feedback that the
+   original ring (and its 20px->32px hover jump) felt like too much. */
 .custom-cursor {
   position: fixed;
   top: 0;
   left: 0;
-  width: 20px;
-  height: 20px;
-  border: 1.5px solid #5eead4;
+  width: 6px;
+  height: 6px;
+  background: #5eead4;
   border-radius: 50%;
   pointer-events: none;
   z-index: 9999;
   opacity: 0;
-  transition: opacity 0.2s ease, width 0.15s ease, height 0.15s ease, border-color 0.15s ease;
+  transition: opacity 0.2s ease, transform 0.15s ease, background 0.15s ease;
   will-change: transform;
 }
 
+/* The scale-on-hover lives in the transform string CustomCursor.tsx writes
+   every frame (it already owns `transform` for position, and a competing
+   CSS transform rule here would never win against that inline write) —
+   this class only carries the colour change. */
 .custom-cursor.is-hovering {
-  width: 32px;
-  height: 32px;
-  border-color: rgba(94, 234, 212, 0.6);
+  background: rgba(94, 234, 212, 0.55);
 }
 
 @media (prefers-reduced-motion: reduce) {

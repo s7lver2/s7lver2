@@ -180,12 +180,23 @@ export default function GitHubSection() {
   // Hover a language (legend or bar segment) → light up only the cells whose
   // repos use it, dim everything else — INCLUDING cells with no attribution
   // yet, per the explicit call: unattributed cells don't get a free pass.
+  //
+  // Cells carry an entrance animation (cell-in) followed by an infinite
+  // ambient shimmer (heat-shimmer) — both animate `opacity`. Per the CSS
+  // cascade, a running (or even paused) animation's effect on a property
+  // outranks a plain inline style write to that same property; pausing the
+  // animation does NOT hand control back to JS, it just freezes the
+  // animation's current value. The only thing that outranks an animation
+  // is an `!important` declaration, so that's what this sets — a plain
+  // `el.style.opacity = ...` here would silently do nothing.
   const highlightLang = (lang: string | null) => {
-    const cells = heatRef.current?.querySelectorAll<HTMLElement>('.hcell');
-    cells?.forEach((el) => {
-      if (!lang) { el.style.opacity = ''; return; }
+    const container = heatRef.current;
+    if (!container) return;
+    const cells = container.querySelectorAll<HTMLElement>('.hcell');
+    cells.forEach((el) => {
+      if (!lang) { el.style.removeProperty('opacity'); return; }
       const langs = el.dataset.langs ? el.dataset.langs.split('|') : [];
-      el.style.opacity = langs.includes(lang) ? '1' : '.14';
+      el.style.setProperty('opacity', langs.includes(lang) ? '1' : '.14', 'important');
     });
   };
 

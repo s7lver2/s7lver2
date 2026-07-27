@@ -1,21 +1,31 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect } from 'react';
 
 const GLYPHS = [' ', ' ', '.', '·', ':', '-', '=', '+', '/', '\\', '|', '*', '#'];
 const CELL = 12;
 
 export default function HeroBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isAnimating, setIsAnimating] = useState(true);
   const animFrameRef = useRef<number>();
   const timeRef = useRef(0);
   const observerRef = useRef<IntersectionObserver | null>(null);
-  // Mouse position in the same CSS-pixel space the draw loop uses. Kept in a
-  // ref (never React state) so pointer movement never triggers a re-render
-  // inside this rAF loop. Starts far off-canvas so nothing avoids by default
-  // — matters for touch devices, which never fire mousemove at all.
-  const mouseRef = useRef({ x: -9999, y: -9999 });
+  // Visibility as a ref, not state: the rAF loop reads it directly, so
+  // toggling it never re-runs the setup effect below (which would tear down
+  // and re-add the mousemove/resize listeners — the previous version used
+  // state here, and that teardown/rebuild is what made the pointer tracking
+  // occasionally "stop working" for a moment).
+  const isAnimatingRef = useRef(true);
+  // Raw client coordinates, updated on every mousemove with NO layout read —
+  // getBoundingClientRect() used to run inside the mousemove handler itself,
+  // which fires far more often than the 60fps draw loop and forced a
+  // synchronous reflow on every single event. The canvas-relative offset is
+  // now computed once per animation frame in draw() instead. Starts far
+  // off-canvas so nothing avoids by default — matters for touch devices,
+  // which never fire mousemove at all.
+  const mouseClientRef = useRef({ x: -9999, y: -9999 });
+  // Cached once per frame in draw(), not per mousemove.
+  const rectRef = useRef({ left: 0, top: 0 });
 
   const prefersReducedMotion = () =>
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -36,7 +46,12 @@ export default function HeroBackground() {
     const cols = Math.ceil(w / CELL);
     const rows = Math.ceil(h / CELL);
 
-    const mouse = mouseRef.current;
+    // Canvas-relative mouse position, computed once for this frame.
+    const rect = rectRef.current;
+    const mouse = {
+      x: mouseClientRef.current.x - rect.left,
+      y: mouseClientRef.current.y - rect.top,
+    };
     const AVOID_R = 90;
     const AVOID_PUSH = 22;
 
@@ -100,13 +115,15 @@ export default function HeroBackground() {
         "'JetBrains Mono', monospace";
       ctx.font = `12px ${monoFont}`;
       ctx.textBaseline = 'top';
+      const r = canvas.getBoundingClientRect();
+      rectRef.current = { left: r.left, top: r.top };
     };
 
     doResize();
 
     // Reduced motion: draw one static frame and stop.
     if (prefersReducedMotion()) {
-      setIsAnimating(false);
+      isAnimatingRef.current = false;
       draw(ctx, canvas);
       const onResizeStatic = () => { doResize(); draw(ctx, canvas); };
       window.addEventListener('resize', onResizeStatic);
@@ -116,31 +133,39 @@ export default function HeroBackground() {
     let alive = true;
     const animate = () => {
       if (!alive) return;
-      if (isAnimating) draw(ctx, canvas);
+      if (isAnimatingRef.current) draw(ctx, canvas);
       animFrameRef.current = requestAnimationFrame(animate);
     };
 
     observerRef.current = new IntersectionObserver(
-      (entries) => entries.forEach((e) => setIsAnimating(e.isIntersecting)),
+      (entries) => entries.forEach((e) => { isAnimatingRef.current = e.isIntersecting; }),
       { threshold: 0 }
     );
     if (hero) observerRef.current.observe(hero);
 
+    // Re-cache the rect on resize AND on scroll — the hero's position
+    // relative to the viewport changes as the page scrolls, and a stale
+    // rect is exactly what made the avoidance effect track the mouse
+    // incorrectly (or not at all) after scrolling.
     const handleResize = () => doResize();
     window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleResize, { passive: true });
 
-    // Glyph-avoidance: track the pointer in CSS-pixel canvas space (matches
-    // the draw loop's coordinate system since ctx is already dpr-scaled).
-    // Skipped entirely under reduced motion above; here it's a no-op until
-    // a real mousemove fires, so touch devices never trigger it.
+    // Glyph-avoidance: mousemove only stores raw client coordinates (no
+    // layout read here — that used to call getBoundingClientRect() on every
+    // single mousemove event, which fires far more often than this loop's
+    // 60fps and forced a synchronous reflow each time, which is what made
+    // the effect feel choppy). The canvas-relative offset is computed once
+    // per frame in draw() using the cached rect above. Skipped entirely
+    // under reduced motion above; here it's a no-op until a real mousemove
+    // fires, so touch devices never trigger it.
     const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      mouseRef.current.x = e.clientX - rect.left;
-      mouseRef.current.y = e.clientY - rect.top;
+      mouseClientRef.current.x = e.clientX;
+      mouseClientRef.current.y = e.clientY;
     };
     const handleMouseLeave = () => {
-      mouseRef.current.x = -9999;
-      mouseRef.current.y = -9999;
+      mouseClientRef.current.x = -9999;
+      mouseClientRef.current.y = -9999;
     };
     canvas.addEventListener('mousemove', handleMouseMove);
     canvas.addEventListener('mouseleave', handleMouseLeave);
@@ -150,12 +175,13 @@ export default function HeroBackground() {
     return () => {
       alive = false;
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleResize);
       canvas.removeEventListener('mousemove', handleMouseMove);
       canvas.removeEventListener('mouseleave', handleMouseLeave);
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
       if (observerRef.current) observerRef.current.disconnect();
     };
-  }, [isAnimating]);
+  }, []);
 
   return (
     <>

@@ -41,12 +41,14 @@ export function useAmpFade<T extends HTMLElement = HTMLDivElement>() {
       const clamped = Math.max(-1, Math.min(1, progress));
       const abs = Math.abs(clamped);
 
-      // Tuned down from the first pass (opacity floor was 0, blur up to
-      // 14px, scale down to .86) after explicit feedback that it read as
-      // too strong — this should be felt, not seen.
-      const opacity = Math.max(0.75, 1 - abs * 0.25);
+      // Tuned down a second time after explicit feedback that even the
+      // first revision still read as too much. No blur at all now — blur
+      // is the part that reads as an "effect"; a bare, small opacity dip
+      // is closer to felt-not-seen. (History: pass 1 had opacity floor 0,
+      // blur to 14px, scale to .86; pass 2 floor .75, blur to 3px.)
+      const opacity = Math.max(0.88, 1 - abs * 0.12);
       const scale = 1;
-      const blur = abs * 3;
+      const blur = 0;
 
       el.style.opacity = String(opacity);
       el.style.filter = blur > 0.05 ? `blur(${blur.toFixed(1)}px)` : 'none';
