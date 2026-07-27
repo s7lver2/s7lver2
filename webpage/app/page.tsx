@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 
 import Navbar          from '@/components/Navbar';
 import HeroSection     from '@/components/sections/Hero';
@@ -14,12 +14,19 @@ import CommandPalette  from '@/components/CommandPalette';
 import ProgressRail    from '@/components/ProgressRail';
 import { track } from '@/lib/track';
 import { useParallax } from '@/lib/parallax';
+import { useAmpFade } from '@/lib/ampFade';
 
 interface Flags {
   terminal: boolean;
   machines: boolean;
   timeline: boolean;
   maintenance: boolean;
+}
+
+// Helper for the --pin-z custom property driving .pin-sec z-index stacking
+// (see globals.css) — CSSProperties doesn't type custom props natively.
+function pinZ(z: number): CSSProperties {
+  return { ['--pin-z' as string]: z } as CSSProperties;
 }
 
 const THEMES: Record<string, { color1: string; color2: string }> = {
@@ -36,6 +43,14 @@ export default function Home() {
   // decorative (non-text, non-interactive) blob layers only.
   const parallax1 = useParallax(0.08);
   const parallax2 = useParallax(0.16);
+  // Softer "amplified fade" transitions for every section boundary that
+  // isn't the hero->skills pinned handoff (see .pin-sec below + useAmpFade).
+  const fadeLanguages = useAmpFade<HTMLDivElement>();
+  const fadeProjects  = useAmpFade<HTMLDivElement>();
+  const fadeHTB        = useAmpFade<HTMLDivElement>();
+  const fadeGithub     = useAmpFade<HTMLDivElement>();
+  const fadeSocial     = useAmpFade<HTMLDivElement>();
+  const fadeFooter     = useAmpFade<HTMLDivElement>();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [paletteTab, setPaletteTab] = useState<'nav' | 'term'>('nav');
   const [trackedSections, setTrackedSections] = useState(new Set<string>());
@@ -171,17 +186,27 @@ export default function Home() {
         </div>
 
         <div className="relative z-10">
-          <HeroSection     onOpenTerminal={openTerminal} />
-          <SkillsSection   machinesEnabled={flags.machines} />
-          <LanguagesSection />
-          <ProjectsGraphSection />
-          <HTBSection      />
-          <GitHubSection   />
-          <SocialSection   />
+          {/* Apple-style pinned handoff, hero->skills ONLY: pure
+              position:sticky + z-index (see .pin-sec in globals.css),
+              disabled on narrow viewports and under
+              prefers-reduced-motion. Approved exception to the "no scroll
+              hijacking" rule — explicitly demoed and chosen by the user.
+              Every other section boundary intentionally does NOT chain
+              another pinned section (several pinned sections in a row can
+              end up visually stacked at once) — those get the softer
+              "amplified fade" scroll-linked transition instead
+              (useAmpFade / .amp-fade), which never pins or stacks. */}
+          <div className="pin-sec" style={pinZ(1)}><HeroSection     onOpenTerminal={openTerminal} /></div>
+          <div className="pin-sec" style={pinZ(2)}><SkillsSection   machinesEnabled={flags.machines} /></div>
+          <div ref={fadeLanguages} className="amp-fade"><LanguagesSection /></div>
+          <div ref={fadeProjects}  className="amp-fade"><ProjectsGraphSection /></div>
+          <div ref={fadeHTB}       className="amp-fade"><HTBSection      /></div>
+          <div ref={fadeGithub}    className="amp-fade"><GitHubSection   /></div>
+          <div ref={fadeSocial}    className="amp-fade"><SocialSection   /></div>
         </div>
       </main>
 
-      <Footer />
+      <div ref={fadeFooter} className="amp-fade"><Footer /></div>
 
       <CommandPalette
         open={paletteOpen}
