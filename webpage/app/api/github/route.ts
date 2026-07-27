@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { readActivityMap } from '@/lib/activity-map';
 
 const GH_USER = process.env.GITHUB_USER || process.env.GITHUB_USERNAME || 's7lver2';
 export const revalidate = 3600; // cache 1h
@@ -71,20 +72,32 @@ async function getProfile(user: string) {
       .slice(0, 5)
       .map(([name, n]) => ({ name, pct: Math.round((n / tot) * 100) }));
 
+    // repo full_name -> primary language, so the heatmap can attribute a
+    // day's repos to the languages they use for the hover cross-highlight.
+    const repoLangs: Record<string, string> = {};
+    list.forEach((r) => {
+      if (r.full_name && r.language) repoLangs[r.full_name] = r.language;
+    });
+
     return {
       publicRepos: u?.public_repos ?? list.length,
       followers: u?.followers ?? 0,
       totalStars,
       languages,
+      repoLangs,
     };
   } catch {
-    return { publicRepos: 0, followers: 0, totalStars: 0, languages: [] };
+    return { publicRepos: 0, followers: 0, totalStars: 0, languages: [], repoLangs: {} };
   }
 }
 
 export async function GET() {
   try {
-    const [days, profile] = await Promise.all([getContributions(GH_USER), getProfile(GH_USER)]);
+    const [days, profile, activityMap] = await Promise.all([
+      getContributions(GH_USER),
+      getProfile(GH_USER),
+      readActivityMap(),
+    ]);
 
     const total = days.reduce((s, d) => s + d.count, 0);
 
@@ -105,7 +118,20 @@ export async function GET() {
     const spark = weeks.map((w) => Math.max(6, Math.round((w / maxWeek) * 100)));
 
     // heatmap: last 196 days (28 weeks) as levels 0-4
-    const heatmap = days.slice(-196).map((d) => d.level);
+    const recentDays = days.slice(-196);
+    const heatmap = recentDays.map((d) => d.level);
+
+    // Same slice, joined with the accumulated activity map. Only days the
+    // cron job has actually seen public events for get a `repos` array —
+    // everything else is `repos: null`, meaning "no attribution yet", which
+    // the client must treat as its own state (dashed border, dims on
+    // language hover) rather than an empty list.
+    const heatmapDays = recentDays.map((d) => ({
+      date: d.date,
+      count: d.count,
+      level: d.level,
+      repos: activityMap[d.date] ?? null,
+    }));
 
     return NextResponse.json({
       ok: true,
@@ -115,6 +141,7 @@ export async function GET() {
         streak,
         spark,
         heatmap,
+        heatmapDays,
       },
     });
   } catch (e: any) {

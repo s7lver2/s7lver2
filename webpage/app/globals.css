@@ -2121,13 +2121,33 @@
   0%, 100% { opacity: 1; }
   50%      { opacity: .55; }
 }
-/* Opacity oscillates against the cell's own colour, so intensity survives. */
-.heat > span {
-  animation: heat-shimmer 3.4s ease-in-out infinite;
-  animation-delay: calc(var(--i, 0) * 7ms);
+@keyframes cell-in {
+  from { opacity: 0; transform: scale(.85); }
+  to   { opacity: 1; transform: scale(1); }
 }
+
+.heat > span {
+  /* Hidden until reveal fires the entrance below. Hover cross-highlight also
+     animates through this same opacity transition. */
+  opacity: 0;
+  transition: opacity .32s cubic-bezier(.16,1,.3,1);
+}
+
+/* Entrance (once, on reveal) + the ambient shimmer picking up right after it
+   — same growth curve (.55s cubic-bezier(.16,1,.3,1)) and per-cell stagger
+   (var(--i)) used by every other "many small items" entrance on the site. */
+.ghbento.revealed .heat > span {
+  animation-name: cell-in, heat-shimmer;
+  animation-duration: .55s, 3.4s;
+  animation-timing-function: cubic-bezier(.16,1,.3,1), ease-in-out;
+  animation-iteration-count: 1, infinite;
+  animation-fill-mode: both, none;
+  animation-delay: calc(var(--i, 0) * 4ms), calc(.6s + var(--i, 0) * 7ms);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .heat > span { animation: none; }
+  .heat > span { opacity: 1; transition: none; }
+  .ghbento.revealed .heat > span { animation: none; }
 }
 
 /* Cards scale up slightly as they arrive. */

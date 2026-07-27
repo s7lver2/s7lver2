@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { colorFor } from '@/lib/lang-colors';
 import { useReveal } from '@/lib/reveal';
 import { useCountUp } from '@/lib/countup';
@@ -29,20 +29,35 @@ const HEAT_COLORS = [
 const HEATMAP_WEEKS = 53;
 const HEATMAP_CELLS = HEATMAP_WEEKS * 7; // 371 — a real year, unlike the old 196
 
+type HeatCell = {
+  date: string;
+  level: number;
+  count: number;
+  /** null = the cron job hasn't seen public-event data for this day yet. */
+  repos: string[] | null;
+};
+
 // Deterministic pseudo-random so SSR and the client produce the same grid.
-function demoHeatmap(): number[] {
-  const out: number[] = [];
+function demoHeatmap(): HeatCell[] {
+  const out: HeatCell[] = [];
   let seed = 1337;
+  const today = new Date();
   for (let i = 0; i < HEATMAP_CELLS; i++) {
     seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    out.push(seed % 5);
+    const level = seed % 5;
+    const d = new Date(today);
+    d.setDate(d.getDate() - (HEATMAP_CELLS - 1 - i));
+    out.push({ date: d.toISOString().slice(0, 10), level, count: level * 2, repos: null });
   }
   return out;
 }
 
-function toYear(cells: number[]): number[] {
+function toYear(cells: HeatCell[]): HeatCell[] {
   if (cells.length >= HEATMAP_CELLS) return cells.slice(cells.length - HEATMAP_CELLS);
-  return [...Array(HEATMAP_CELLS - cells.length).fill(0), ...cells];
+  const pad: HeatCell[] = Array.from({ length: HEATMAP_CELLS - cells.length }, () => ({
+    date: '', level: 0, count: 0, repos: null,
+  }));
+  return [...pad, ...cells];
 }
 
 type GitHubData = {
@@ -51,7 +66,9 @@ type GitHubData = {
   followers: number;
   commitsPerYear: number;
   languages: { name: string; percentage: number; color: string }[];
-  heatmap: number[];
+  heatmapDays: HeatCell[];
+  /** repo full_name -> primary language, for the hover cross-highlight. */
+  repoLangs: Record<string, string>;
 };
 
 function CountKpi({ label, value, accent }: { label: string; value: number; accent?: boolean }) {
@@ -64,6 +81,14 @@ function CountKpi({ label, value, accent }: { label: string; value: number; acce
   );
 }
 
+function relDate(dateStr: string): string {
+  if (!dateStr) return '';
+  const days = Math.max(0, Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000));
+  if (days === 0) return 'hoy';
+  if (days === 1) return 'ayer';
+  return `hace ${days}d`;
+}
+
 export default function GitHubSection() {
   const [data, setData] = useState<GitHubData | null>(null);
   const reveal = useReveal<HTMLDivElement>();
@@ -71,6 +96,8 @@ export default function GitHubSection() {
   const bentoReveal = useReveal<HTMLDivElement>();
   const langReveal = useReveal<HTMLDivElement>();
   const [langsIn, setLangsIn] = useState(false);
+  const [tip, setTip] = useState<string>('');
+  const heatRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // .langbar only exists once `data` is loaded, so this must re-run when
@@ -100,7 +127,6 @@ export default function GitHubSection() {
       .then((j) => {
         if (j.ok && j.data) {
           const apiData = j.data;
-          // Transformar datos reales del API a nuestro formato
           const languages = (apiData.languages || []).map((l: Lang) => ({
             name: l.name,
             percentage: l.pct,
@@ -113,10 +139,10 @@ export default function GitHubSection() {
             followers: apiData.followers || 0,
             commitsPerYear: apiData.commitsPerYear ?? 0,
             languages,
-            heatmap: apiData.heatmap?.length ? toYear(apiData.heatmap) : generateHeatmap,
+            heatmapDays: apiData.heatmapDays?.length ? toYear(apiData.heatmapDays) : generateHeatmap,
+            repoLangs: apiData.repoLangs || {},
           });
         } else {
-          // Si no hay API, mostrar datos demo
           setData({
             repos: 24,
             stars: 158,
@@ -128,12 +154,12 @@ export default function GitHubSection() {
               { name: 'Rust', percentage: 15, color: '#dea584' },
               { name: 'Python', percentage: 10, color: '#3572A5' },
             ],
-            heatmap: generateHeatmap,
+            heatmapDays: generateHeatmap,
+            repoLangs: {},
           });
         }
       })
       .catch(() => {
-        // Si falla el fetch, usar datos demo
         setData({
           repos: 24,
           stars: 158,
@@ -145,10 +171,23 @@ export default function GitHubSection() {
             { name: 'Rust', percentage: 15, color: '#dea584' },
             { name: 'Python', percentage: 10, color: '#3572A5' },
           ],
-          heatmap: generateHeatmap,
+          heatmapDays: generateHeatmap,
+          repoLangs: {},
         });
       });
   }, [generateHeatmap]);
+
+  // Hover a language (legend or bar segment) → light up only the cells whose
+  // repos use it, dim everything else — INCLUDING cells with no attribution
+  // yet, per the explicit call: unattributed cells don't get a free pass.
+  const highlightLang = (lang: string | null) => {
+    const cells = heatRef.current?.querySelectorAll<HTMLElement>('.hcell');
+    cells?.forEach((el) => {
+      if (!lang) { el.style.opacity = ''; return; }
+      const langs = el.dataset.langs ? el.dataset.langs.split('|') : [];
+      el.style.opacity = langs.includes(lang) ? '1' : '.14';
+    });
+  };
 
   // This wrap stays mounted across the loading -> loaded transition so its
   // ref is a single stable DOM node — useReveal's IntersectionObserver is
@@ -184,19 +223,41 @@ export default function GitHubSection() {
         {/* Bento con heatmap + lenguajes + KPIs */}
         <div className="ghbento reveal reveal-stagger" ref={bentoReveal}>
           <div className="card heatbig">
-            <div className="cap">Contributions · last year</div>
+            <div className="cap" style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+              <span>Contributions · last year</span>
+              <span className="mono" style={{ color: 'var(--dim)', fontSize: 11, minHeight: 14 }}>{tip}</span>
+            </div>
 
-            {/* Heatmap: grid 28×7 (4 semanas × 7 días) */}
-            <div className="heat">
-              {data.heatmap.map((intensity, i) => (
-                <span
-                  key={i}
-                  style={{
-                    background: HEAT_COLORS[Math.min(intensity, 4)],
-                    ['--i' as string]: i,
-                  }}
-                />
-              ))}
+            {/* Heatmap: grid 53×7. Each cell knows which repos (if any) the
+                cron job has attributed to it, and lights up on language hover. */}
+            <div className="heat" ref={heatRef}>
+              {data.heatmapDays.map((cell, i) => {
+                const langs = (cell.repos ?? [])
+                  .map((r) => data.repoLangs[r])
+                  .filter(Boolean) as string[];
+                return (
+                  <span
+                    key={i}
+                    className="hcell"
+                    data-langs={langs.join('|')}
+                    style={{
+                      background: HEAT_COLORS[Math.min(cell.level, 4)],
+                      outline: cell.repos ? '1px dashed rgba(94,234,212,.45)' : undefined,
+                      outlineOffset: cell.repos ? -1 : undefined,
+                      ['--i' as string]: i,
+                    }}
+                    onMouseEnter={() => {
+                      if (!cell.date) return;
+                      setTip(
+                        cell.repos && cell.repos.length
+                          ? `${relDate(cell.date)} · ${cell.count} commits · ${cell.repos.join(', ')}`
+                          : `${relDate(cell.date)} · ${cell.count} commits · sin datos de atribución todavía`
+                      );
+                    }}
+                    onMouseLeave={() => setTip('')}
+                  />
+                );
+              })}
             </div>
 
             {/* Language bar */}
@@ -211,6 +272,8 @@ export default function GitHubSection() {
                     width: langsIn ? `${lang.percentage}%` : 0,
                     background: lang.color,
                   }}
+                  onMouseEnter={() => highlightLang(lang.name)}
+                  onMouseLeave={() => highlightLang(null)}
                 />
               ))}
             </div>
@@ -227,7 +290,12 @@ export default function GitHubSection() {
               }}
             >
               {data.languages.map((lang) => (
-                <span key={lang.name}>
+                <span
+                  key={lang.name}
+                  onMouseEnter={() => highlightLang(lang.name)}
+                  onMouseLeave={() => highlightLang(null)}
+                  style={{ cursor: 'default' }}
+                >
                   <span
                     style={{
                       display: 'inline-block',
