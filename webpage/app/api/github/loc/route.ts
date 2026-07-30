@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { readLocCache, refreshLoc, LOC_TTL_MS } from '@/lib/loc';
 
+// Nunca estatica: en el build no hay cache que leer, asi que caeria por el
+// camino que bloquea (refreshLoc, 30-140 s) y ademas horneria el resultado.
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const cached = await readLocCache();
 

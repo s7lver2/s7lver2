@@ -19,6 +19,10 @@ async function loadSnapshot(): Promise<Snapshot> {
   } catch { return []; }
 }
 
+// Sin esto Next la hornea en el build: no fallaba, que es peor — servia para
+// siempre la foto del snapshot del momento de compilar.
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const token = process.env.HTB_API_TOKEN;
   const userId = process.env.HTB_USER_ID;

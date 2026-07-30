@@ -137,6 +137,10 @@ async function buildPayload(featured: FeaturedRepo[]): Promise<GraphPayload> {
   return { nodes, links, fetchedAt: Date.now() };
 }
 
+// Igual que las otras: horneada en el build servia un grafo congelado, y el
+// TTL de 6 h de aqui abajo no llegaba a usarse nunca.
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const featured = await getContent<FeaturedRepo[]>('featured');
   const cached = await kvGetJSON<GraphPayload | null>(CACHE_KEY, CACHE_FILE, null);

@@ -22,6 +22,11 @@ function h(token: string): HeadersInit {
   };
 }
 
+// Proxy en vivo: si Next la hornea (salia como `○`), sirve para siempre la
+// respuesta del build — que es cuando aparecia el `[HTB machines] activity 404`
+// del log, porque se ejecutaba sin las credenciales de runtime.
+export const dynamic = 'force-dynamic';
+
 export async function GET(_req: NextRequest) {
   const token  = process.env.HTB_API_TOKEN;
   const userId = process.env.HTB_USER_ID;

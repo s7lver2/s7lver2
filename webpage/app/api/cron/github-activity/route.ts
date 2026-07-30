@@ -31,6 +31,11 @@ type GhEvent = {
  * verify it here so this route can't be hit by anyone else to burn rate
  * limit or write garbage into the map.
  */
+// Critico: sin esto Next la prerenderiza (salia como `○` en la tabla del
+// build) y el cron se vuelve un no-op — Vercel llamaria a la URL y recibiria
+// la respuesta horneada sin ejecutar nada de lo de abajo.
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   if (secret) {
