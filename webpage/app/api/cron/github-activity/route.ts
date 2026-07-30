@@ -21,7 +21,12 @@ type GhEvent = {
  * *first* time it was polled after this feature shipped. Cells from before
  * that stay "sin datos" forever; that's the accepted tradeoff, not a bug.
  *
- * Triggered by Vercel Cron (see vercel.json). Vercel signs cron requests
+ * Triggered by Vercel Cron (see vercel.json), una vez al dia: el plan Hobby
+ * no admite mas de una ejecucion diaria por cron. No importa aqui porque cada
+ * poll solo acumula, y la API devuelve los ultimos ~300 eventos — muy por
+ * encima de lo que este usuario genera en 24 h.
+ *
+ * Vercel signs cron requests
  * with `Authorization: Bearer $CRON_SECRET` when that env var is set —
  * verify it here so this route can't be hit by anyone else to burn rate
  * limit or write garbage into the map.
