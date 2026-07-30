@@ -7,6 +7,7 @@ import { useCountUp } from '@/lib/countup';
 import LocCounter from './LocCounter';
 
 type Lang = { name: string; pct: number };
+type CellPopup = { x: number; y: number; cell: HeatCell };
 type Data = {
   login: string;
   name: string | null;
@@ -96,7 +97,7 @@ export default function GitHubSection() {
   const bentoReveal = useReveal<HTMLDivElement>();
   const langReveal = useReveal<HTMLDivElement>();
   const [langsIn, setLangsIn] = useState(false);
-  const [tip, setTip] = useState<string>('');
+  const [popup, setPopup] = useState<CellPopup | null>(null);
   const heatRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -234,15 +235,20 @@ export default function GitHubSection() {
         {/* Bento con heatmap + lenguajes + KPIs */}
         <div className="ghbento reveal reveal-stagger" ref={bentoReveal}>
           <div className="card heatbig">
-            <div className="cap" style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-              <span>Contributions · last year</span>
-              <span className="mono" style={{ color: 'var(--dim)', fontSize: 11, minHeight: 14 }}>{tip}</span>
-            </div>
+            <div className="cap">Contributions · last year</div>
 
-            {/* Heatmap: grid 53×7. Each cell knows which repos (if any) the
-                cron job has attributed to it, and lights up on language hover. */}
-            <div className="heat" ref={heatRef}>
-              {data.heatmapDays.map((cell, i) => {
+            {/* Heatmap: grid 53×7. Cells are uniform — no per-cell outline —
+                and hover opens a small popup (below) with the real breakdown
+                instead of a border trying to signal "this one has data".
+                The popup is a sibling of .heat, not a child — .heat scrolls
+                horizontally (overflow-x: auto) to fit 53 weeks, and a popup
+                living inside it near the right edge extended its scrollable
+                width, which is what made a horizontal scrollbar intermittently
+                appear. Positioned here, in a non-scrolling wrapper, it can
+                never do that. */}
+            <div className="heat-wrap" style={{ position: 'relative' }}>
+              <div className="heat" ref={heatRef}>
+                {data.heatmapDays.map((cell, i) => {
                 const langs = (cell.repos ?? [])
                   .map((r) => data.repoLangs[r])
                   .filter(Boolean) as string[];
@@ -253,39 +259,66 @@ export default function GitHubSection() {
                     data-langs={langs.join('|')}
                     style={{
                       background: HEAT_COLORS[Math.min(cell.level, 4)],
-                      outline: cell.repos ? '1px dashed rgba(94,234,212,.45)' : undefined,
-                      outlineOffset: cell.repos ? -1 : undefined,
                       ['--i' as string]: i,
                     }}
-                    onMouseEnter={() => {
+                    onMouseEnter={(e) => {
                       if (!cell.date) return;
-                      if (!cell.repos || !cell.repos.length) {
-                        setTip(`${relDate(cell.date)} · ${cell.count} commits · sin datos de atribución todavía`);
-                        return;
-                      }
-                      // We only know which repos were touched that day, not the
-                      // real line-level diff per repo — so this is a share of
-                      // that day's REPOS per language, not a byte-precise
-                      // share of lines. Labelled "repos" in the tooltip so it
-                      // never overclaims a precision we don't have.
-                      const tally: Record<string, number> = {};
-                      cell.repos.forEach((r) => {
-                        const l = data.repoLangs[r];
-                        if (l) tally[l] = (tally[l] || 0) + 1;
+                      const host = heatRef.current;
+                      if (!host) return;
+                      const hostRect = host.getBoundingClientRect();
+                      const cellRect = e.currentTarget.getBoundingClientRect();
+                      setPopup({
+                        x: cellRect.left - hostRect.left + cellRect.width / 2,
+                        y: cellRect.top - hostRect.top,
+                        cell,
                       });
-                      const entries = Object.entries(tally);
-                      const langPct = entries.length
-                        ? ' · ' + entries
-                            .sort((a, b) => b[1] - a[1])
-                            .map(([l, n]) => `${l} ${Math.round((n / cell.repos!.length) * 100)}%`)
-                            .join(', ')
-                        : '';
-                      setTip(`${relDate(cell.date)} · ${cell.count} commits · ${cell.repos.join(', ')}${langPct}`);
                     }}
-                    onMouseLeave={() => setTip('')}
+                    onMouseLeave={() => setPopup(null)}
                   />
                 );
               })}
+            </div>
+
+            {popup && (
+              <div
+                className="heat-popup mono"
+                style={{ left: popup.x, top: popup.y }}
+              >
+                <div className="heat-popup-head">
+                  {relDate(popup.cell.date)} · {popup.cell.count} commits
+                </div>
+                {popup.cell.repos && popup.cell.repos.length > 0 ? (
+                  <>
+                    {/* We only know which repos were touched that day, not a
+                        real per-repo line/commit split — so every repo gets
+                        an equal-width segment. Bars mean "these repos were
+                        active", not a precise proportion; the row below
+                        each bar spells that out so it never overclaims. */}
+                    <div className="heat-popup-bar">
+                      {popup.cell.repos.map((r) => (
+                        <span
+                          key={r}
+                          style={{
+                            width: `${100 / popup.cell.repos!.length}%`,
+                            background: colorFor(data.repoLangs[r] ?? ''),
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div className="heat-popup-list">
+                      {popup.cell.repos.map((r) => (
+                        <span key={r}>
+                          <i style={{ background: colorFor(data.repoLangs[r] ?? '') }} />
+                          {r}
+                        </span>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="heat-popup-empty">sin datos de atribución todavía</div>
+                )}
+              </div>
+            )}
             </div>
 
             {/* Language bar */}

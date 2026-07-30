@@ -1,20 +1,7 @@
 'use client';
-import { FaGithub, FaDiscord, FaTwitter, FaTiktok, FaInstagram } from 'react-icons/fa';
 
-const socials = [
-  { icon: <FaGithub />,    name: 'GitHub',    link: 'https://github.com/s7lver2' },
-  { icon: <FaDiscord />,   name: 'Discord',   link: '#' },
-  { icon: <FaTwitter />,   name: 'X',         link: 'https://twitter.com/not_s7lver' },
-  { icon: <FaTiktok />,    name: 'TikTok',    link: 'https://tiktok.com/@s7lver6' },
-  { icon: <FaInstagram />, name: 'Instagram', link: 'https://instagram.com/ims7lver' },
-];
-
-const projects = [
-  { title: 'file-meet', link: 'https://github.com/s7lver2/file-meet' },
-  { title: 'ZephyrOS',  link: 'https://github.com/s7lver2/ZephyrOS' },
-  { title: 'CodeDotJS', link: 'https://CodeDotjs.vercel.app' },
-  { title: 'tsuki',     link: 'https://github.com/s7lver2/tsuki' },
-];
+import { useEffect, useState } from 'react';
+import { DEFAULT_PROJECTS, DEFAULT_SOCIALS, type SocialC } from '@/lib/content-constants';
 
 const navLinks = [
   { id: 'about',    label: 'Introduction' },
@@ -25,85 +12,77 @@ const navLinks = [
 ];
 
 export default function Footer() {
+  // Same source the admin-managed Social section reads from, not a second
+  // hardcoded list that can drift from it — and only entries with a real
+  // URL render; several defaults are still '#' placeholders until filled in
+  // via the admin panel, and a footer with a dead Discord link is worse than
+  // no Discord link at all.
+  const [socials, setSocials] = useState<SocialC[]>(DEFAULT_SOCIALS);
+
+  useEffect(() => {
+    fetch('/api/content/socials')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: SocialC[] | null) => { if (Array.isArray(d) && d.length) setSocials(d); })
+      .catch(() => {});
+  }, []);
+
+  const realSocials = socials.filter((s) => s.url.startsWith('http'));
+
   const scroll = (id: string) =>
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
 
   return (
-    <footer id="footer" className="section relative z-10 border-t border-white/10 bg-black/50 backdrop-blur-sm">
-      <div className="container-page py-12">
-        <div className="grid md:grid-cols-4 gap-8 mb-8">
-          {/* Brand */}
-          <div>
-            <div className="text-xl font-bold mb-4">
-              <span className="text-white">s7lver</span>
-              <span className="text-gradient">2</span>
-            </div>
-            <p className="text-sm text-gray-500">Developer & cybersecurity student</p>
+    <footer id="footer" className="ftr">
+      <div className="wrap">
+        <div className="ftr-grid">
+          <div className="ftr-col ftr-brand">
+            <div className="ftr-logo">s7lver<span className="grad">2</span></div>
+            <p className="ftr-tag">Developer &amp; cybersecurity student</p>
           </div>
 
-          {/* Nav */}
-          <div>
-            <h4 className="text-sm font-semibold text-white mb-4">Navigation</h4>
-            <ul className="space-y-2">
-              {navLinks.map(({ id, label }) => (
-                <li key={id}>
-                  <button
-                    onClick={() => scroll(id)}
-                    className="text-sm text-gray-500 hover:text-white transition-colors"
-                  >
-                    {label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <nav className="ftr-col">
+            <span className="ftr-h">Navigate</span>
+            {navLinks.map(({ id, label }) => (
+              <button key={id} type="button" className="ftr-link" onClick={() => scroll(id)}>
+                {label}
+              </button>
+            ))}
+          </nav>
 
-          {/* Projects */}
-          <div>
-            <h4 className="text-sm font-semibold text-white mb-4">Projects</h4>
-            <ul className="space-y-2">
-              {projects.map((p) => (
-                <li key={p.title}>
-                  <a
-                    href={p.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-gray-500 hover:text-white transition-colors"
-                  >
-                    {p.title}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <nav className="ftr-col">
+            <span className="ftr-h">Projects</span>
+            {DEFAULT_PROJECTS.map((p) => (
+              <a
+                key={p.slug}
+                href={p.web ?? `https://github.com/${p.repo}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ftr-link"
+              >
+                {p.name}
+              </a>
+            ))}
+          </nav>
 
-          {/* Social */}
-          <div>
-            <h4 className="text-sm font-semibold text-white mb-4">Social</h4>
-            <ul className="space-y-2">
-              {socials.map((s) => (
-                <li key={s.name}>
-                  <a
-                    href={s.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-gray-500 hover:text-white transition-colors flex items-center gap-2"
-                  >
-                    {s.icon}<span>{s.name}</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <nav className="ftr-col">
+            <span className="ftr-h">Elsewhere</span>
+            {realSocials.map((s) => (
+              <a
+                key={s.k}
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ftr-link"
+              >
+                {s.k}
+              </a>
+            ))}
+          </nav>
         </div>
 
-        <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-gray-600">© 2026 s7lver. All rights reserved</p>
-          <p className="text-sm text-gray-600">Built in Next.js · Deployed with Vercel</p>
-          {/* Tiny easter egg hint */}
-          <p className="text-[11px] text-gray-800 font-mono select-none" aria-hidden>
-            // press ` to open terminal
-          </p>
+        <div className="ftr-meta">
+          <span>© 2026 s7lver</span>
+          <span className="ftr-egg" aria-hidden>Press ` to open the terminal</span>
         </div>
       </div>
     </footer>

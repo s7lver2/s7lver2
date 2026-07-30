@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash E:/s7lver2/webpage/workflow/hooks/session-start.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

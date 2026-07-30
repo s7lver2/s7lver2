@@ -47,12 +47,19 @@ export default function ProjectsGraph() {
   const closeReadme = useCallback(() => setReadme({ status: 'idle' }), []);
 
   const { canvasRef, ready, mode, setMode, hovered, selected, setSelected,
-          autoRotate, setAutoRotate, reset } = useGraph({
+          autoRotate, setAutoRotate, filterLang, setFilterLang, reset } = useGraph({
     payload,
     bandFraction: open ? 0.42 : 1,
     zoomLabelRef,
     onOpenProject,
   });
+
+  // Legend/filter chips — the language nodes themselves no longer render on
+  // the canvas (see render.ts), so this row is now the only place languages
+  // are named. Sorted by how many projects use them, most-used first.
+  const languages = (payload?.nodes ?? [])
+    .filter((n) => n.kind === 'language')
+    .sort((a, b) => b.degree - a.degree);
 
   useEffect(() => {
     if (!selected) setReadme({ status: 'idle' });
@@ -106,10 +113,6 @@ export default function ProjectsGraph() {
             <canvas ref={canvasRef} className="gcanvas" />
             {!ready && !failed && <div className="gmsg mono">Loading graph…</div>}
             {failed && <div className="gmsg mono">Graph unavailable.</div>}
-            {/* The always-on "proyecto/lenguaje" legend was dropped — the
-                donut-vs-hollow-ring shapes plus each project's initials
-                already read as distinct without a permanent label overlay
-                competing for attention. */}
 
             <aside className={`grd${open ? ' open' : ''}`} aria-hidden={!open}>
               {readme.status !== 'idle' && (
@@ -156,6 +159,30 @@ export default function ProjectsGraph() {
               )}
             </aside>
           </div>
+
+          {/* Replaces the language nodes/edges that used to live on the canvas
+              (see render.ts) — a clickable legend instead of floating clutter.
+              Clicking a chip pins it as a filter (click again to clear);
+              non-matching projects dim on the graph above. */}
+          {languages.length > 0 && (
+            <div className="glegend">
+              {languages.map((lang) => (
+                <button
+                  key={lang.id}
+                  type="button"
+                  className="glegend-chip"
+                  data-active={filterLang === lang.id}
+                  style={{ ['--chip-color' as string]: lang.color }}
+                  onClick={() => setFilterLang(filterLang === lang.id ? null : lang.id)}
+                  title={`${lang.id} · ${lang.degree} proyecto${lang.degree === 1 ? '' : 's'}`}
+                >
+                  <i />
+                  {lang.id}
+                  <b>{lang.degree}</b>
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="gsl">
             <span className="m" data-readme={open}>{open ? 'README' : 'NORMAL'}</span>

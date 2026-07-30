@@ -27,7 +27,7 @@ export interface GraphNode {
   phase: number;
 }
 
-export interface GraphLink { s: GraphNode; t: GraphNode; weight: number; }
+export interface GraphLink { s: GraphNode; t: GraphNode; weight: number; color?: string; }
 
 export interface Camera { rx: number; ry: number; zoom: number; px: number; py: number; }
 
@@ -36,6 +36,11 @@ export interface Projected { sx: number; sy: number; s: number; z: number; }
 export interface Graph {
   nodes: GraphNode[];
   links: GraphLink[];
+  /** Project-to-project edges, derived from shared languages. Language
+   *  nodes themselves are never drawn (see render.ts), so this is the only
+   *  visible connective tissue in the graph — a real edge between the two
+   *  projects that share it, colored by the strongest language they share. */
+  projectLinks: GraphLink[];
   byId: Record<string, GraphNode>;
   /** adjacency[a][b] is true when a and b share an edge. */
   adjacency: Record<string, Record<string, true>>;
@@ -127,8 +132,34 @@ export function buildGraph(payload: GraphPayload): Graph {
     adjacency[t.id][s.id] = true;
   }
 
+  // Derive project<->project edges from shared languages. `langs` is each
+  // project's language percentage map — two projects are linked if any key
+  // overlaps, and the edge is colored/weighted by whichever shared language
+  // is strongest for both (min of the two percentages, so a language that's
+  // dominant in one project but a rounding-error sliver in the other doesn't
+  // count as a strong tie).
+  const projects = nodes.filter((n) => n.kind === 'project');
+  const projectLinks: GraphLink[] = [];
+  for (let i = 0; i < projects.length; i++) {
+    for (let j = i + 1; j < projects.length; j++) {
+      const a = projects[i], b = projects[j];
+      if (!a.langs || !b.langs) continue;
+      let bestLang: string | null = null;
+      let bestWeight = 0;
+      for (const lang of Object.keys(a.langs)) {
+        const bp = b.langs[lang];
+        if (bp === undefined) continue;
+        const w = Math.min(a.langs[lang], bp);
+        if (w > bestWeight) { bestWeight = w; bestLang = lang; }
+      }
+      if (bestLang) {
+        projectLinks.push({ s: a, t: b, weight: bestWeight, color: colorFor(bestLang) });
+      }
+    }
+  }
+
   seedSphere(nodes, SEED_RADIUS);
-  return { nodes, links, byId, adjacency };
+  return { nodes, links, projectLinks, byId, adjacency };
 }
 
 /** One integration step. `held` is pinned (used while dragging a node). */

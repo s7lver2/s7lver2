@@ -12,23 +12,20 @@ const INTERACTIVE_SELECTOR =
  * teal (#5eead4) already on .prail-fill / active nav states elsewhere in
  * globals.css.
  *
- * Position AND hover-scale both live in one transform string written every
- * frame (translate3d, never top/left, so it never triggers layout) — a
- * separate CSS transform rule for the hover scale would never win against
- * that inline write, so it has to happen here, not in globals.css.
- * Disabled outright on coarse/touch pointers (no mouse to track); the
- * hover-scale step is skipped under prefers-reduced-motion.
+ * Position tracks the real pointer 1:1, every frame, with zero easing — an
+ * earlier version lerped the displayed position toward the target (0.35 per
+ * frame), meant to read as a soft trail. In practice it read as latency: the
+ * hero's mouse-avoidance canvas reacts to the raw pointer instantly, so the
+ * lagging dot visibly fell behind the ASCII field it was supposed to be
+ * causing, looking broken rather than smooth. The hover pop is still
+ * animated, but as a CSS transition on `scale` (declared once in
+ * globals.css), decoupled from the position write.
+ * Disabled outright on coarse/touch pointers (no mouse to track).
  */
 export default function CustomCursor() {
   const dotRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>();
-  // Target (raw mouse) and displayed (eased) position are tracked
-  // separately. A cursor that snaps 1:1 to the mouse every frame reads as
-  // mechanical; lerping the displayed position a fraction of the remaining
-  // distance each frame gives it a small, natural trailing feel instead —
-  // still tight enough (0.35/frame at 60fps) to never feel like lag.
   const target = useRef({ x: -9999, y: -9999 });
-  const shown = useRef({ x: -9999, y: -9999 });
   const hoveringRef = useRef(false);
 
   useEffect(() => {
@@ -38,22 +35,10 @@ export default function CustomCursor() {
     if (!el) return;
 
     document.documentElement.classList.add('custom-cursor-active');
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const EASE = 0.35;
 
     const render = () => {
-      if (reduced) {
-        // No easing under reduced motion — the cursor should track the
-        // real pointer with no independent motion of its own.
-        shown.current.x = target.current.x;
-        shown.current.y = target.current.y;
-      } else {
-        shown.current.x += (target.current.x - shown.current.x) * EASE;
-        shown.current.y += (target.current.y - shown.current.y) * EASE;
-      }
-      const scale = !reduced && hoveringRef.current ? 1.6 : 1;
       el.style.transform =
-        `translate3d(${shown.current.x}px, ${shown.current.y}px, 0) translate(-50%, -50%) scale(${scale})`;
+        `translate3d(${target.current.x}px, ${target.current.y}px, 0) translate(-50%, -50%)`;
       rafRef.current = requestAnimationFrame(render);
     };
 

@@ -780,6 +780,55 @@
     border-radius: 2px;
   }
 
+  .heat-popup {
+    position: absolute;
+    transform: translate(-50%, calc(-100% - 8px));
+    z-index: 10;
+    pointer-events: none;
+    background: #14141c;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 8px 10px;
+    min-width: 150px;
+    font-size: 10.5px;
+    white-space: nowrap;
+  }
+
+  .heat-popup-head {
+    color: rgba(255, 255, 255, 0.75);
+    margin-bottom: 6px;
+  }
+
+  .heat-popup-bar {
+    display: flex;
+    height: 5px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .heat-popup-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 6px;
+    color: rgba(255, 255, 255, 0.55);
+  }
+
+  .heat-popup-list i {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  .heat-popup-empty {
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 2px;
+  }
+
   .langbar {
     display: flex;
     height: 10px;
@@ -1807,25 +1856,61 @@
   .gcanvas { height: 300px; }
 }
 
-.gleg {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
+/* Legend + filter row: the graph used to draw a hollow ring per language
+   plus a thin connecting edge to every project that used it — permanent,
+   always-on clutter. This row is the replacement: languages are named once,
+   here, and a click pins one as a filter (dims non-matching projects in
+   render.ts) instead of a permanent web of nodes and lines. */
+.glegend {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 9.5px;
-  color: rgba(255, 255, 255, 0.4);
-  pointer-events: none;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0d0d13;
 }
 
-.gleg i {
+.glegend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.55);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.glegend-chip:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.glegend-chip i {
   display: inline-block;
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  margin-right: 6px;
-  vertical-align: middle;
+  background: var(--chip-color);
+}
+
+.glegend-chip b {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.glegend-chip[data-active='true'] {
+  border-color: var(--chip-color);
+  color: #fff;
+  background: color-mix(in srgb, var(--chip-color) 16%, transparent);
+}
+
+.glegend-chip[data-active='true'] b {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .gbtn:disabled {
@@ -2338,15 +2423,24 @@ html.custom-cursor-active * {
   pointer-events: none;
   z-index: 9999;
   opacity: 0;
-  transition: opacity 0.2s ease, transform 0.15s ease, background 0.15s ease;
+  /* `transform` is intentionally NOT transitioned: CustomCursor.tsx writes a
+     fresh translate3d() every animation frame with the raw pointer position
+     (no easing), and a CSS transition on transform fights that write every
+     frame, animating toward a target that's already stale — the exact
+     trailing-behind-the-mouse lag reported against the hero's mouse-avoidance
+     effect. The hover "pop" instead animates width/height, which is fully
+     decoupled from the position transform. */
+  transition: opacity 0.2s ease, width 0.15s ease, height 0.15s ease, background 0.15s ease;
   will-change: transform;
 }
 
-/* The scale-on-hover lives in the transform string CustomCursor.tsx writes
-   every frame (it already owns `transform` for position, and a competing
-   CSS transform rule here would never win against that inline write) —
-   this class only carries the colour change. */
+/* Position (transform) is written every frame by CustomCursor.tsx and never
+   transitioned; the hover "pop" is entirely this class's width/height/
+   background change, transitioned above, so it animates smoothly without
+   ever touching — or lagging behind — the position write. */
 .custom-cursor.is-hovering {
+  width: 10px;
+  height: 10px;
   background: rgba(94, 234, 212, 0.55);
 }
 
@@ -2367,4 +2461,80 @@ html.custom-cursor-active * {
   .reveal .htbring circle.prog { stroke-dashoffset: var(--offset, 0); }
   .htbterm-line { width: calc(var(--chars, 20) * 1ch); animation: none; }
   .htbterm-cursor { animation: none; }
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────
+   Plain body type (the site's own default, not JetBrains Mono), the same
+   --mut/--dim tokens and --brand gradient already used everywhere else —
+   no teal, no terminal costume, no oversized wordmark. Quiet on purpose. */
+.ftr {
+  font-family: var(--font-body);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0b0b12;
+  padding: 56px 0 40px;
+}
+
+.ftr-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr 1fr;
+  gap: 32px;
+}
+
+.ftr-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ftr-h {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mut);
+  margin-bottom: 4px;
+}
+
+.ftr-link {
+  font-family: var(--font-body);
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  font-size: 13.5px;
+  color: var(--dim);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.ftr-link:hover { color: #fff; }
+
+.ftr-logo {
+  font-size: 19px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.ftr-tag {
+  font-size: 13px;
+  color: var(--dim);
+  margin-top: 6px;
+  max-width: 220px;
+}
+
+.ftr-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 44px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.ftr-egg { color: rgba(255, 255, 255, 0.22); }
+
+@media (max-width: 760px) {
+  .ftr-grid { grid-template-columns: 1fr 1fr; }
+  .ftr-meta { flex-direction: column; align-items: flex-start; gap: 6px; }
 }

@@ -34,6 +34,9 @@ export interface UseGraphResult {
   setSelected: (n: GraphNode | null) => void;
   autoRotate: boolean;
   setAutoRotate: (v: boolean) => void;
+  /** Pinned by a legend chip click; null clears it. */
+  filterLang: string | null;
+  setFilterLang: (lang: string | null) => void;
   fit: () => void;
   reset: () => void;
 }
@@ -61,11 +64,14 @@ export function useGraph({ payload, bandFraction, zoomLabelRef, onOpenProject }:
   const [selected, setSelectedState] = useState<GraphNode | null>(null);
   const [autoRotate, setAutoRotate] = useState(false);
   const autoRotRef = useRef(false);
+  const [filterLang, setFilterLang] = useState<string | null>(null);
+  const filterLangRef = useRef<string | null>(null);
   const reduced = useRef(false);
   const entranceT0 = useRef(0);
 
   useEffect(() => { bandRef.current = bandFraction; }, [bandFraction]);
   useEffect(() => { autoRotRef.current = autoRotate; }, [autoRotate]);
+  useEffect(() => { filterLangRef.current = filterLang; }, [filterLang]);
   useEffect(() => { onOpenProjectRef.current = onOpenProject; }, [onOpenProject]);
 
   const setSelected = useCallback((n: GraphNode | null) => { selRef.current = n; setSelectedState(n); }, []);
@@ -151,14 +157,15 @@ export function useGraph({ payload, bandFraction, zoomLabelRef, onOpenProject }:
 
         const { w, h } = sizeRef.current;
         const now = performance.now();
-        const entrance = reduced.current
-          ? 1
-          : Math.min(1, (now - entranceT0.current) / 700);
-        const entranceEased = 1 - Math.pow(1 - entrance, 3);
+        // Raw elapsed ms since the graph was built — render.ts staggers each
+        // node's own entrance off this using its phase, rather than easing a
+        // single global 0..1 here and animating every node in lockstep.
+        const entranceMs = reduced.current ? Infinity : now - entranceT0.current;
         drawGraph(ctx, {
           graph: g, mode: modeRef.current, cam: camRef.current, w, h,
           lit: litRef.current, selected: selRef.current,
-          t: now, reduced: reduced.current, entrance: entranceEased,
+          t: now, reduced: reduced.current, entranceMs,
+          filterLang: filterLangRef.current,
         });
 
         if (zoomLabelRef?.current) {
@@ -196,7 +203,10 @@ export function useGraph({ payload, bandFraction, zoomLabelRef, onOpenProject }:
       if (!g) return null;
       let best: GraphNode | null = null;
       let bestD = Infinity;
+      // Language nodes are never drawn (see render.ts) — hit-testing them
+      // would let hover/drag/click target an invisible point on screen.
       for (const n of g.nodes) {
+        if (n.kind !== 'project') continue;
         const p = project(n, modeRef.current, camRef.current, w, h);
         const rr = Math.max(n.r * (modeRef.current === '3d' ? p.s : 1) * camRef.current.zoom, 9) + 5;
         const d = Math.hypot(mx - p.sx, my - p.sy);
@@ -336,6 +346,6 @@ export function useGraph({ payload, bandFraction, zoomLabelRef, onOpenProject }:
   return {
     canvasRef, ready, mode, setMode,
     hovered, selected, setSelected,
-    autoRotate, setAutoRotate, fit, reset,
+    autoRotate, setAutoRotate, filterLang, setFilterLang, fit, reset,
   };
 }
