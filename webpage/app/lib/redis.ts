@@ -29,13 +29,29 @@ async function writeFile<T>(file: string, value: T): Promise<void> {
   await fs.writeFile(path.join(DATA_DIR, file), JSON.stringify(value), 'utf8');
 }
 
+// `redis` siendo no-null solo prueba que las credenciales estan *definidas*,
+// no que Upstash responda (store desinstalado, credenciales rotas o mal
+// pegadas). Antes, un fallo aqui tumbaba la ruta entera con un 500 mudo — el
+// panel dependia de esto para el propio login. Ahora cae al fichero y deja
+// rastro real en `vercel logs` en vez de un stack trace generico.
+function logRedisFailure(op: 'get' | 'set', key: string, err: unknown): void {
+  const msg = err instanceof Error ? err.message : String(err);
+  console.error(`[s7lver] Redis ${op} fallo para "${key}": ${msg} — usando fallback de fichero`);
+}
+
 export async function kvGetJSON<T>(key: string, file: string, def: T): Promise<T> {
-  if (redis) { const v = await redis.get<T>(key); return (v ?? def); }
+  if (redis) {
+    try { const v = await redis.get<T>(key); return (v ?? def); }
+    catch (err) { logRedisFailure('get', key, err); }
+  }
   return readFile<T>(file, def);
 }
 
 export async function kvSetJSON<T>(key: string, file: string, value: T): Promise<void> {
-  if (redis) { await redis.set(key, value); return; }
+  if (redis) {
+    try { await redis.set(key, value); return; }
+    catch (err) { logRedisFailure('set', key, err); }
+  }
   await writeFile<T>(file, value);
 }
 
