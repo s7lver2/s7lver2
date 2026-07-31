@@ -1,11 +1,19 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useGraph } from '@/components/graph/useGraph';
 import type { GraphNode } from '@/components/graph/engine';
 import type { GraphPayload } from '@/lib/graph-types';
-import Readme from '@/components/graph/Readme';
 import { useReveal } from '@/lib/reveal';
+
+// react-markdown + remark-gfm + rehype-raw + rehype-sanitize (y sus
+// dependencias de unified/hast/mdast) solo hacen falta si alguien abre un
+// README. Cargarlas en el bundle inicial de la home penaliza a todo visitante
+// por una funcion que la mayoria nunca usa.
+const Readme = dynamic(() => import('@/components/graph/Readme'), {
+  loading: () => <div className="grdempty mono">Cargando README…</div>,
+});
 
 type ReadmeState =
   | { status: 'idle' }

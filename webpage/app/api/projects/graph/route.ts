@@ -83,15 +83,15 @@ async function buildPayload(featured: FeaturedRepo[]): Promise<GraphPayload> {
   const langsByRepo: Record<string, Record<string, number>> = {};
   const metaByRepo: Record<string, { name: string; desc: string; stars: number }> = {};
 
-  // Sequential rather than Promise.all: a handful of repos is not worth
-  // burning concurrent rate-limit slots, and a partial failure is easier to
-  // reason about.
-  for (const f of featured) {
-    const bytes = await fetchLanguages(f.repo);
+  // Concurrent: GitHub's rate limit is a per-hour request budget, not a
+  // concurrency cap, so running these in parallel costs nothing extra and
+  // turns N sequential round-trips into one. Each fetch already isolates its
+  // own failure (returns null), so a slow or broken repo can't stall the rest.
+  await Promise.all(featured.map(async (f) => {
+    const [bytes, meta] = await Promise.all([fetchLanguages(f.repo), fetchRepoMeta(f.repo)]);
     if (bytes) langsByRepo[f.repo] = toPercentages(bytes);
-    const meta = await fetchRepoMeta(f.repo);
     if (meta) metaByRepo[f.repo] = meta;
-  }
+  }));
 
   const repos = featured.map((f) => f.repo);
   const primaryLangs: Record<string, string | null> = {};
