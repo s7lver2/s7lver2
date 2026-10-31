@@ -16,7 +16,7 @@ import { Hologram } from './hologram';
 import { slots } from './socials';
 import { shape, shotAt, stationShot, type Stage } from './stations';
 import { makePentagram } from './pentagram';
-import { CameraRig } from '../library/shots';
+import { CameraRig, type Shot } from '../library/shots';
 import { makeFx } from './fx';
 import { makeHall } from './hall';
 
@@ -125,6 +125,8 @@ export class RitualScene {
   // lo rápido que gira la cámara (para los efectos) y su ángulo del fotograma anterior
   private speed = 0;
   private lastAz?: number;
+  /** El último plano del recorrido (con el acercamiento y el cursor): el final arranca desde él. */
+  private lastShot?: Shot;
   // cada estatua: en el cuadrado y en su punta del pentagrama
   private spots: { sq: { pos: THREE.Vector3; yaw: number }; star: { pos: THREE.Vector3; yaw: number } }[] = [];
   private mist?: ReturnType<typeof makeMist>;
@@ -423,7 +425,9 @@ export class RitualScene {
     sh.place(center.clone().addScaledVector(dir, 5.6), Math.atan2(-dir.x, -dir.z));
     sh.to('walking', { cut: true });
     sh.root.visible = true;
-    top();
+    // (sin corte: la cámara sigue donde la dejó el recorrido, ya algo acercada)
+    if (this.lastShot) this.rig.cut(this.lastShot);
+    else top();
     await during(1.8, () => {});
     // 2. corte a su lado; al pasar entre las estatuas de las puntas 1 y 4, sus hologramas parpadean
     const follow = { h: 1.25 };
@@ -600,7 +604,7 @@ export class RitualScene {
       shot.pos.addScaledVector(side, this.pointerNow.x * 0.16 * near).y += this.pointerNow.y * 0.08 * near;
       shot.look.addScaledVector(side, this.pointerNow.x * 0.05 * near);
     }
-    this.rig.cut(shot);
+    this.rig.cut((this.lastShot = shot));
     this.rig.update(dt);
     // la velocidad de giro alrededor del centro (rad/s), suavizada: de ella viven los efectos
     const az = Math.atan2(this.camera.position.x - st.center.x, this.camera.position.z - st.center.z);

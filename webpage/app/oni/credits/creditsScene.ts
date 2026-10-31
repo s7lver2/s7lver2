@@ -48,7 +48,11 @@ export class CreditsScene {
   p = 0;
   /** Ya entró y aún no has hecho scroll: el indicador se enciende. */
   get idle() {
-    return this.since > 1.8 && this.aim < 0.02;
+    return this.entered && this.aim < 0.02;
+  }
+  /** La entrada (la máscara hundiéndose) ya acabó. */
+  get entered() {
+    return this.since > 1.8;
   }
   aim = 0;
   t = 0;
@@ -127,6 +131,8 @@ export class CreditsScene {
     s.add(this.mask, this.cards, this.surface.group);
     [this.me, this.claude].forEach((c, i) => this.cards.add(this.holders[i].add(c.mesh)));
     this.avatar.onload = () => this.setPresence(this.presence);
+    // sin Discord configurado (Lanyard o DISCORD_ID), la ruta da 404: entonces, el de GitHub
+    this.avatar.onerror = () => void (this.avatar.onerror = null, (this.avatar.src = '/api/avatar/github'));
     this.avatar.src = '/api/avatar/discord';
 
     // nieve marina: motas que caen despacio alrededor del camino de la cámara
@@ -140,14 +146,36 @@ export class CreditsScene {
     this.camera.lookAt(0, 0, 0);
     // compilar ya, con las sombras encendidas como en el ritual (cambiarlas obligaría a recompilar):
     // la escena para el destino intermedio del compositor, poco a poco (ver compileGently; mientras,
-    // el ritual sigue pintando), y el paso del agua (su material, en un plano suelto) para la pantalla
+    // el ritual sigue pintando), y luego el compositor entero (bloom, SMAA, el agua): montado al
+    // tomar el lienzo, sus programas se compilaban de golpe justo cuando la máscara entraba al agua.
+    // Sus materiales, en paralelo en planos sueltos; luego un fotograma invisible de 64×64 (las
+    // sombras y lo que dependa del destino) en su propio destino
     const r = this.renderer;
     r.shadowMap.enabled = true;
     r.shadowMap.type = shadowType(r);
     await compileGently(r, s, this.camera);
-    const quad = new THREE.Scene().add(new THREE.Mesh(new THREE.PlaneGeometry(1, 1), this.water.material));
+    const c = (this.composer = new EffectComposer(r));
+    c.addPass(new RenderPass(this.scene, this.camera));
+    c.addPass(new UnrealBloomPass(new THREE.Vector2(1, 1), 0.45, 0.35, 0.9));
+    c.addPass(new OutputPass());
+    c.addPass(this.water);
+    // antialiasing al final, como en la habitación
+    c.addPass(new SMAAPass(1, 1));
+    c.renderToScreen = false;
+    const plane = new THREE.PlaneGeometry(1, 1), quad = new THREE.Scene();
+    for (const p of c.passes)
+      for (const v of Object.values(p).flat()) if (v instanceof THREE.Material) quad.add(new THREE.Mesh(plane, v));
     await r.compileAsync(quad, this.camera);
-    (quad.children[0] as THREE.Mesh).geometry.dispose();
+    plane.dispose();
+    if (this.disposed) return;
+    const before = r.getRenderTarget(), tm = r.toneMapping, te = r.toneMappingExposure;
+    r.toneMapping = THREE.ACESFilmicToneMapping;
+    r.toneMappingExposure = 1;
+    c.setSize(64, 64);
+    c.render(0);
+    r.setRenderTarget(before);
+    r.toneMapping = tm;
+    r.toneMappingExposure = te;
   }
 
   /** Lo último de Discord: redibuja la ficha de s7lver. */
@@ -180,13 +208,9 @@ export class CreditsScene {
     r.toneMapping = THREE.ACESFilmicToneMapping;
     r.toneMappingExposure = 1;
     r.setRenderTarget(null);
-    const c = (this.composer = new EffectComposer(r));
-    c.addPass(new RenderPass(this.scene, this.camera));
-    c.addPass(new UnrealBloomPass(new THREE.Vector2(1, 1), 0.45, 0.35, 0.9));
-    c.addPass(new OutputPass());
-    c.addPass(this.water);
-    // antialiasing al final, como en la habitación
-    c.addPass(new SMAAPass(1, 1));
+    // el compositor ya está montado (y compilado) desde load()
+    const c = this.composer!;
+    c.renderToScreen = true;
     this.resize();
     this.step(0);
     c.render();

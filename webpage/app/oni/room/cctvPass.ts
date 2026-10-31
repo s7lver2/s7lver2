@@ -4,7 +4,9 @@ import * as THREE from 'three';
  * Mientras seguimos dentro de la tele de la CAM 03, todo se ve a través de una cámara de
  * seguridad: grano que hierve, líneas de barrido, una banda de tracking que baja despacio,
  * filas que se desplazan a ratos, aberración, color lavado y viñeteado. Une la imagen del
- * virus con la sala y se apaga al salir de la pantalla.
+ * virus con la sala y se apaga al salir de la pantalla. En la sala (`uVirus`) es la estática del
+ * propio virus, calcada: su grano, su banda y en el mismo sitio (con el mismo reloj, `uClock`), para
+ * que el paso de una a otra no se note.
  */
 export const CctvShader = {
   uniforms: {
@@ -16,18 +18,33 @@ export const CctvShader = {
     // la biblioteca: la máscara del cómic (sin la curva de la lente) y cuánto cede el filtro sobre ella
     tComic: { value: null as THREE.Texture | null },
     uComicCctv: { value: 0 },
+    // 1: la estática del virus (ver Virus.tsx) y no la de la biblioteca; `uClock`, performance.now() en s
+    uVirus: { value: 0 },
+    uClock: { value: 0 },
   },
   vertexShader: /* glsl */ `
     varying vec2 vUv;
     void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
   fragmentShader: /* glsl */ `
     uniform sampler2D tDiffuse, tComic;
-    uniform float uTime, uMove, uAmt, uComicCctv;
+    uniform float uTime, uMove, uAmt, uComicCctv, uVirus, uClock;
     uniform vec2 uRes;
     varying vec2 vUv;
     float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
     void main() {
       if (uAmt <= 0.0) { gl_FragColor = texture2D(tDiffuse, vUv); return; }
+      if (uVirus > 0.5) {
+        // el lienzo del virus (480 × 360, cubriendo la pantalla), en sus píxeles con la y hacia abajo
+        float k = max(uRes.x / 480.0, uRes.y / 360.0);
+        vec2 p = vec2(240.0, 180.0) + (vec2(vUv.x, 1.0 - vUv.y) - 0.5) * uRes / k;
+        float tick = floor(uClock / 0.06), bandY = mod(uClock * 1000.0 / 14.0, 420.0) - 30.0;
+        float inB = step(abs(p.y - bandY), 10.0) * uMove;
+        float sh = inB * floor(hash(vec2(floor(p.y), tick)) * 10.0);
+        vec3 c = texture2D(tDiffuse, vUv + vec2(sh * k / uRes.x, 0.0)).rgb;
+        c += vec3(1.0, 0.5, 0.5) * (hash(floor(p) + tick * 1.7) - 0.5) * uMove * mix(38.0, 90.0, inB) / 255.0;
+        gl_FragColor = vec4(mix(texture2D(tDiffuse, vUv).rgb, c, uAmt), 1.0);
+        return;
+      }
       vec2 uv = vUv;
       float t = floor(uTime * 24.0) * uMove;
       // la banda de tracking baja despacio; dentro, las filas tiemblan

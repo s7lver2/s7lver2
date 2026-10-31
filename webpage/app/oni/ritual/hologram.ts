@@ -153,7 +153,10 @@ export class Hologram {
     this.hits.push(oni);
     // la tela cuelga de la barra; el mástil baja por detrás hasta el suelo y el cordón va de su
     // remate a las puntas de la barra
-    const cloth = new THREE.Mesh(new THREE.PlaneGeometry(FLAG_W, FLAG_H, 16, 48), mat(2));
+    // de las dos caras: al girar entre estatuas, los estandartes de las otras se ven por detrás
+    const cm = mat(2);
+    cm.side = THREE.DoubleSide;
+    const cloth = new THREE.Mesh(new THREE.PlaneGeometry(FLAG_W, FLAG_H, 16, 48), cm);
     cloth.position.set(0, FLAG_TOP - FLAG_H / 2, -0.05);
     cloth.renderOrder = 6;
     const sm = mat(3), rod = (len: number, r: number) => new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 6), sm);

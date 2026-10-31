@@ -58,12 +58,13 @@ void main() {
   float cut = step(0.72, hash(vec2(slot, uSeed))) * step(fract(uTime / 5.0 + uSeed * 13.0), 0.06) * (1.0 - uFlat) * (1.0 - uSteady) * step(uMode, 1.5);
   uv.y = fract(uv.y + cut * uTime * 3.0);
   if (uMode > 0.5 && uMode < 1.5) {
-    // la imagen de cámara de seguridad lleva siempre su estática: banda de tracking y grano
-    float trk = uCctv * smoothstep(0.03, 0.0, abs(uv.y - fract(-uTime * 0.08 + uSeed)));
+    // la imagen de cámara de seguridad lleva siempre su estática: banda de tracking y grano (de
+    // frente, en la llegada, no: ahí la pone el filtro de la sala, igual que la del virus)
+    float trk = uCctv * (1.0 - uFlat) * smoothstep(0.03, 0.0, abs(uv.y - fract(-uTime * 0.08 + uSeed)));
     col = texture2D(tFeed, clamp(uv + vec2(trk * (hash(vec2(floor(uv.y * 300.0), t)) - 0.5) * 0.03, 0.0), 0.0, 1.0)).rgb;
     // con ganancia, una curva que levanta las sombras sin quemar las luces
     if (uGain > 1.0) col = 1.0 - exp(-col * uGain);
-    col += uCctv * ((n - 0.5) * 0.16 + trk * 0.12);
+    col += uCctv * (1.0 - uFlat) * ((n - 0.5) * 0.16 + trk * 0.12);
     // fósforo rojo: terminales, radar y demás, del negro al rojo y el trazo más vivo casi rosa
     if (uMono > 0.5) {
       float l = dot(col, vec3(0.3, 0.59, 0.11)) * 1.25 + (n - 0.5) * 0.08;

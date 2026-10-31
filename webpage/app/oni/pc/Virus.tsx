@@ -66,7 +66,8 @@ export default function Virus({ audio, cctv, reduced, onDone }: { audio: PcAudio
     const t0 = performance.now();
     let raf = 0, nextErr = 0, nErr = 0, nextBait = 0, hdd = 0, ended = false, flashes = 0, nextFlash = 0;
     let cur: Phase = 'bait';
-    const go = (p: Phase) => cur !== p && ((cur = p), setPhase(p));
+    // la fase, también en <html data-virus>: la sala que carga detrás no pinta durante la risa
+    const go = (p: Phase) => cur !== p && ((cur = p), (document.documentElement.dataset.virus = p), setPhase(p));
     const fall: { el: HTMLElement; x: number; y: number; vx: number; vy: number; r: number; vr: number }[] = [];
 
     // el anzuelo: la ventana de passwords.txt se llena de basura que se sale por los bordes
@@ -161,6 +162,7 @@ export default function Virus({ audio, cctv, reduced, onDone }: { audio: PcAudio
     raf = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(raf);
+      delete document.documentElement.dataset.virus;
       clearInterval(hdd);
       audio.stuckBeeps(false);
       audio.detune(0);

@@ -248,9 +248,13 @@ export default function Library({ renderer, canvas, scene, onDone, onSkip }: { r
       if (from === 'bolt') l.skip = undefined;
       const unwake = stop;
       l.onHover = setHovered;
-      stop = still(l, cv, setMeter, () => {
+      stop = still(l, cv, setMeter, async () => {
         stop?.();
         stop = unwake;
+        // el rayo y la carta, con el ritual ya cargado: si aún carga, el tiempo sigue parado hasta que
+        // acabe (cargando a la vez que la carta caía, iba a tirones)
+        await next?.catch(() => {});
+        if (!alive) return;
         setStopped(false);
         l.resume().then(() => {
           if (!alive) return;

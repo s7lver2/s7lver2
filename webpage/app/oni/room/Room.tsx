@@ -80,6 +80,10 @@ function Room({ feeds, live = true, onArrive, onExit }: { feeds: ImageBitmap[]; 
           reduced,
           onReady: async () => {
             if (!alive) return;
+            // los dos primeros fotogramas cuestan (en la GPU, cerca de un segundo cada uno) y la
+            // biblioteca carga justo después: si toca en la risa del virus, esperan a que acabe
+            while (document.documentElement.dataset.virus === 'laugh') await new Promise((r) => setTimeout(r, 100));
+            if (!alive) return;
             // dos fotogramas pintados (las texturas suben a la GPU) y quieta hasta que le toque
             await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
             scene!.paused = true;

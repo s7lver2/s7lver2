@@ -115,17 +115,19 @@ export default function Credits({ renderer, canvas, ready, pose, onShown, onDone
       if (!got) sc.cut();
       shown.current?.();
       stop = drive(sc);
-      sc.onFrame.add(() => cue(hint.current, sc!.idle));
-      // la cena se carga ya, en el mismo renderer: al oscurecerse, sale sin esperar a compilar
-      if (done.current) {
-        const low = window.matchMedia('(pointer: coarse)').matches || !!dev?.has('low');
-        next = import('../supper/supperScene').then(async ({ SupperScene }) => {
+      // la cena se carga en el mismo renderer (al oscurecerse, sale sin esperar a compilar), pero
+      // no mientras la máscara se hunde: cuando acaba la bajada
+      const low = window.matchMedia('(pointer: coarse)').matches || !!dev?.has('low');
+      const prepare = () =>
+        (next ??= import('../supper/supperScene').then(async ({ SupperScene }) => {
           const s = new SupperScene({ renderer: r, reduced, low });
           await s.load();
           return s;
-        });
-        next.catch(() => {});
-      }
+        })).catch(() => {});
+      sc.onFrame.add(() => {
+        cue(hint.current, sc!.idle);
+        if (sc!.entered && done.current && !next) prepare();
+      });
       // al oscurecerse del todo, la cena se queda con el renderer y el lienzo
       sc.onEnd = () => {
         if (!done.current) return;
@@ -133,6 +135,7 @@ export default function Credits({ renderer, canvas, ready, pose, onShown, onDone
         stop?.();
         stop = undefined;
         sc!.halt();
+        if (!next) prepare();
         done.current({ renderer: r, canvas: cv, supper: next });
       };
       if (dev) Object.assign(window, { __credits: sc });

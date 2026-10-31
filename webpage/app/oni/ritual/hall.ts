@@ -130,7 +130,15 @@ export async function makeHall(o: { radius: number; entrance: THREE.Vector3 }) {
     const b = g.boundingBox!, c = b.getCenter(new THREE.Vector3()), k = 1 / Math.max(...b.getSize(new THREE.Vector3()).toArray());
     g.translate(-c.x, -b.min.y, -c.z).scale(k, k, k);
     const r = new THREE.Mesh(g, mesh.material);
-    (r.material as THREE.MeshStandardMaterial).color.multiplyScalar(0.4);
+    // (los materiales se comparten entre rocas: cada uno, una vez) el paquete trae un mapa emisivo
+    // que las hacía brillar solas, blancas como papel: fuera
+    const mat = r.material as THREE.MeshStandardMaterial;
+    if (!mat.userData.dim) {
+      mat.userData.dim = true;
+      mat.color.multiplyScalar(0.4);
+      mat.emissive.setHex(0);
+      mat.emissiveMap = null;
+    }
     r.castShadow = r.receiveShadow = true;
     rocks.push(r);
   });

@@ -145,6 +145,7 @@ export class SurveillanceScene {
     this.cctv = new ShaderPass(CctvShader);
     this.cctv.uniforms.uMove.value = opts.reduced ? 0 : 1;
     this.cctv.uniforms.uAmt.value = 0;
+    this.cctv.uniforms.uVirus.value = 1;
     this.composer.addPass(this.cctv);
 
     this.camera.position.copy(this.camPos);
@@ -808,6 +809,7 @@ export class SurveillanceScene {
     this.last = now;
     for (const sc of this.screens) sc.mat.uniforms.uTime.value = t;
     this.cctv.uniforms.uTime.value = t;
+    this.cctv.uniforms.uClock.value = (now % 588000) / 1000; // el reloj del virus (su banda vuelve cada 5,88 s)
     // rellenos y emisiones a la vista a 10 fps; las que quedan fuera del encuadre, a 2
     if (now - this.lastPaint > 100) {
       this.lastPaint = now;
