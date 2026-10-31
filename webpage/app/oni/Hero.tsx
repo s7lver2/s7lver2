@@ -42,12 +42,16 @@ export default function Hero({ fontFamily }: { fontFamily: string }) {
   // el virus termina en la cámara de seguridad: de ahí se sale a la sala
   const [inRoom, setInRoom] = useState(false);
   const exitPc = useCallback(() => setInRoom(true), []);
+  // la sala se precarga, oculta, desde que empieza el virus
+  const [roomSoon, setRoomSoon] = useState(false);
+  const preRoom = useCallback(() => setRoomSoon(true), []);
   const [inLibrary, setInLibrary] = useState(false);
   // al apagar la sala, la biblioteca se queda con su renderer, su lienzo y su escena
   const [fromRoom, setFromRoom] = useState<RoomExit>();
   const toLibrary = useCallback((e: RoomExit) => {
     setFromRoom(e);
     setInRoom(false);
+    setRoomSoon(false);
     setInLibrary(true);
   }, []);
   // el sujeto se ha ido en su rayo: la biblioteca le pasa su renderer y su lienzo al ritual
@@ -219,7 +223,7 @@ export default function Hero({ fontFamily }: { fontFamily: string }) {
         st = ScrollTrigger.create({
           trigger: section.current,
           start: 'top top',
-          end: '+=520%',
+          end: '+=300%',
           pin: true,
           scrub: 1, // con inercia: la cámara acelera y frena en vez de ir pegada a la rueda
           onUpdate: (s) => {
@@ -263,12 +267,12 @@ export default function Hero({ fontFamily }: { fontFamily: string }) {
   return (
     <section ref={section} className="oni-hero" data-gl={gl} aria-label="Intro">
       {loading && createPortal(<Loader fontFamily={fontFamily} progress={gl === 'pending' ? progress : 1} ready={progress >= 1 || gl !== 'pending'} onEnter={enter} onDone={finish} />, document.body)}
-      {inPc && createPortal(<Computer fontFamily={fontFamily} ctx={sceneRef.current?.audio.listener.context} cctv={cams[2] ?? null} onExit={exitPc} />, document.body)}
-      {inRoom && createPortal(<Room feeds={cams} onArrive={arrive} onExit={toLibrary} />, document.body)}
+      {inPc && createPortal(<Computer fontFamily={fontFamily} ctx={sceneRef.current?.audio.listener.context} cctv={cams[2] ?? null} onVirus={preRoom} onExit={exitPc} />, document.body)}
+      {(roomSoon || inRoom) && createPortal(<Room feeds={cams} live={inRoom} onArrive={arrive} onExit={toLibrary} />, document.body)}
       {inLibrary && createPortal(<Library renderer={fromRoom?.renderer} canvas={fromRoom?.canvas} scene={fromRoom?.scene} onDone={leaveLibrary} onSkip={toEnd} />, document.body)}
       {inRitual && createPortal(<Ritual renderer={fromLibrary?.renderer} canvas={fromLibrary?.canvas} ready={fromLibrary?.ritual} onDone={leaveRitual} onSkip={toEnd} />, document.body)}
       {inCredits && createPortal(<Credits renderer={fromRitual?.renderer} canvas={fromRitual?.canvas} ready={fromRitual?.credits} pose={fromRitual?.pose} onShown={creditsShown} onDone={leaveCredits} onSkip={toEnd} />, document.body)}
-      {inSupper && createPortal(<Supper renderer={fromCredits?.renderer} canvas={fromCredits?.canvas} onShown={supperShown} />, document.body)}
+      {inSupper && createPortal(<Supper renderer={fromCredits?.renderer} canvas={fromCredits?.canvas} ready={fromCredits?.supper} onShown={supperShown} />, document.body)}
       <canvas ref={canvas} className="oni-hero__gl" aria-hidden="true" />
       {/* Texto real: visible si WebGL no arranca, y siempre accesible */}
       <h1 className="oni-hero__title">S7LVER</h1>

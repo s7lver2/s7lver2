@@ -5,14 +5,17 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
  * El acabado de imagen del ritual, la última pasada: grano fino, viñeta, y con la cámara girando
  * deprisa, un desenfoque radial desde el centro, la separación de color hacia los bordes y, en lo
  * más rápido, un fundido a desenfocado.
- * `speed` (0-1) lo pone la escena según lo rápido que gira la cámara.
+ * `speed` (0-1) lo pone la escena según lo rápido que gira la cámara. `uSink` (0-1) funde al color del
+ * agua de los créditos: la cámara cruza el suelo y al otro lado está el agua, sin corte.
  */
+// el negro verdoso del agua de los créditos (MURK), ya en sRGB: esta pasada va después de la de salida
+const MURK_SRGB = new THREE.Color(0x05090b);
 export function makeFx() {
   const pass = new ShaderPass({
-    uniforms: { tDiffuse: { value: null }, uSpeed: { value: 0 }, uTime: { value: 0 }, uFocus: { value: 0 } },
+    uniforms: { tDiffuse: { value: null }, uSpeed: { value: 0 }, uTime: { value: 0 }, uFocus: { value: 0 }, uSink: { value: 0 }, uMurk: { value: MURK_SRGB } },
     vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
     fragmentShader: `
-      uniform sampler2D tDiffuse; uniform float uSpeed, uTime, uFocus; varying vec2 vUv;
+      uniform sampler2D tDiffuse; uniform float uSpeed, uTime, uFocus, uSink; uniform vec3 uMurk; varying vec2 vUv;
       float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
       void main() {
         vec2 d = vUv - 0.5;
@@ -44,6 +47,8 @@ export function makeFx() {
         c *= 1.0 - smoothstep(0.35 - uFocus * 0.1, 0.85, r) * min(0.95, 0.55 + uSpeed * 0.3 + uFocus * 0.3);
         // grano fino, distinto en cada fotograma
         c += (hash(vUv * 1000.0 + fract(uTime * 7.3)) - 0.5) * 0.035;
+        // al cruzar el suelo, la imagen se hunde en el agua: primero los bordes, luego el centro
+        c = mix(c, uMurk, smoothstep(0.0, 1.0, uSink * (1.0 + r)));
         gl_FragColor = vec4(c, 1.0);
       }`,
   });

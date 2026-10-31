@@ -114,22 +114,25 @@ export default function Login({ audio, onDone }: { audio: PcAudio; onDone: (user
     return () => clearTimeout(id);
   }, [step, user]);
 
+  // Enter avanza. Sin <form> ni type="password": así los gestores de contraseñas no lo toman por
+  // un inicio de sesión de verdad (la contraseña ya se pinta con asteriscos)
+  const enter = (e: React.KeyboardEvent) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    audio.key();
+    if (step === 'user') {
+      setStep('pass');
+      setTimeout(() => passIn.current?.focus({ preventScroll: true }));
+    } else if (step === 'pass') setStep('check');
+  };
+  const quiet = { autoComplete: 'off', autoCapitalize: 'off', spellCheck: false, 'data-1p-ignore': '', 'data-lpignore': 'true', 'data-bwignore': '', 'data-form-type': 'other' } as const;
+
   const focusCurrent = () => (step === 'user' ? userIn : passIn).current?.focus({ preventScroll: true });
 
   return (
     <div className="pc-login" onClick={focusCurrent}>
       <canvas ref={canvas} className="pc-login__mask" aria-hidden="true" />
-      <form
-        className="pc-login__tty"
-        onSubmit={(e) => {
-          e.preventDefault();
-          audio.key();
-          if (step === 'user') {
-            setStep('pass');
-            setTimeout(() => passIn.current?.focus({ preventScroll: true }));
-          } else if (step === 'pass') setStep('check');
-        }}
-      >
+      <div className="pc-login__tty">
         <p className="pc-dim">ONI//OS 0.7 (tty1)</p>
         <label className="pc-line">
           <span>login:</span>
@@ -137,7 +140,7 @@ export default function Login({ audio, onDone }: { audio: PcAudio; onDone: (user
             {user}
             {step === 'user' && <i className="pc-caret" />}
           </span>
-          <input ref={userIn} value={user} onChange={(e) => (audio.key(), setUser(e.target.value.slice(0, 24)))} disabled={step !== 'user'} autoComplete="off" autoCapitalize="off" spellCheck={false} aria-label="login" />
+          <input ref={userIn} value={user} onChange={(e) => (audio.key(), setUser(e.target.value.slice(0, 24)))} disabled={step !== 'user'} onKeyDown={enter} {...quiet} aria-label="login" />
         </label>
         {step !== 'user' && (
           <label className="pc-line">
@@ -146,13 +149,12 @@ export default function Login({ audio, onDone }: { audio: PcAudio; onDone: (user
               {'*'.repeat(pass.length)}
               {step === 'pass' && <i className="pc-caret" />}
             </span>
-            <input ref={passIn} type="password" value={pass} onChange={(e) => (audio.key(), setPass(e.target.value.slice(0, 32)))} disabled={step !== 'pass'} autoComplete="off" aria-label="password" />
+            <input ref={passIn} value={pass} onChange={(e) => (audio.key(), setPass(e.target.value.slice(0, 32)))} disabled={step !== 'pass'} onKeyDown={enter} {...quiet} aria-label="password" />
           </label>
         )}
         {(step === 'check' || step === 'ok') && <p className="pc-dim">checking {'.'.repeat(dots)}</p>}
         {step === 'ok' && <p className="pc-hot">access granted. welcome, {user.trim() || 'guest'}</p>}
-        <button type="submit" hidden />
-      </form>
+      </div>
     </div>
   );
 }

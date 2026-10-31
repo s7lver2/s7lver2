@@ -39,4 +39,6 @@ export const CREDITS: { title: string; author: string; url: string; license: 'CC
   { title: 'Tux Penguin', author: 'MysteryPancake', url: 'https://sketchfab.com/3d-models/tux-penguin-0e9e2902a7cb4684b11eb42d6dfc6655', license: 'CC-BY-4.0' },
   { title: 'Environment - Library', author: 'anaroeto', url: 'https://sketchfab.com/3d-models/environment-library-26c53ed3f9a84256a45607917c63c321', license: 'CC-BY-4.0' },
   { title: 'Tesla Bot', author: 'donalleniii', url: 'https://sketchfab.com/3d-models/tesla-bot-a65fe7cd17814149936912300fb8620b', license: 'CC-BY-NC-4.0' },
+  { title: 'Japanese Torii Gate', author: 'Sahir Virmani', url: 'https://sketchfab.com/3d-models/japanese-torii-gate-2027a248de1b4b70985ff97e708fb50d', license: 'CC-BY-4.0' },
+  { title: 'Japanese Lowpoly temple', author: 'carolinefangel', url: 'https://sketchfab.com/3d-models/japanese-lowpoly-temple-cc26af7781344e908d356030e84e4121', license: 'CC-BY-4.0' },
 ];

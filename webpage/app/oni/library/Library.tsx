@@ -5,6 +5,7 @@ import type { RitualScene } from '../ritual/ritualScene';
 import type { SocialC } from '../../lib/content-constants';
 import { LibraryScene } from './libraryScene';
 import { loadPapers, type Paper } from './papers';
+import { shelfmark } from './sheets';
 import ScrollMeter from './ScrollMeter';
 import Osd, { useLatch } from '../Osd';
 
@@ -35,9 +36,9 @@ function devBot(lib: LibraryScene) {
   });
 }
 
-// el scroll que llena el indicador del tiempo parado: unos 2000 px de rueda (cada golpe cuenta 60
+// el scroll que llena el indicador del tiempo parado: unos 900 px de rueda (cada golpe cuenta 60
 // como mucho), y baja a 0.25/s cuando llevas medio segundo sin hacer scroll
-const FILL_PX = 2000, DECAY = 0.25, PER_EVENT = 60;
+const FILL_PX = 900, DECAY = 0.25, PER_EVENT = 60;
 
 /**
  * El tiempo parado: la rueda, el arrastre del dedo y las teclas llenan el indicador (y nada más
@@ -131,16 +132,18 @@ export interface LibraryExit { renderer: THREE.WebGLRenderer; canvas: HTMLCanvas
 export interface PreparedRitual { scene: RitualScene; socials: SocialC[] }
 
 /** El índice del archivo: pasa por los papers uno a uno, con su número, su signatura y su título. */
-function Catalog({ papers }: { papers: Paper[] }) {
-  const [i, setI] = useState(0);
+function Catalog({ papers, hovered }: { papers: Paper[]; hovered: Paper | null }) {
+  const [cycle, setI] = useState(0);
+  // la hoja señalada manda; si no, va pasando
+  const at = hovered ? papers.indexOf(hovered) : -1, i = at >= 0 ? at : cycle;
   useEffect(() => {
-    if (papers.length < 2) return;
+    if (papers.length < 2 || hovered) return;
     const id = setInterval(() => setI((n) => (n + 1) % papers.length), 2800);
     return () => clearInterval(id);
-  }, [papers.length]);
+  }, [papers.length, hovered]);
   const p = papers[i % Math.max(1, papers.length)];
   const pad = (n: number) => String(n).padStart(2, '0');
-  const code = useLatch(p ? `ARC-${(p.venue ?? 'UNPUB').replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8)}-${p.year}` : '', 8);
+  const code = useLatch(p ? shelfmark(p) : '', 8);
   if (!p) return null;
   return (
     <>
@@ -148,7 +151,7 @@ function Catalog({ papers }: { papers: Paper[] }) {
         {pad(i + 1)}/{pad(papers.length)}
       </b>
       <span>{code}</span>
-      <small>{p.placeholder ? 'Classified' : p.title}</small>
+      <small>{p.placeholder ? 'Classified' : hovered ? `${p.title} · click to open ↗` : p.title}</small>
     </>
   );
 }
@@ -161,6 +164,7 @@ export default function Library({ renderer, canvas, scene, onDone, onSkip }: { r
   const [papers, setPapers] = useState<Paper[]>(scene?.papers ?? []);
   const [stopped, setStopped] = useState(false);
   const [meter, setMeter] = useState(0);
+  const [hovered, setHovered] = useState<Paper | null>(null);
   const done = useRef(onDone);
   done.current = onDone;
   // la escena se monta una sola vez: el doble montaje de StrictMode (en desarrollo) no la desecha
@@ -243,6 +247,7 @@ export default function Library({ renderer, canvas, scene, onDone, onSkip }: { r
       const l = lib;
       if (from === 'bolt') l.skip = undefined;
       const unwake = stop;
+      l.onHover = setHovered;
       stop = still(l, cv, setMeter, () => {
         stop?.();
         stop = unwake;
@@ -291,7 +296,7 @@ export default function Library({ renderer, canvas, scene, onDone, onSkip }: { r
       )}
       {!failed && (
         <Osd ch={11} sys="ARCHIVE.SYS" tate="書庫・止まった時間" off={view !== 'inside'}>
-          <Catalog papers={papers} />
+          <Catalog papers={papers} hovered={hovered} />
         </Osd>
       )}
       {stopped && <ScrollMeter value={meter} />}

@@ -76,3 +76,5 @@ next-env.d.ts
 /public/models/supper/*.zip
 /public/models/supper/src/
 /public/models/supper/animations/
+/public/models/ritual/*.zip
+/public/models/ritual/src/

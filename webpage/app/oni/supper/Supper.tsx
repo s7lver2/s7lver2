@@ -6,6 +6,7 @@ import { unlock, when, type Achievement } from '../achievements';
 import { tanker } from '../fonts';
 import dynamic from 'next/dynamic';
 import Foot from './Foot';
+import ScrollCue, { cue } from '../ScrollCue';
 
 // el panel de ajuste, solo en desarrollo: en producción ni se descarga
 const Tuner = process.env.NODE_ENV === 'development' ? dynamic(() => import('./Tuner')) : () => null;
@@ -63,11 +64,12 @@ const stamp = (ms: number) =>
  * su lienzo; sin nada (el atajo ?supper) crea los suyos. Es la última escena: al salir suelta el
  * contexto WebGL. El email y los enlaces son DOM de verdad: sin WebGL se ven igual.
  */
-export default function Supper({ renderer, canvas, onShown }: { renderer?: THREE.WebGLRenderer; canvas?: HTMLCanvasElement; onShown?: () => void }) {
+export default function Supper({ renderer, canvas, ready, onShown }: { renderer?: THREE.WebGLRenderer; canvas?: HTMLCanvasElement; ready?: Promise<SupperScene>; onShown?: () => void }) {
   const root = useRef<HTMLDivElement>(null);
   const track = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const contact = useRef<HTMLDivElement>(null);
+  const hint = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
   const [copied, setCopied] = useState(false);
   // copiar el email es aceptar el reto: el título cambia y ya no vuelve
@@ -154,8 +156,11 @@ export default function Supper({ renderer, canvas, onShown }: { renderer?: THREE
           powerPreference: 'high-performance',
         }));
       if (made) made.setPixelRatio(Math.min(devicePixelRatio, 1.75));
-      sc = new SupperScene({ renderer: r, reduced, low });
-      await sc.load();
+      // de los créditos suele llegar ya cargada; si no (o falló), se carga aquí
+      const got = await ready?.catch(() => undefined);
+      if (!alive) return got?.dispose();
+      sc = got ?? new SupperScene({ renderer: r, reduced, low });
+      if (!got) await sc.load();
       if (!alive) return;
       const el = contact.current!,
         box = root.current!,
@@ -168,6 +173,8 @@ export default function Supper({ renderer, canvas, onShown }: { renderer?: THREE
       sc.onFrame.add(() => {
         const far = sc!.pulled >= 0.9;
         if (far !== !el.hasAttribute('data-wait')) el.toggleAttribute('data-wait', !far), setNear(far);
+        // la rueda aleja la cámara: el indicador, mientras sigas en el primer plano
+        cue(hint.current, sc!.pull < 0.02);
       });
       sc.onHover = (a, x, y) => setHover(a && { a, x, y });
       scene.current = sc;
@@ -195,10 +202,10 @@ export default function Supper({ renderer, canvas, onShown }: { renderer?: THREE
   }, []);
 
   return (
-    <div ref={root} className={`supper ${tanker.variable}`} data-failed={failed || undefined}>
+    <div ref={root} className={`supper ${tanker.variable}`} data-failed={failed || undefined} data-lenis-prevent>
       <div ref={track} className="supper__track">
         <div ref={stage} className="supper__stage">
-          <div ref={contact} className="supper__contact">
+          <div ref={contact} className="supper__contact" data-wait>
             <p key={String(dared)} data-text={dared ? DARED : DARE} data-dared={dared || undefined}>
               {dared ? DARED : DARE}
             </p>
@@ -217,6 +224,7 @@ export default function Supper({ renderer, canvas, onShown }: { renderer?: THREE
               </div>
             </div>
           </div>
+          <ScrollCue ref={hint} />
         </div>
       </div>
       {hover && (
