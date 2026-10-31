@@ -11,6 +11,9 @@
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 html.lenis, html.lenis * { scroll-behavior: auto !important; }
+/* sin barras de scroll: la página es un recorrido, el indicador de cada escena dice cuándo bajar */
+html, .supper { scrollbar-width: none; }
+html::-webkit-scrollbar, .supper::-webkit-scrollbar { display: none; }
 
 /* ── HERO ── */
 .oni-hero {
@@ -172,6 +175,9 @@ html.lenis, html.lenis * { scroll-behavior: auto !important; }
   background: var(--red);
   animation: oni-drop 1.8s cubic-bezier(0.6, 0, 0.3, 1) infinite;
 }
+/* el mismo, en las escenas a pantalla completa (van en un portal, fuera de .oni-root: sus colores aquí) */
+.oni-hint.oni-cue { --ash: oklch(0.62 0.012 40); --red: oklch(0.62 0.245 27); z-index: 3; opacity: 0; transition: opacity 0.8s ease; }
+.oni-hint.oni-cue[data-on] { opacity: 1; }
 @keyframes oni-drop {
   0% { transform: translateY(-12px); }
   70%, 100% { transform: translateY(44px); }

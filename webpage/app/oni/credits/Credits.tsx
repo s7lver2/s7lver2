@@ -6,6 +6,8 @@ import type { ExitPose } from '../ritual/ritualScene';
 import { CLAUDE_CARD, presenceCard } from './card';
 import { watchPresence, type Presence } from './presence';
 import { tanker } from '../fonts';
+import ScrollCue, { cue } from '../ScrollCue';
+import type { SupperScene } from '../supper/supperScene';
 
 // lo que hay que hacer scroll para todo el recorrido (px de rueda), y el tope por evento
 const PX_TOTAL = 2400, PER_EVENT = 120;
@@ -51,10 +53,13 @@ function drive(sc: CreditsScene) {
 export interface CreditsExit {
   renderer: THREE.WebGLRenderer;
   canvas: HTMLCanvasElement;
+  /** La cena, que se carga y se compila mientras corren los créditos. */
+  supper?: Promise<SupperScene>;
 }
 
 export default function Credits({ renderer, canvas, ready, pose, onShown, onDone, onSkip }: { renderer?: THREE.WebGLRenderer; canvas?: HTMLCanvasElement; ready?: Promise<CreditsScene>; pose?: ExitPose; onShown?: () => void; onDone?: (e: CreditsExit) => void; onSkip?: () => void }) {
   const root = useRef<HTMLDivElement>(null);
+  const hint = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
   const [presence, setPresence] = useState<Presence>({ name: 's7lver', status: null, custom: null, activity: null, spotify: null });
   // la escena se monta una sola vez: el doble montaje de StrictMode (en desarrollo) no la desecha
@@ -81,7 +86,7 @@ export default function Credits({ renderer, canvas, ready, pose, onShown, onDone
       clearTimeout(life.current.bin);
       return later;
     }
-    let alive = true, sc: CreditsScene | undefined, made: THREE.WebGLRenderer | undefined, stop: (() => void) | undefined, handed = false;
+    let alive = true, sc: CreditsScene | undefined, made: THREE.WebGLRenderer | undefined, stop: (() => void) | undefined, handed = false, next: Promise<SupperScene> | undefined;
     // Discord en directo: el texto del DOM y la ficha (cuando la escena exista)
     const unwatch = watchPresence((p) => {
       setPresence(p);
@@ -110,6 +115,17 @@ export default function Credits({ renderer, canvas, ready, pose, onShown, onDone
       if (!got) sc.cut();
       shown.current?.();
       stop = drive(sc);
+      sc.onFrame.add(() => cue(hint.current, sc!.idle));
+      // la cena se carga ya, en el mismo renderer: al oscurecerse, sale sin esperar a compilar
+      if (done.current) {
+        const low = window.matchMedia('(pointer: coarse)').matches || !!dev?.has('low');
+        next = import('../supper/supperScene').then(async ({ SupperScene }) => {
+          const s = new SupperScene({ renderer: r, reduced, low });
+          await s.load();
+          return s;
+        });
+        next.catch(() => {});
+      }
       // al oscurecerse del todo, la cena se queda con el renderer y el lienzo
       sc.onEnd = () => {
         if (!done.current) return;
@@ -117,7 +133,7 @@ export default function Credits({ renderer, canvas, ready, pose, onShown, onDone
         stop?.();
         stop = undefined;
         sc!.halt();
-        done.current({ renderer: r, canvas: cv });
+        done.current({ renderer: r, canvas: cv, supper: next });
       };
       if (dev) Object.assign(window, { __credits: sc });
     };
@@ -130,6 +146,7 @@ export default function Credits({ renderer, canvas, ready, pose, onShown, onDone
         stop?.();
         sc?.dispose();
         if (handed) return;
+        next?.then((s) => s.dispose(), () => {});
         const r = renderer ?? made;
         r?.dispose();
         r?.forceContextLoss();
@@ -147,6 +164,7 @@ export default function Credits({ renderer, canvas, ready, pose, onShown, onDone
           Skip to the end
         </button>
       )}
+      {!failed && <ScrollCue ref={hint} />}
       {/* los créditos como texto: ocultos a la vista (están en el holograma) y lo único que queda sin WebGL */}
       <ol className="credits-list" aria-label="Credits">
         {[presenceCard(presence, new Image()), CLAUDE_CARD].map((c) => (

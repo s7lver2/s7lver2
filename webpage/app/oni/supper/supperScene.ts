@@ -37,11 +37,52 @@ const MID = 0.5;
 const ease = (k: number) => k * k * (3 - 2 * k);
 
 // cómo se coge cada arma: tamaño (m de largo) y giro en el hueso de la mano (a ojo, sobre el maniquí)
-const PROPS: Record<Prop, { url: string; len: number; rot: [number, number, number]; at: [number, number, number] }> = {
-  pistol: { url: '/models/supper/pistol.glb', len: 0.2, rot: [Math.PI / 2, 0, Math.PI / 2], at: [0, 0.08, 0.03] },
-  mp5: { url: '/models/supper/mp5.glb', len: 0.6, rot: [0, Math.PI / 2, Math.PI / 2], at: [0, 0.08, 0.04] },
-  grenade: { url: '/models/supper/grenade.glb', len: 0.11, rot: [0, 0, 0], at: [0, 0.09, 0.03] },
+/*
+ * Las armas, en el espacio de su modelo: hacia dónde apunta el cañón, dónde está arriba y por dónde
+ * se cogen (la empuñadura, en fracciones de su caja: 0 el mínimo y 1 el máximo de cada eje). La
+ * pistola viene boca abajo: el cañón hacia -z y la corredera abajo. La granada no se orienta: va en la palma.
+ */
+const PROPS: Record<Prop, { url: string; len: number; muzzle?: THREE.Vector3; up?: THREE.Vector3; grip: [number, number, number] }> = {
+  pistol: { url: '/models/supper/pistol.glb', len: 0.2, muzzle: new THREE.Vector3(0, 0, -1), up: new THREE.Vector3(0, -1, 0), grip: [0.5, 0.75, 0.85] },
+  mp5: { url: '/models/supper/mp5.glb', len: 0.6, muzzle: new THREE.Vector3(1, 0, 0), up: new THREE.Vector3(0, 1, 0), grip: [0.42, 0.15, 0.5] },
+  grenade: { url: '/models/supper/grenade.glb', len: 0.11, grip: [0.5, 0.5, 0.5] },
 };
+
+/**
+ * Pone el arma en la mano derecha, cogida de verdad: la empuñadura en la palma, el cañón siguiendo
+ * los nudillos (algo levantado hacia el pulgar, como al apuntar) y el meñique abajo. Se calcula con
+ * los huesos de la mano del sujeto, así que vale para cualquier pose (va colgada de la mano).
+ */
+function hold(g: THREE.Object3D, p: (typeof PROPS)[Prop], bone: (n: string) => THREE.Object3D) {
+  const at = (n: string) => bone(n).getWorldPosition(new THREE.Vector3());
+  const hand = bone('RightHand'), wrist = at('RightHand'), index = at('RightHandIndex1'), pinky = at('RightHandPinky1');
+  const knuckles = index.clone().add(pinky).multiplyScalar(0.5);
+  const fingers = knuckles.clone().sub(wrist).normalize(), down = pinky.clone().sub(index);
+  down.addScaledVector(fingers, -down.dot(fingers)).normalize();
+  const palm = wrist.clone().lerp(knuckles, 0.6);
+  // la caja del modelo, sin transformar, y su tamaño en el mundo
+  g.position.set(0, 0, 0);
+  g.quaternion.identity();
+  g.scale.setScalar(1);
+  g.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(g), size = box.getSize(new THREE.Vector3()), k = p.len / Math.max(size.x, size.y, size.z);
+  const grip = new THREE.Vector3(...p.grip).multiply(size).add(box.min);
+  const q = new THREE.Quaternion();
+  if (p.muzzle && p.up) {
+    const aim = fingers.clone().addScaledVector(down, -0.3).normalize(), up = down.clone().negate();
+    up.addScaledVector(aim, -up.dot(aim)).normalize();
+    const model = new THREE.Matrix4().makeBasis(p.muzzle, p.up, p.muzzle.clone().cross(p.up));
+    const world = new THREE.Matrix4().makeBasis(aim, up, aim.clone().cross(up));
+    q.setFromRotationMatrix(world.multiply(model.transpose()));
+  }
+  // en el mundo: la empuñadura en la palma; luego, al espacio de la mano
+  const pos = palm.sub(grip.multiplyScalar(k).applyQuaternion(q));
+  const hq = hand.getWorldQuaternion(new THREE.Quaternion()), hk = hand.getWorldScale(new THREE.Vector3()).x;
+  g.quaternion.copy(hq.invert().multiply(q));
+  g.scale.setScalar(k / hk);
+  g.position.copy(hand.worldToLocal(pos));
+  hand.add(g);
+}
 
 export class SupperScene {
   readonly scene = new THREE.Scene();
@@ -125,21 +166,11 @@ export class SupperScene {
       const c = await chair();
       this.chairs[i] = c;
       s.add(c, b.root);
-      if (seat.prop) {
-        const p = PROPS[seat.prop], g = await glb(p.url);
-        const box = new THREE.Box3().setFromObject(g), size = box.getSize(new THREE.Vector3());
-        g.scale.setScalar(p.len / Math.max(size.x, size.y, size.z));
-        g.position.set(...p.at);
-        g.rotation.set(...p.rot);
-        // el hueso de la mano lleva la escala del maniquí: el arma se compensa
-        const hand = b.bone('RightHand');
-        hand.updateWorldMatrix(true, false);
-        const k = new THREE.Vector3().setFromMatrixScale(hand.matrixWorld).x;
-        g.scale.divideScalar(k);
-        g.position.divideScalar(k);
-        hand.add(g);
-      }
       this.place(i, true);
+      if (seat.prop) {
+        b.root.updateMatrixWorld(true);
+        hold(await glb(PROPS[seat.prop].url), PROPS[seat.prop], (n) => b.bone(n));
+      }
       // en móvil y sin movimiento, los doce se quedan quietos y solo el del centro da sombra
       if (i !== CENTER && (low || reduced)) {
         b.freeze(true);

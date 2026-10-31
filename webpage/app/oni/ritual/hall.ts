@@ -1,15 +1,33 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+import { disposeDeep } from '../dispose';
 
 /*
  * La sala del ritual: un santuario en ruinas a las afueras de la ciudad, de noche. Detrás del
- * silencio, un torii de piedra negra con un filo de neón rojo; alrededor del círculo, cinco
- * faroles de piedra (tōrō) con la lumbre roja; más lejos, monolitos rotos que se pierden en la
- * bruma; y en el horizonte, la ciudad. Sin luces de three: los brillos son materiales emisivos,
- * así no cambia ningún shader del resto de la escena.
+ * silencio, un torii lacado con un filo de neón rojo y, al fondo, en la bruma, el templo;
+ * alrededor del círculo, cinco faroles de piedra (tōrō) con la lumbre roja; más lejos, rocas con
+ * musgo medio enterradas; y en el horizonte, la ciudad. La luna, fría y por detrás, recorta el
+ * torii, el templo y las rocas contra el cielo. Todo existe desde la carga: nada recompila después.
  */
+const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+const glb = (n: string) => loader.loadAsync(`/models/ritual/${n}.glb`).then((g) => g.scene);
+
+// encaja un modelo: su lado más largo en horizontal mide `w` metros y apoya en el suelo
+function fit(o: THREE.Object3D, w: number) {
+  o.updateMatrixWorld(true);
+  const b = new THREE.Box3().setFromObject(o), sz = b.getSize(new THREE.Vector3()), k = w / Math.max(sz.x, sz.z);
+  o.scale.multiplyScalar(k);
+  const c = b.getCenter(new THREE.Vector3());
+  o.position.set(-c.x * k, -b.min.y * k, -c.z * k);
+  const g = new THREE.Group();
+  g.add(o);
+  return g;
+}
 const NEON = new THREE.Color(6, 0.14, 0.08);
 
-export function makeHall(o: { radius: number; entrance: THREE.Vector3 }) {
+export async function makeHall(o: { radius: number; entrance: THREE.Vector3 }) {
+  const [toriiModel, templeModel, stoneModel] = await Promise.all([glb('torii'), glb('temple'), glb('stones')]);
   const group = new THREE.Group();
   const stone = new THREE.MeshStandardMaterial({ color: 0x0c0c0e, roughness: 0.85, metalness: 0 });
   const neon = new THREE.MeshBasicMaterial({ color: NEON, toneMapped: false });
@@ -21,33 +39,55 @@ export function makeHall(o: { radius: number; entrance: THREE.Vector3 }) {
     return x;
   };
 
-  // el torii, detrás de la figura del silencio (al fondo del primer plano), de cara al círculo
-  const torii = new THREE.Group();
+  // el torii, detrás de la figura del silencio (al fondo del primer plano), de cara al círculo: el
+  // modelo viene con el ancho a lo largo de z; se gira para que cruce el paso
+  toriiModel.rotation.y = Math.PI / 2;
+  toriiModel.traverse((m) => {
+    const mesh = m as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    mesh.castShadow = mesh.receiveShadow = true;
+    // la laca, apagada: de noche casi negra, con el rojo justo para leerse con la luna
+    const mat = mesh.material as THREE.MeshStandardMaterial;
+    mat.color.multiplyScalar(0.55);
+    mat.envMapIntensity = 0.4;
+  });
+  const torii = fit(toriiModel, 6.2);
+  const tb = new THREE.Box3().setFromObject(torii), th = tb.max.y;
   for (const s of [-1, 1]) {
-    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.23, 4.6, 20), stone);
-    post.position.set(s * 2.1, 2.3, 0);
-    post.castShadow = true;
-    torii.add(post);
     // el neón por la cara de dentro de cada pilar
-    const strip = box(0.025, 3.9, 0.025, neon);
-    strip.position.set(s * 1.9, 2.05, 0);
+    const strip = box(0.025, th * 0.66, 0.025, neon);
+    strip.position.set(s * 1.36, th * 0.36, 0.2);
     torii.add(strip);
   }
-  const kasagi = box(5.8, 0.3, 0.5);
-  kasagi.position.y = 4.75;
-  const shimaki = box(5.2, 0.2, 0.38);
-  shimaki.position.y = 4.5;
-  const nuki = box(4.8, 0.18, 0.22);
-  nuki.position.y = 3.75;
-  const gaku = box(0.18, 0.55, 0.16);
-  gaku.position.y = 4.1;
-  const lip = box(5.0, 0.025, 0.025, neon);
-  lip.position.set(0, 4.39, 0.2);
-  torii.add(kasagi, shimaki, nuki, gaku, lip);
+  const lip = box(2.72, 0.025, 0.025, neon);
+  lip.position.set(0, th * 0.69, 0.2);
+  torii.add(lip);
+  // y lo que el neón alumbra: la laca de dentro de los pilares y el suelo bajo el arco, en rojo
+  const glow = new THREE.PointLight(0xff2a1a, 9, 6, 1.6);
+  glow.position.set(0, th * 0.55, 0.9);
+  torii.add(glow);
   const dir = o.entrance.clone().setY(0).normalize();
   torii.position.copy(dir).multiplyScalar(-9.5);
   torii.rotation.y = Math.atan2(dir.x, dir.z);
   group.add(torii);
+
+  // el templo, al fondo del torii y en la bruma: una silueta oscura con el tejado cortando el cielo
+  templeModel.traverse((m) => {
+    const mesh = m as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const mat = mesh.material as THREE.MeshStandardMaterial;
+    mat.color.multiplyScalar(0.35);
+    mat.envMapIntensity = 0.2;
+  });
+  const temple = fit(templeModel, 15);
+  temple.position.copy(dir).multiplyScalar(-21);
+  temple.rotation.y = Math.atan2(dir.x, dir.z) + Math.PI / 2;
+  group.add(temple);
+
+  // la luna: fría, alta y por detrás del templo, sin sombras; perfila lo que queda contra el cielo
+  const moon = new THREE.DirectionalLight(0x8ea6d8, 0.9);
+  moon.position.copy(dir).multiplyScalar(-30).setY(18);
+  group.add(moon, moon.target);
 
   // los faroles, entre las puntas de la estrella, algo por fuera
   const roof = new THREE.ConeGeometry(0.34, 0.2, 4);
@@ -77,20 +117,34 @@ export function makeHall(o: { radius: number; entrance: THREE.Vector3 }) {
     group.add(l);
   }
 
-  // los monolitos rotos, lejos y en la bruma, con alguna veta de neón
+  // las rocas, lejos y en la bruma, medio enterradas: las cinco del paquete, cada una con su musgo
   let seed = 7;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  for (let i = 0; i < 11; i++) {
-    const a = (i / 11) * Math.PI * 2 + rnd() * 0.3, r = 11 + rnd() * 3, h = 3 + rnd() * 6;
-    const m = box(0.6 + rnd() * 0.5, h, 0.6 + rnd() * 0.5);
-    m.position.set(Math.sin(a) * r, h / 2 - 0.2, Math.cos(a) * r);
-    m.rotation.set((rnd() - 0.5) * 0.12, rnd() * 3, (rnd() - 0.5) * 0.12);
+  const rocks: THREE.Object3D[] = [];
+  stoneModel.updateMatrixWorld(true);
+  stoneModel.traverse((m) => {
+    const mesh = m as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const g = mesh.geometry.clone().applyMatrix4(mesh.matrixWorld);
+    g.computeBoundingBox();
+    const b = g.boundingBox!, c = b.getCenter(new THREE.Vector3()), k = 1 / Math.max(...b.getSize(new THREE.Vector3()).toArray());
+    g.translate(-c.x, -b.min.y, -c.z).scale(k, k, k);
+    const r = new THREE.Mesh(g, mesh.material);
+    (r.material as THREE.MeshStandardMaterial).color.multiplyScalar(0.4);
+    r.castShadow = r.receiveShadow = true;
+    rocks.push(r);
+  });
+  const dirA = Math.atan2(dir.x, dir.z);
+  for (let i = 0; i < 18; i++) {
+    const a = (i / 18) * Math.PI * 2 + rnd() * 0.25;
+    // por detrás del torii no: ahí se ve el templo
+    if (Math.abs(((a - dirA - Math.PI + Math.PI * 3) % (Math.PI * 2)) - Math.PI) < 0.35) continue;
+    const rr = 9.5 + rnd() * 5, size = 1.4 + rnd() * 2.6;
+    const m = rocks[(rnd() * rocks.length) | 0].clone();
+    m.scale.setScalar(size);
+    m.position.set(Math.sin(a) * rr, -size * 0.12, Math.cos(a) * rr);
+    m.rotation.set((rnd() - 0.5) * 0.25, rnd() * Math.PI * 2, (rnd() - 0.5) * 0.25);
     group.add(m);
-    if (rnd() < 0.45) {
-      const v = box(0.02, h * 0.7, 0.02, neon);
-      v.position.set(0.31, -h * 0.1, 0.31);
-      m.add(v);
-    }
   }
 
   // la ciudad en el horizonte: siluetas con ventanas sueltas, por encima de la bruma
@@ -123,13 +177,12 @@ export function makeHall(o: { radius: number; entrance: THREE.Vector3 }) {
     /** Cuánto se apaga el fondo (0-1): en las estatuas, para que manden la estatua y sus estandartes. */
     dim(k: number) {
       neon.color.copy(neon0).multiplyScalar(1 - 0.75 * k);
+      glow.intensity = 9 * (1 - 0.75 * k);
       ember.color.copy(ember0).multiplyScalar(1 - 0.6 * k);
       cm.opacity = 0.85 * (1 - 0.7 * k);
     },
     dispose() {
-      group.traverse((m) => (m as THREE.Mesh).geometry?.dispose());
-      for (const m of [stone, neon, ember, city.material]) m.dispose();
-      t.dispose();
+      disposeDeep(group);
     },
   };
 }

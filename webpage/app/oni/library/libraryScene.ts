@@ -140,6 +140,9 @@ export class LibraryScene {
   private shotAt = -1;
   private stillPass?: ShaderPass;
   private frenzy?: { next: number; n: number; max: number };
+  // los libros de verdad de las dos estanterías donde busca: uno a uno (instanciados), para que los
+  // que saca salgan de su hueco y no de la nada
+  private shelved: { mesh: THREE.InstancedMesh; i: number; size: [number, number, number]; m: THREE.Matrix4; taken?: boolean }[] = [];
   private sheets: Sheet[] = [];
   /** Cuándo se para el tiempo: las hojas que salen en el frenesí llegan a su sitio justo entonces. */
   private freezeAt = 0;
@@ -211,6 +214,8 @@ export class LibraryScene {
     ]);
     if (this.disposed) return;
     const s = this.scene;
+    // a trozos, soltando el hilo entre uno y otro: se carga mientras la sala sigue en pantalla
+    const breathe = () => new Promise((r) => setTimeout(r));
 
     // la carcasa, con su suelo cambiado por uno de tablas con relieve
     shell.traverse((o) => {
@@ -233,7 +238,9 @@ export class LibraryScene {
     floor.material.userData.env = 0.4;
     s.add(floor);
 
+    await breathe();
     this.stacks(shelf);
+    await breathe();
     this.reading(table, chair, desklamp);
     // dos lámparas de techo colgando en el hueco de la entreplanta, apagadas: solo siluetas
     ceilinglamp.traverse((o) => {
@@ -279,13 +286,16 @@ export class LibraryScene {
     sb.rotation.y = Math.PI;
     s.add(sb);
 
+    await breathe();
     this.cardKit = makeCard(this.subject.face!, this.renderer);
     this.card.add(this.cardKit.mesh);
     // la carta espera oculta hasta que la saca
     this.card.visible = false;
     s.add(this.card);
     this.lights();
+    await breathe();
     this.placePapers();
+    await breathe();
     this.scene.environment = this.reflections();
     s.traverse((o) => {
       for (const m of ([] as THREE.Material[]).concat((o as THREE.Mesh).material ?? []))
@@ -294,6 +304,7 @@ export class LibraryScene {
     // compilar ya (también lo oculto: la carta, la estática, las hojas), para que el primer fotograma
     // de la grabación no se trabe; poco a poco, que mientras tanto la sala sigue pintando
     await compileGently(this.renderer, s, this.cctvCam, (fn) => this.lit(fn));
+    await breathe();
     // y un fotograma de la grabación, que compila lo que solo se ve pintando (los mapas de sombra),
     // con el cómic encendido para que su máscara y su pasada también estén ya compiladas
     this.comic.amount = 1;
@@ -330,9 +341,12 @@ export class LibraryScene {
       mats.push(new THREE.Matrix4().compose(new THREE.Vector3(x + (rand() - 0.5) * 0.05, 0, z + (rand() - 0.5) * 0.04), q, new THREE.Vector3(1, 1, 1)));
     };
     const zA = AISLE_Z - AISLE_W / 2 - SHELF_D / 2, zB = AISLE_Z + AISLE_W / 2 + SHELF_D / 2;
+    // las dos estanterías de delante de él (la 1 y la 2 de la fila del pasillo): sus libros van sueltos
+    const real: number[] = [];
     // el pasillo y, espalda con espalda, las filas de detrás; luego un pasillo más a cada lado
     for (let i = 0; i < 6; i++) {
       const x = AISLE_X0 + SHELF_W * (i + 0.5);
+      if (i === 1 || i === 2) real.push(mats.length);
       put(x, zA, 1);
       put(x, zB, -1);
       put(x, zA - SHELF_D, -1);
@@ -374,6 +388,7 @@ export class LibraryScene {
     if (!this.spine) return;
     const r2 = seeded(11);
     const front = zA + SHELF_D / 2 - 0.08;
+    const gaps: [number, number, number][] = []; // [balda, desde x, hasta x]: ahí no va un libro de la hilera
     for (const [lvl, x0] of [[3, -5.1], [3, -4.62], [4, -4.9], [2, -4.4], [4, -4.25], [3, -3.95]] as const) {
       const w = 0.035 + r2() * 0.03, h = 0.24 + r2() * 0.08, d = 0.17 + r2() * 0.05;
       const b = makeBook(this.spine, [w, h, d]);
@@ -381,7 +396,82 @@ export class LibraryScene {
       b.rotation.z = (r2() - 0.5) * 0.12;
       this.scene.add(b);
       this.loose.push(b);
+      gaps.push([lvl, x0 - w / 2 - 0.012, x0 + w / 2 + 0.012]);
     }
+    this.fillShelves(insts, real, gaps);
+  }
+
+  /*
+   * Los lomos del modelo son un bloque por balda (una caja con la foto de los libros). En las dos
+   * estanterías de delante de él, el bloque se quita y su sitio se llena de libros uno a uno, de
+   * alturas y gruesos distintos, en unas pocas mallas instanciadas.
+   */
+  private fillShelves(insts: THREE.InstancedMesh[], real: number[], gaps: [number, number, number][]) {
+    const r = seeded(31), zero = new THREE.Matrix4().makeScale(0, 0, 0), m = new THREE.Matrix4(), box = new THREE.Box3();
+    const BASE: [number, number, number] = [0.045, 0.28, 0.2];
+    const kinds = Array.from({ length: 6 }, () => makeBook(this.spine!, BASE));
+    const slots: { kind: number; m: THREE.Matrix4; size: [number, number, number]; tint: number }[] = [];
+    for (const inst of insts) {
+      const name = (inst.material as THREE.Material).name;
+      if (!name.includes('lomos') && !name.includes('hojas')) continue;
+      inst.geometry.computeBoundingBox();
+      for (const i of real) {
+        inst.getMatrixAt(i, m);
+        if (name.includes('lomos')) {
+          box.copy(inst.geometry.boundingBox!).applyMatrix4(m);
+          const lvl = SHELF_LEVELS.findIndex((y) => Math.abs(y - box.min.y) < 0.12);
+          const H = box.max.y - box.min.y, D = box.max.z - box.min.z;
+          for (let x = box.min.x; ; ) {
+            const w = 0.028 + r() * 0.04;
+            if (x + w > box.max.x) break;
+            const cx = x + w / 2;
+            x += w + 0.001;
+            if (gaps.some(([l, a, b]) => l === lvl && cx > a && cx < b)) continue;
+            const h = H * (0.74 + r() * 0.2), d = D * (0.9 + r() * 0.08);
+            const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), (r() - 0.5) * 0.03);
+            const at = new THREE.Vector3(cx, box.min.y + h / 2 + 0.002, box.max.z - d / 2 - 0.004);
+            slots.push({ kind: (r() * kinds.length) | 0, m: new THREE.Matrix4().compose(at, q, new THREE.Vector3(w / BASE[0], h / BASE[1], d / BASE[2])), size: [w, h, d], tint: 0.72 + r() * 0.45 });
+          }
+        }
+        inst.setMatrixAt(i, zero);
+      }
+      inst.instanceMatrix.needsUpdate = true;
+      inst.computeBoundingSphere();
+    }
+    const c = new THREE.Color();
+    kinds.forEach((k, kind) => {
+      const mine = slots.filter((s) => s.kind === kind);
+      const mesh = new THREE.InstancedMesh(k.geometry, k.material, mine.length);
+      mine.forEach((s, i) => {
+        mesh.setMatrixAt(i, s.m);
+        mesh.setColorAt(i, c.setScalar(s.tint));
+        this.shelved.push({ mesh, i, size: s.size, m: s.m });
+      });
+      mesh.castShadow = mesh.receiveShadow = true;
+      mesh.computeBoundingSphere();
+      this.scene.add(mesh);
+    });
+  }
+
+  /** Saca de su hueco un libro de la estantería, cerca de x y entre esas alturas: el libro, ya suelto. */
+  private pull(x: number, y0: number, y1: number) {
+    const p = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3();
+    const near = this.shelved.filter((b) => {
+      if (b.taken) return false;
+      p.setFromMatrixPosition(b.m);
+      return Math.abs(p.x - x) < 0.35 && p.y > y0 && p.y < y1;
+    });
+    const b = near[(Math.random() * near.length) | 0];
+    if (!b || !this.spine) return null;
+    b.taken = true;
+    b.mesh.setMatrixAt(b.i, new THREE.Matrix4().makeScale(0, 0, 0));
+    b.mesh.instanceMatrix.needsUpdate = true;
+    const book = makeBook(this.spine, b.size);
+    b.m.decompose(p, q, sc);
+    book.position.copy(p);
+    book.quaternion.copy(q);
+    this.scene.add(book);
+    return book;
   }
 
   // al fondo del pasillo, la zona de lectura: mesas largas con sus lámparas encendidas
@@ -642,7 +732,8 @@ export class LibraryScene {
     f.next = this.t + 0.28 + Math.random() * 0.12;
     if (f.n++ >= f.max) return;
     const lvl = 2 + ((Math.random() * 3) | 0), front = AISLE_Z - AISLE_W / 2 - 0.08;
-    const book = this.loose.shift() ?? makeBook(this.spine, [0.035 + Math.random() * 0.03, 0.24 + Math.random() * 0.08, 0.17 + Math.random() * 0.05]);
+    const hand = this.subject.root.position.x + 0.07;
+    const book = this.loose.shift() ?? this.pull(hand, SHELF_LEVELS[2], SHELF_LEVELS[5]) ?? makeBook(this.spine, [0.035 + Math.random() * 0.03, 0.24 + Math.random() * 0.08, 0.17 + Math.random() * 0.05]);
     if (!book.parent) {
       // al alcance de su mano derecha (mira a la balda: su derecha es +x)
       book.position.set(this.subject.root.position.x - 0.2 + Math.random() * 0.55, SHELF_LEVELS[lvl] + 0.15, front);
@@ -735,7 +826,10 @@ export class LibraryScene {
   /** La hoja señalada se aclara y se acerca 4 cm a la cámara; lo demás sigue quieto. */
   hover(paper: Paper | null) {
     for (const s of this.sheets) s.want = s.paper === paper ? 1 : 0;
+    this.onHover?.(paper);
   }
+  /** La hoja que se señala (o null): el rótulo del archivo la enseña. */
+  onHover?: (paper: Paper | null) => void;
 
   private hoverStep(dt: number) {
     const k = Math.min(1, dt / 0.2), toward = new THREE.Vector3();
@@ -744,8 +838,8 @@ export class LibraryScene {
       s.h += Math.sign(s.want - s.h) * Math.min(Math.abs(s.want - s.h), k);
       if (!this.frozen) continue;
       toward.copy(this.camera.position).sub(s.base).normalize();
-      s.mesh.position.copy(s.base).addScaledVector(toward, 0.04 * s.h);
-      (s.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.03 + 0.25 * s.h;
+      s.mesh.position.copy(s.base).addScaledVector(toward, 0.06 * s.h);
+      (s.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.08 + 0.4 * s.h;
     }
   }
 

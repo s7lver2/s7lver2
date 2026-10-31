@@ -7,6 +7,7 @@ import { hasLink, loadSocials } from './socials';
 import { POSES } from './poses';
 import type { Hologram } from './hologram';
 import type { PreparedRitual } from '../library/Library';
+import ScrollCue, { cue } from '../ScrollCue';
 import Osd, { useLatch } from '../Osd';
 import type { CreditsScene } from '../credits/creditsScene';
 
@@ -111,6 +112,7 @@ function Station({ n, pair }: { n: number; pair: (SocialC | null)[] }) {
 
 export default function Ritual({ renderer, canvas, ready, onDone, onSkip }: { renderer?: THREE.WebGLRenderer; canvas?: HTMLCanvasElement; ready?: Promise<PreparedRitual>; onDone?: (exit: RitualExit) => void; onSkip?: () => void }) {
   const root = useRef<HTMLDivElement>(null);
+  const hint = useRef<HTMLDivElement>(null);
   const own = useRef<HTMLCanvasElement>(null);
   const [failed, setFailed] = useState(false);
   const [socials, setSocials] = useState<SocialC[]>([]);
@@ -163,18 +165,19 @@ export default function Ritual({ renderer, canvas, ready, onDone, onSkip }: { re
       rit.takeOver(cv);
       scene.current = rit;
       stop = drive(rit, cv);
-      // arriba del todo arranca el final: mientras se reproduce, los créditos se cargan y se
-      // compilan en el mismo renderer; en el golpe de la máscara se les pasa el lienzo
+      // los créditos se cargan y se compilan ya, en el mismo renderer, con el primer plano quieto
+      // (antes se cargaban durante el final y el final iba a tirones); en el golpe de la máscara se
+      // les pasa el lienzo
+      next = import('../credits/creditsScene').then(async ({ CreditsScene }) => {
+        const c = new CreditsScene({ renderer: r, reduced });
+        await c.load();
+        return c;
+      });
+      next.catch(() => {});
       rit.onStation = (n) => setStation({ n, pair: n >= 1 && n <= 4 ? rit!.holograms.slice(n * 2 - 2, n * 2).map((h) => h.social) : [] });
       rit.onSummit = () => {
         stop?.();
         setEnding(true);
-        next = import('../credits/creditsScene').then(async ({ CreditsScene }) => {
-          const c = new CreditsScene({ renderer: r, reduced });
-          await c.load();
-          return c;
-        });
-        next.catch(() => {});
         rit!.finale().then(() => {
           if (!alive) return;
           // el renderer y el lienzo siguen vivos: se los quedan los créditos, que siguen el plano
@@ -182,6 +185,7 @@ export default function Ritual({ renderer, canvas, ready, onDone, onSkip }: { re
           done.current?.({ renderer: r, canvas: cv, credits: next, pose: rit!.exit });
         });
       };
+      rit.onFrame.add(() => cue(hint.current, rit!.idle));
       if (dev) Object.assign(window, { __ritual: rit, __poses: POSES });
       // desarrollo: ?ritual&free da una cámara libre para mirar la escena, sin secuencia
       if (dev?.has('free')) {
@@ -228,6 +232,7 @@ export default function Ritual({ renderer, canvas, ready, onDone, onSkip }: { re
           {station.n >= 1 && station.n <= 4 && <Station key={station.n} n={station.n} pair={station.pair} />}
         </Osd>
       )}
+      {!failed && <ScrollCue ref={hint} />}
       {/* las redes como enlaces: ocultas salvo con el teclado, y lo único que queda sin WebGL */}
       <nav className="ritual-socials" aria-label="Social">
         <ul>

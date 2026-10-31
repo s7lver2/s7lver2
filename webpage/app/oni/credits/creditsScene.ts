@@ -46,6 +46,10 @@ export class CreditsScene {
   readonly cards = new THREE.Group();
   /** El scroll: progreso (0-1) y adónde va. */
   p = 0;
+  /** Ya entró y aún no has hecho scroll: el indicador se enciende. */
+  get idle() {
+    return this.since > 1.8 && this.aim < 0.02;
+  }
   aim = 0;
   t = 0;
   /** Al oscurecerse del todo (una vez). */
@@ -221,6 +225,9 @@ export class CreditsScene {
     // la máscara se hunde con el scroll y, sin movimiento reducido, se balancea con el agua
     // entra desde arriba frenando (el agua la para) y, con el scroll, se hunde
     const e = reduced ? 1 : Math.min(1, this.since / ENTER), entry = ENTRY * (1 - e) * (1 - e) * (1 - e);
+    // entra desde el agua turbia en la que acabó el ritual: la bruma se abre en un segundo
+    const clear = Math.min(1, this.since / 1.1);
+    (this.scene.fog as THREE.FogExp2).density = 0.35 + (reduced ? 0 : 7 * (1 - clear) * (1 - clear));
     const s = Math.min(1, this.p / SINK_END), sink = s * s * (3 - 2 * s), base = -DEPTH * sink, y = base + entry;
     // el balanceo entra poco a poco, para no mover el primer fotograma
     const sway = reduced ? 0 : e;

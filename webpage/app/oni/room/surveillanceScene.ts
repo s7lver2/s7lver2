@@ -102,6 +102,8 @@ export class SurveillanceScene {
   approach = 0;
   private near = 0;
   introDone = false;
+  /** Precargada mientras el virus sigue en pantalla: no pinta hasta que le toca. */
+  paused = false;
   /** Con el mando en la mano, la cámara ya no la lleva el scroll sino los canales. */
   holding = false;
   private aiming = false;
@@ -239,13 +241,20 @@ export class SurveillanceScene {
     // la simplificación de antennatv dejó normales degeneradas: se rehacen
     byModel.antennatv.traverse((o) => (o as THREE.Mesh).isMesh && (o as THREE.Mesh).geometry.computeVertexNormals());
     const slots = layoutWall(this.opts.channels.length, 7, missing);
-    for (const slot of slots) this.addTv(byModel[slot.model], slot.model, slot.position, slot.rotY, slot.scale);
+    // montar la sala son ~2 s de trabajo seguido: a trozos, soltando el hilo entre uno y otro, para
+    // que lo que haya en pantalla (el virus, que la está precargando) no se congele
+    const breathe = () => new Promise((r) => setTimeout(r));
+    for (const slot of slots) {
+      this.addTv(byModel[slot.model], slot.model, slot.position, slot.rotY, slot.scale);
+      await breathe();
+    }
     this.opts.channels.forEach((ch, i) => this.screens[i] && (this.screens[i].channel = ch));
 
     const xs = slots.map((s) => s.position[0]);
     // la sala es más ancha que el muro: a los lados se ve la pared del fondo con sus ventanas
     const x0 = Math.min(-5, Math.min(...xs) - 2.4), x1 = Math.max(5, Math.max(...xs) + 2.4);
     this.buildRoom(x0, x1);
+    await breathe();
     const deskW = 4.2;
     this.lights.push(buildDesk(this.scene, deskW, DESK_Y, DESK_Z));
     shelving(this.scene, slots, ROOM_H);
@@ -365,13 +374,16 @@ export class SurveillanceScene {
     this.wall = makeWallShows(this.camera.aspect);
     this.aimWall();
 
+    await breathe();
     // las cámaras de la habitación, reveladas igual que en el virus, con su rótulo
-    this.cams = this.opts.feeds.map((b) => {
+    this.cams = [];
+    for (const b of this.opts.feeds) {
       const canvas = Object.assign(document.createElement('canvas'), { width: CCTV_W, height: CCTV_H });
       const tex = new THREE.CanvasTexture(canvas);
       tex.colorSpace = THREE.SRGBColorSpace;
-      return { canvas, base: gradeCctv(b), tex };
-    });
+      this.cams.push({ canvas, base: gradeCctv(b), tex });
+      await breathe();
+    }
     this.stampCams();
     this.setDisplay('live');
 
@@ -791,6 +803,7 @@ export class SurveillanceScene {
   private last = performance.now();
   private frame = (now: number) => {
     this.raf = requestAnimationFrame(this.frame);
+    if (this.paused) return void (this.last = now);
     const t = (now - this.t0) / 1000, dt = Math.min(0.1, (now - this.last) / 1000);
     this.last = now;
     for (const sc of this.screens) sc.mat.uniforms.uTime.value = t;

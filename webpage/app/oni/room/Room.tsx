@@ -22,7 +22,7 @@ export interface RoomExit { renderer: import('three').WebGLRenderer; canvas: HTM
 const ch = (n: number) => `CH ${String(n).padStart(2, '0')}`;
 const KEYS: Record<string, RemoteButton> = { ArrowUp: 'chUp', ArrowDown: 'chDown', Enter: 'ok', s: 'source', S: 'source' };
 
-function Room({ feeds, onArrive, onExit }: { feeds: ImageBitmap[]; onArrive: () => void; onExit?: (e: RoomExit) => void }) {
+function Room({ feeds, live = true, onArrive, onExit }: { feeds: ImageBitmap[]; live?: boolean; onArrive: () => void; onExit?: (e: RoomExit) => void }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [ready, setReady] = useState(false);
@@ -52,6 +52,16 @@ function Room({ feeds, onArrive, onExit }: { feeds: ImageBitmap[]; onArrive: () 
   const cur = useRef(-1);
   const digits = useRef('');
   const timers = useRef({ digit: 0, osd: 0, back: 0 });
+  // se monta en cuanto empieza el virus, para cargar y compilar mientras tanto (antes, todo eso
+  // pasaba con la estática en pantalla y la congelaba): entra cuando el virus termina
+  const gate = useRef<{ open: Promise<void>; let: () => void }>();
+  if (!gate.current) {
+    let open!: () => void;
+    gate.current = { open: new Promise<void>((r) => (open = r)), let: () => open() };
+  }
+  const liveRef = useRef(live);
+  liveRef.current = live;
+  useEffect(() => void (live && gate.current!.let()), [live]);
 
   useEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -68,20 +78,32 @@ function Room({ feeds, onArrive, onExit }: { feeds: ImageBitmap[]; onArrive: () 
           channels: chs,
           feeds,
           reduced,
-          onReady: () => {
+          onReady: async () => {
             if (!alive) return;
-            if (process.env.NODE_ENV === 'development') (window as unknown as { __sala: unknown }).__sala = scene;
+            // dos fotogramas pintados (las texturas suben a la GPU) y quieta hasta que le toque
+            await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+            scene!.paused = true;
             const parts = Promise.all([import('../library/libraryScene'), import('../library/papers').then((m) => m.loadPapers()), import('../library/Library')]);
+            const lib = () => {
+              library.current ??= parts.then(async ([{ LibraryScene }, papers]) => {
+                const l = new LibraryScene({ renderer: scene!.renderer, papers, reduced, ctx: sound().ctx });
+                await l.load();
+                return l;
+              });
+              library.current.catch(() => {});
+            };
+            // con el virus aún en pantalla, la biblioteca también se carga ya (sus tirones caen en el
+            // virus). Si la sala ha tardado y ya toca entrar, espera a que termine la entrada: a la vez
+            // que ella, la entrada iba a tirones (y luego coger el mando, también)
+            const early = !liveRef.current;
+            if (early) lib();
+            await gate.current!.open;
+            if (!alive) return;
+            scene!.paused = false;
+            if (process.env.NODE_ENV === 'development') (window as unknown as { __sala: unknown }).__sala = scene;
             const intro = scene!.startIntro();
             intro.then(() => alive && !sceneRef.current!.holding && sceneRef.current!.approach < 0.03 && setHint(true));
-            // la biblioteca se descarga ya, pero se monta y se compila con la entrada terminada: a la
-            // vez que ella, en Firefox (que compila en el hilo principal) la entrada iba a tirones
-            library.current = Promise.all([parts, intro]).then(async ([[{ LibraryScene }, papers]]) => {
-              const lib = new LibraryScene({ renderer: scene!.renderer, papers, reduced, ctx: sound().ctx });
-              await lib.load();
-              return lib;
-            });
-            library.current.catch(() => {});
+            if (!early) intro.then(lib);
             // un fotograma pintado antes de fundirse encima del virus
             requestAnimationFrame(() => requestAnimationFrame(() => {
               setReady(true);
@@ -89,15 +111,17 @@ function Room({ feeds, onArrive, onExit }: { feeds: ImageBitmap[]; onArrive: () 
               setTimeout(() => setHud(false), reduced ? 600 : 2600);
             }));
           },
-          onError: () => {
+          onError: () => gate.current!.open.then(() => {
             if (!alive) return;
             setFailed(true);
             arrive.current();
-          },
+          }),
         });
       } catch {
-        setFailed(true);
-        arrive.current();
+        gate.current!.open.then(() => {
+          setFailed(true);
+          arrive.current();
+        });
       }
     });
     const t = timers.current;
@@ -265,7 +289,7 @@ function Room({ feeds, onArrive, onExit }: { feeds: ImageBitmap[]; onArrive: () 
   const Show = shown && broadcastFor(shown).Component;
 
   return (
-    <div className="room" data-ready={ready || failed || undefined} data-failed={failed || undefined}>
+    <div className="room" data-ready={ready || failed || undefined} data-failed={failed || undefined} {...((live ? {} : { inert: '' }) as object)}>
       <canvas
         ref={canvas}
         className="room__gl"

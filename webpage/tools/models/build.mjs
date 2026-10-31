@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 await MeshoptEncoder.ready; await MeshoptSimplifier.ready;
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.encoder': MeshoptEncoder });
 
-// node build.mjs <room|surveillance|library|supper> [job...]
+// node build.mjs <room|surveillance|library|supper|ritual> [job...]
 const MODELS = fileURLToPath(new URL('../../public/models/', import.meta.url));
 
 const room = {
@@ -132,9 +132,15 @@ const supper = {
   city:    { src: 'cyberpunk_city_-_1', tex: 1024 },
 };
 
-const SETS = { supper: [supper, 'supper/'], room: [room, 'room/'], surveillance: [surveillance, 'surveilance_room/'], library: [library, 'library/'] };
+const ritual = {
+  torii:   { src: 'japanese_torii_gate', tex: 1024 },
+  temple:  { src: 'japanese_lowpoly_temple', tex: 512, drop: n => n === 'Object_3' }, // sin las rocas de la base: de cerca, astillas blancas
+  stones:  { src: 'stylized_stones_minipack', tex: 512 },
+};
+
+const SETS = { ritual: [ritual, 'ritual/'], supper: [supper, 'supper/'], room: [room, 'room/'], surveillance: [surveillance, 'surveilance_room/'], library: [library, 'library/'] };
 const [set, ...only] = process.argv.slice(2);
-if (!SETS[set]) { console.error('uso: node build.mjs <room|surveillance|library|supper> [job...]'); process.exit(1); }
+if (!SETS[set]) { console.error('uso: node build.mjs <room|surveillance|library|supper|ritual> [job...]'); process.exit(1); }
 const [jobs, dir] = SETS[set];
 const SRC = MODELS + dir + 'src/', OUT = MODELS + dir;
 

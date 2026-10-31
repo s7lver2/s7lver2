@@ -19,7 +19,7 @@ type Phase = 'post' | 'boot' | 'login' | 'desk' | 'virus';
 const POST = (mem: number) =>
   ['ONI BIOS v0.7   (c) 1997 s7lver', '', 'CPU  : 486DX2-66', `MEM  : ${mem}K${mem >= 16384 ? ' ok' : ''}`, '', 'detecting ide drives ...', '  primary master : ONI-HDD 540MB', '', 'booting ONI//OS'];
 
-function Computer({ fontFamily, ctx, cctv, onExit }: { fontFamily: string; ctx?: AudioContext; cctv: ImageBitmap | null; onExit: () => void }) {
+function Computer({ fontFamily, ctx, cctv, onVirus, onExit }: { fontFamily: string; ctx?: AudioContext; cctv: ImageBitmap | null; onVirus?: () => void; onExit: () => void }) {
   const [phase, setPhase] = useState<Phase>('post');
   const [user, setUser] = useState('guest');
   const [items, setItems] = useState(DEFAULT_DESKTOP.items);
@@ -134,7 +134,12 @@ function Computer({ fontFamily, ctx, cctv, onExit }: { fontFamily: string; ctx?:
     return () => clearTimeout(t);
   }, []);
 
-  const infect = useCallback(() => setPhase('virus'), []);
+  const virus = useRef(onVirus);
+  virus.current = onVirus;
+  const infect = useCallback(() => {
+    setPhase('virus');
+    virus.current?.();
+  }, []);
 
   // desarrollo: ?pc&virus salta al escritorio y abre passwords.txt
   useEffect(() => {

@@ -81,6 +81,10 @@ export class RitualScene {
   private aim = 0;
   private quiet = 0;
   private ready = false;
+  /** Esperando el primer scroll (ya mandó callar y aún no te has movido): el indicador se enciende. */
+  get idle() {
+    return this.ready && this.p < 0.04 && !this.directing;
+  }
   private ended = false;
   private atTop = 0;
   // cuánto lleva la cámara quieta en la estación (el zoom lento)
@@ -104,7 +108,7 @@ export class RitualScene {
   // los haces sobre el cuadrado (antes de separarse)
   private airSq?: ReturnType<typeof atmosphere>;
   private fx = makeFx();
-  private hall?: ReturnType<typeof makeHall>;
+  private hall?: Awaited<ReturnType<typeof makeHall>>;
   /** El pentagrama del suelo (se enciende en el final). */
   pentagram!: ReturnType<typeof makePentagram>;
   // la luz roja del pentagrama, en el centro: existe desde la carga (a 0) para no recompilar nada
@@ -153,7 +157,7 @@ export class RitualScene {
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40).rotateX(-Math.PI / 2), floorMaterial());
     floor.receiveShadow = true;
     s.add(floor);
-    this.hall = makeHall({ radius: RING_R, entrance: points[0] });
+    this.hall = await makeHall({ radius: RING_R, entrance: points[0] });
     s.add(this.hall.group);
     this.pentagram = makePentagram(points, RING_R);
     s.add(this.pentagram.mesh);
@@ -474,6 +478,8 @@ export class RitualScene {
       const k = Math.min(1, t / 0.42);
       face.quaternion.slerpQuaternions(q0, q1, k * k * (3 - 2 * k));
       watch();
+      // los últimos centímetros antes del suelo, la imagen se funde al agua de los créditos
+      this.fx.uniforms.uSink.value = THREE.MathUtils.smoothstep(0.45 - this.camera.position.y, 0, 0.43);
     };
     this.onFrame.add(fall);
     await until(() => this.camera.position.y <= 0.02);

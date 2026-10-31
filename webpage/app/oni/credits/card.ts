@@ -32,7 +32,9 @@ export const CLAUDE_CARD: CardData = {
   role: 'co-written by',
   name: 'CLAUDE',
   avatar: 'mark',
-  lines: [{ dot: true, text: 'online · “making the oni sink”' }, { text: 'Opus 5.5 · Anthropic' }, { text: '♪ the hum of your GPU' }],
+  // lo que costó escribir la página, contado en las sesiones de Claude Code del proyecto (lecturas de
+  // caché incluidas) a 31-10-2026: una estimación, no se actualiza sola
+  lines: [{ dot: true, text: 'online · “making the oni sink”' }, { text: 'Opus 5.5 · Anthropic' }, { text: '≈1.1B tokens read · 3.3M written' }],
 };
 
 // el texto más largo que cabe en `w`, con «…» si no cabe entero

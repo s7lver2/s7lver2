@@ -56,7 +56,15 @@ function grain(x: CanvasRenderingContext2D) {
   return grainTile;
 }
 
-export function paintSheet(paper: Paper) {
+// la signatura del archivo: la revista o el congreso y el año, como en el rótulo de la biblioteca
+export const shelfmark = (p: Paper) => `ARC-${(p.venue ?? 'UNPUB').replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8)}-${p.year}`;
+
+/*
+ * La portada es una ficha del archivo: la pestaña roja con su número y su signatura arriba, el
+ * título grande a la izquierda, dónde y quién, el resumen que se apaga hacia abajo, y al pie el
+ * código de barras del préstamo y un sello de «abrir» (el de «clasificado» si no hay PDF).
+ */
+export function paintSheet(paper: Paper, n = 1, of = 1) {
   const c = Object.assign(document.createElement('canvas'), { width: W * RES, height: H * RES }), x = c.getContext('2d')!;
   x.scale(RES, RES);
   // el papel: amarillento, con grano y algo más oscuro en los bordes
@@ -64,62 +72,96 @@ export function paintSheet(paper: Paper) {
   x.fillRect(0, 0, W, H);
   const g = x.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.75);
   g.addColorStop(0, 'rgba(120,90,50,0)');
-  g.addColorStop(1, 'rgba(120,90,50,0.22)');
+  g.addColorStop(1, 'rgba(120,90,50,0.24)');
   x.fillStyle = g;
   x.fillRect(0, 0, W, H);
+  const INK = '#1b1714', RED = '#a3170f';
+  const pad = (k: number) => String(k).padStart(2, '0');
 
-  x.fillStyle = '#1b1714';
+  // la pestaña: un bloque de tinta roja que asoma por arriba, con el número y la signatura
+  x.fillStyle = RED;
+  x.fillRect(W - M - 300, 0, 300, 132);
+  x.fillStyle = '#f3e6dc';
   x.textBaseline = 'alphabetic';
+  x.textAlign = 'left';
+  x.font = `700 64px ${SERIF}`;
+  x.fillText(`№ ${pad(n)}`, W - M - 276, 78);
+  x.font = `600 21px ${SERIF}`;
+  x.fillText(`${shelfmark(paper)} · ${pad(n)}/${pad(of)}`, W - M - 274, 114);
+
   // la cabecera: dónde y cuándo
-  x.font = `italic 26px ${SERIF}`;
-  x.textAlign = 'left';
-  x.fillText([paper.venue, paper.year].filter(Boolean).join(' · '), M, M + 10);
-  // el título, centrado, en las líneas que hagan falta (como mucho tres)
-  x.textAlign = 'center';
-  x.font = `600 58px ${SERIF}`;
-  const tl = lines(x, paper.title, W - M * 2).slice(0, 3);
-  let y = M + 150;
+  x.fillStyle = INK;
+  x.font = `italic 28px ${SERIF}`;
+  x.fillText([paper.venue, paper.year].filter(Boolean).join(' · '), M, M + 14);
+
+  // el título, grande y a la izquierda (como mucho cuatro líneas)
+  x.font = `700 76px ${SERIF}`;
+  const tl = lines(x, paper.title, W - M * 2).slice(0, 4);
+  let y = M + 210;
   for (const l of tl) {
-    x.fillText(l, W / 2, y);
-    if (paper.placeholder) redact(x, W / 2 - x.measureText(l).width / 2, y, x.measureText(l).width, 58);
-    y += 70;
+    x.fillStyle = INK;
+    x.fillText(l, M, y);
+    if (paper.placeholder) redact(x, M, y, x.measureText(l).width, 76);
+    y += 86;
   }
-  x.fillStyle = '#1b1714';
-  x.font = `30px ${SERIF}`;
-  y += 20;
-  x.fillText(paper.authors.join(', '), W / 2, y);
-  y += 80;
-  x.font = `600 30px ${SERIF}`;
-  x.fillText('Abstract', W / 2, y);
-  y += 50;
-  // el resumen, a dos columnas, cortado donde se acaba la hoja
-  x.textAlign = 'left';
-  x.font = `25px ${SERIF}`;
-  const colW = (W - M * 2 - 48) / 2, lh = 34, body = lines(x, paper.abstract.repeat(paper.placeholder ? 3 : 1), colW);
-  const perCol = Math.floor((H - M - y) / lh);
-  body.slice(0, perCol * 2).forEach((l, i) => {
-    const cx = i < perCol ? M : M + colW + 48, ly = y + (i % perCol) * lh;
-    x.fillStyle = '#1b1714';
-    x.fillText(l, cx, ly);
-    if (paper.placeholder && (i % 5 !== 3)) redact(x, cx, ly, x.measureText(l).width, 25);
+  x.fillStyle = INK;
+  x.font = `32px ${SERIF}`;
+  y += 18;
+  for (const l of lines(x, paper.authors.join(', '), W - M * 2).slice(0, 2)) {
+    x.fillText(l, M, y);
+    y += 42;
+  }
+  // una regla corta de tinta roja antes del resumen
+  y += 34;
+  x.fillStyle = RED;
+  x.fillRect(M, y - 26, 120, 7);
+  y += 40;
+
+  // el resumen, a una columna, que se apaga antes del pie
+  x.font = `27px ${SERIF}`;
+  const lh = 38, foot = H - M - 150, body = lines(x, paper.abstract.repeat(paper.placeholder ? 3 : 1), W - M * 2);
+  const rows = Math.max(0, Math.floor((foot - y) / lh));
+  body.slice(0, rows).forEach((l, i) => {
+    const ly = y + i * lh;
+    x.globalAlpha = Math.min(1, (rows - i) / 4);
+    x.fillStyle = INK;
+    x.fillText(l, M, ly);
+    if (paper.placeholder && i % 5 !== 3) redact(x, M, ly, x.measureText(l).width, 27);
   });
-  if (paper.placeholder) {
-    // el sello, torcido y con la tinta gastada
-    x.save();
-    x.translate(W / 2, H * 0.47);
-    x.rotate(-0.21);
-    x.strokeStyle = 'rgba(176,26,18,0.82)';
-    x.fillStyle = 'rgba(176,26,18,0.82)';
-    x.lineWidth = 9;
-    x.strokeRect(-300, -70, 600, 140);
-    x.font = `700 92px ${SERIF}`;
-    x.textAlign = 'center';
-    x.textBaseline = 'middle';
-    x.fillText('CLASSIFIED', 0, 6);
-    x.globalCompositeOperation = 'destination-out';
-    for (let i = 0; i < 900; i++) x.fillRect(-310 + Math.random() * 620, -80 + Math.random() * 160, 2 + Math.random() * 3, 2 + Math.random() * 3);
-    x.restore();
+  x.globalAlpha = 1;
+
+  // el pie: el código de barras del préstamo y el sello
+  const by = H - M - 96;
+  let bx = M;
+  const seed = [...paper.title].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 7);
+  for (let k = 0; bx < M + 300; k++) {
+    const w = 3 + ((seed >> k % 24) & 3) * 3;
+    if (k % 2 === 0) {
+      x.fillStyle = INK;
+      x.fillRect(bx, by, w, 70);
+    }
+    bx += w;
   }
+  x.font = `20px ${SERIF}`;
+  x.fillText(shelfmark(paper), M, by + 96);
+
+  // el sello, torcido y con la tinta gastada: «abrir» con su flecha o «clasificado»
+  const big = !!paper.placeholder;
+  x.save();
+  x.translate(big ? W / 2 : W - M - 170, big ? H * 0.5 : by + 30);
+  x.rotate(big ? -0.21 : -0.08);
+  x.strokeStyle = 'rgba(163,23,15,0.86)';
+  x.fillStyle = 'rgba(163,23,15,0.86)';
+  x.lineWidth = big ? 9 : 6;
+  const [sw, sh] = big ? [600, 140] : [300, 92];
+  x.strokeRect(-sw / 2, -sh / 2, sw, sh);
+  x.font = `700 ${big ? 92 : 46}px ${SERIF}`;
+  x.textAlign = 'center';
+  x.textBaseline = 'middle';
+  x.fillText(big ? 'CLASSIFIED' : 'OPEN  ↗', 0, 4);
+  x.globalCompositeOperation = 'destination-out';
+  for (let k = 0; k < (big ? 900 : 380); k++) x.fillRect(-sw / 2 - 10 + Math.random() * (sw + 20), -sh / 2 - 10 + Math.random() * (sh + 20), 2 + Math.random() * 3, 2 + Math.random() * 3);
+  x.restore();
   return c;
 }
 
@@ -145,14 +187,14 @@ function sheetGeometry() {
   return g;
 }
 
-function makeSheet(paper: Paper) {
-  const t = new THREE.CanvasTexture(paintSheet(paper));
+function makeSheet(paper: Paper, n: number, of: number) {
+  const t = new THREE.CanvasTexture(paintSheet(paper, n, of));
   t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = 4;
   const g = sheetGeometry();
   // un poco de luz propia: el papel claro coge la poca que hay y tiene que leerse
   // el papel, algo por debajo del blanco: cerca de una luz se quemaba con el bloom
-  const front = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map: t, color: 0xdadada, roughness: 0.85, emissive: 0xffffff, emissiveMap: t, emissiveIntensity: 0.03, side: THREE.FrontSide }));
+  const front = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map: t, color: 0xdadada, roughness: 0.85, emissive: 0xffffff, emissiveMap: t, emissiveIntensity: 0.08, side: THREE.FrontSide }));
   const back = new THREE.Mesh(g, backMat);
   back.rotation.y = Math.PI;
   back.scale.x = -1;
@@ -163,7 +205,7 @@ function makeSheet(paper: Paper) {
 
 /** Pinta una hoja por paper (lo caro, una vez). */
 export function makeSheets(papers: Paper[]) {
-  return papers.map((paper) => ({ mesh: makeSheet(paper), paper }));
+  return papers.map((paper, i) => ({ mesh: makeSheet(paper, i + 1, papers.length), paper }));
 }
 
 /**

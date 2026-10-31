@@ -9,9 +9,10 @@ import { PILLARS, PILLAR_FRONT, GLASS } from './penthouse';
  * barrido que dejan ver a través, un parpadeo a saltos y bandas que se corren de lado). Cada marco es
  * un filo de luz con cuatro escuadras en las esquinas y, detrás, una pantalla apenas visible. Dentro,
  * su icono: una pieza en 3D hecha para ese logro (una puerta entreabierta, unas gafas de realidad
- * virtual, un pentagrama...), girando despacio. Conseguido, el icono es sólido y brilla; sin
- * conseguir, solo se ven sus aristas, apagadas. El del final, más grande y delante del cristal,
- * lleva el oni. Al pasar el puntero, la escena avisa (`pick`) y la página saca el popup.
+ * virtual, un pentagrama...), flotando sobre el haz de su proyector y girando despacio. Sin
+ * conseguir, el marco está apagado: un filo gris, sin proyector ni icono, y el cristal a oscuras;
+ * al conseguirlo se enciende con un parpadeo de arranque. El del final, más grande y delante del
+ * cristal, lleva el oni. Al pasar el puntero, la escena avisa (`pick`) y la página saca el popup.
  */
 
 const BAND = 0.012;
@@ -56,6 +57,33 @@ const holo = new THREE.ShaderMaterial({
   blending: THREE.AdditiveBlending,
   depthWrite: false,
 });
+const LIT = new THREE.Color(0xff1f1f).multiplyScalar(1.6), OFF = new THREE.Color(0x2a2626);
+
+// el haz del proyector: un trapecio desde el filo de abajo hasta el icono, que se apaga al subir
+const beamMat = new THREE.ShaderMaterial({
+  uniforms: { uTime: { value: 0 }, uShow: { value: 1 }, uGlitch: { value: 0 }, uColor: { value: LIT.clone() } },
+  vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+  fragmentShader: `
+    uniform float uTime, uShow; uniform vec3 uColor; varying vec2 vUv;
+    void main() {
+      float up = pow(1.0 - vUv.y, 1.6), side = 1.0 - pow(abs(vUv.x - 0.5) * 2.0, 3.0);
+      float lines = 0.55 + 0.45 * smoothstep(0.3, 0.7, fract(vUv.y * 22.0 - uTime * 1.4));
+      gl_FragColor = vec4(uColor * up * side * lines * 0.32 * uShow, 1.0);
+    }`,
+  transparent: true,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+  side: THREE.DoubleSide,
+});
+function beamGeo(w: number, h: number) {
+  const bottom = -h / 2 + w * 0.05, top = h * 0.08, b = w * 0.1, t = w * 0.36;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute([-b, bottom, 0.01, b, bottom, 0.01, t, top, 0.07, -t, top, 0.07], 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2));
+  g.setIndex([0, 1, 2, 0, 2, 3]);
+  return g;
+}
+
 const mat = (mode: number) => {
   const m = holo.clone();
   m.uniforms.uMode.value = mode;
@@ -182,7 +210,10 @@ interface Item {
   lines?: THREE.LineSegments;
   icon: THREE.Object3D;
   mats: THREE.ShaderMaterial[];
+  beam: THREE.Mesh;
   seed: number;
+  /** Encendido (0-1): sube con un parpadeo al conseguirlo. */
+  on: number;
 }
 
 export class Frames {
@@ -226,18 +257,22 @@ export class Frames {
         icon.add(lines);
       }
       icon.add(solid);
-      const group = new THREE.Group().add(screen, new THREE.Mesh(frameGeo(w, h), em), icon);
+      const bm = beamMat.clone();
+      mats.push(bm);
+      const beam = new THREE.Mesh(beamGeo(w, h), bm);
+      const group = new THREE.Group().add(screen, new THREE.Mesh(frameGeo(w, h), em), beam, icon);
       group.position.set(x, y, z);
       group.traverse((o) => void (o.renderOrder = 6));
       this.group.add(group);
-      this.items.push({ a, screen, solid, lines, icon, mats, seed: Math.random() * 10 });
+      const got = has(a.id) ? 1 : 0;
+      this.items.push({ a, screen, solid, lines, icon, mats, beam, seed: Math.random() * 10, on: got });
     });
     this.refresh();
   }
 
-  /** Vuelve a mirar qué logros hay: los conseguidos, sólidos; los demás, solo aristas. */
+  /** Vuelve a mirar qué logros hay (el encendido de los nuevos lo hace update, con su parpadeo). */
   refresh() {
-    for (const it of this.items) it.solid.visible = has(it.a.id) || !it.lines;
+    for (const it of this.items) if (!has(it.a.id)) it.on = 0;
   }
 
   /** El marco bajo el rayo (el del puntero), o null. */
@@ -250,16 +285,22 @@ export class Frames {
   update(dt: number, reduced: boolean, glitch: number) {
     this.t += dt;
     for (const it of this.items) {
-      const got = has(it.a.id);
-      // sin conseguir: apagado, latiendo despacio
-      const show = got ? 1 : 0.3 + (reduced ? 0 : 0.1 * Math.sin(this.t * 1.3 + it.seed));
+      // conseguido: se enciende en 0,8 s, a tirones (como un tubo que arranca)
+      if (has(it.a.id) && it.on < 1) it.on = reduced ? 1 : Math.min(1, it.on + dt / 0.8);
+      const on = it.on, boot = on >= 1 || reduced ? 1 : Math.sin(on * 40) > -0.2 ? on : 0.08;
+      it.icon.visible = it.beam.visible = on > 0;
       for (const m of it.mats) {
         m.uniforms.uTime.value = reduced ? 0 : this.t + it.seed;
-        m.uniforms.uShow.value = show;
-        m.uniforms.uGlitch.value = glitch;
+        // apagado: el filo gris y el cristal casi negro, quietos
+        m.uniforms.uShow.value = on > 0 ? boot : 0.55;
+        (m.uniforms.uColor.value as THREE.Color).copy(on > 0 ? LIT : OFF);
+        m.uniforms.uGlitch.value = on > 0 ? glitch : 0;
       }
-      // el icono se mece de lado a lado, despacio
-      if (!reduced) it.icon.rotation.y = Math.sin(this.t * 0.35 + it.seed) * 0.6;
+      // el icono flota sobre su haz: sube y baja un poco y se mece de lado a lado, despacio
+      if (!reduced) {
+        it.icon.rotation.y = Math.sin(this.t * 0.35 + it.seed) * 0.6;
+        it.icon.position.y = Math.sin(this.t * 0.9 + it.seed) * 0.008;
+      }
     }
   }
 
@@ -268,6 +309,7 @@ export class Frames {
       for (const m of it.mats) m.dispose();
       it.screen.geometry.dispose();
       it.lines?.geometry.dispose();
+      it.beam.geometry.dispose();
     }
     // el resto de mallas (marcos, iconos) las desecha la escena al recorrerse
   }
