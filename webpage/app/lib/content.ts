@@ -4,6 +4,8 @@ import {
   DEFAULT_SKILLS,
   DEFAULT_SOCIALS,
   DEFAULT_HOME,
+  DEFAULT_DESKTOP,
+  DEFAULT_PAPERS,
 } from './content-constants';
 import { DEFAULT_FEATURED, type FeaturedRepo } from './featured';
 
@@ -14,26 +16,31 @@ export {
   type SkillC,
   type SocialC,
   type HomeC,
+  type DeskNode,
+  type DesktopC,
+  type PaperC,
   DEFAULT_PROJECTS,
   DEFAULT_SKILLS,
   DEFAULT_SOCIALS,
   DEFAULT_HOME,
+  DEFAULT_DESKTOP,
+  DEFAULT_PAPERS,
 } from './content-constants';
 export { DEFAULT_FEATURED, type FeaturedRepo } from './featured';
 
 export interface AdminPrefs { renderer: 'dots' | 'braille' | 'svg'; }
 export const DEFAULT_PREFS: AdminPrefs = { renderer: 'dots' };
 
-export type ContentType = 'projects' | 'skills' | 'socials' | 'home' | 'featured' | 'adminPrefs';
+export type ContentType = 'projects' | 'skills' | 'socials' | 'home' | 'featured' | 'adminPrefs' | 'desktop' | 'papers';
 
 const DEFAULTS: Record<ContentType, unknown> = {
   projects: DEFAULT_PROJECTS, skills: DEFAULT_SKILLS, socials: DEFAULT_SOCIALS,
-  home: DEFAULT_HOME, featured: DEFAULT_FEATURED, adminPrefs: DEFAULT_PREFS,
+  home: DEFAULT_HOME, featured: DEFAULT_FEATURED, adminPrefs: DEFAULT_PREFS, desktop: DEFAULT_DESKTOP, papers: DEFAULT_PAPERS,
 };
 
 export function isContentType(t: string): t is ContentType {
   return t === 'projects' || t === 'skills' || t === 'socials'
-    || t === 'home' || t === 'featured' || t === 'adminPrefs';
+    || t === 'home' || t === 'featured' || t === 'adminPrefs' || t === 'desktop' || t === 'papers';
 }
 
 export async function getContent<T = unknown>(type: ContentType): Promise<T> {

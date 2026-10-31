@@ -1,0 +1,227 @@
+@import 'lenis/dist/lenis.css';
+
+.oni-root,
+.oni-load {
+  --void: oklch(0.13 0.006 25);
+  --bone: oklch(0.955 0.008 60);
+  --ash: oklch(0.62 0.012 40);
+  --red: oklch(0.62 0.245 27);
+  background: var(--void);
+  color: var(--bone);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+html.lenis, html.lenis * { scroll-behavior: auto !important; }
+
+/* ── HERO ── */
+.oni-hero {
+  position: relative;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  background: #0b0909;
+}
+.oni-hero__gl {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Si WebGL no arranca, el nombre se ve en grande; si arranca, lo pinta el 3D y aquí queda solo para lectores */
+.oni-hero__title {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  font-family: var(--font-tanker), Impact, sans-serif;
+  font-weight: 400;
+  font-size: 30vw;
+  line-height: 0.8;
+  letter-spacing: 0.01em;
+  color: var(--bone);
+}
+/* mientras carga, oscuro; si en 8 s no hay escena (sin JS, sin WebGL), aparece el nombre */
+.oni-hero[data-gl='pending'] .oni-hero__title { opacity: 0; animation: oni-show 0.6s 8s forwards; }
+@keyframes oni-show { to { opacity: 1; } }
+.oni-hero[data-gl='ok'] .oni-hero__title {
+  clip-path: inset(50%);
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* OSD: la capa de texto de una cámara o un monitor, encima de la imagen */
+.oni-osd {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: var(--bone);
+  text-shadow: 0 0 1px oklch(0.955 0.008 60 / 0.6);
+  opacity: var(--osd, 1);
+}
+.oni-osd > * { position: absolute; }
+.oni-osd__tl { left: clamp(16px, 3vw, 48px); top: clamp(16px, 3.5vh, 40px); line-height: 1.7; }
+.oni-osd__tl b { font-family: var(--font-tanker), Impact, sans-serif; font-weight: 400; font-size: 34px; letter-spacing: 0.02em; }
+.oni-osd__tr { right: clamp(16px, 3vw, 48px); top: clamp(16px, 3.5vh, 40px); display: flex; align-items: center; gap: 8px; }
+.oni-osd__tr i { width: 9px; height: 9px; border-radius: 50%; background: var(--red); animation: oni-rec 1.4s steps(2) infinite; }
+@keyframes oni-rec { 50% { opacity: 0; } }
+.oni-osd__tate {
+  right: clamp(16px, 3vw, 48px);
+  top: 50%;
+  transform: translateY(-50%);
+  writing-mode: vertical-rl;
+  font-size: 15px;
+  letter-spacing: 0.5em;
+  color: var(--red);
+}
+
+/* el mismo rótulo en las escenas de después (fuera de .oni-root: lleva sus colores) */
+.oni-osd--scene {
+  --bone: oklch(0.955 0.008 60);
+  --ash: oklch(0.62 0.012 40);
+  --red: oklch(0.62 0.245 27);
+  z-index: 3;
+  transition: opacity 0.8s ease;
+}
+.oni-osd--scene[data-off] { opacity: 0; }
+/* lo propio de cada escena, abajo a la izquierda, sin pisar el indicador del centro */
+.oni-osd__bl {
+  left: clamp(16px, 3vw, 48px);
+  bottom: clamp(16px, 3.5vh, 40px);
+  max-width: min(46ch, calc(50vw - 64px));
+  display: grid;
+  gap: 4px;
+  line-height: 1.5;
+}
+.oni-osd__bl b { font-family: var(--font-tanker), Impact, sans-serif; font-weight: 400; font-size: 34px; letter-spacing: 0.04em; line-height: 1; }
+.oni-osd__bl small { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 12px; letter-spacing: 0; color: var(--ash); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* el OSD aparece cuando hay señal; sin JS o sin WebGL se ve igual */
+.oni-hero[data-gl='pending'] .oni-osd { opacity: 0.35; }
+
+/* ── CARGA: la máscara en píxeles, pequeña, y debajo LOADING con su barra */
+.oni-load {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: clamp(20px, 4vh, 36px);
+  background: #030202;
+  color: var(--red);
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+}
+.oni-load__mask { display: block; }
+.oni-load__fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.oni-load__bar { display: grid; justify-items: center; gap: 10px; text-align: center; }
+.oni-load__bar b { font-weight: 400; font-size: 15px; letter-spacing: 0.5em; margin-right: -0.5em; color: var(--bone); }
+.oni-load__bar b::after { content: '_'; animation: oni-rec 1s steps(2) infinite; }
+.oni-load__bar span { font-size: 14px; letter-spacing: 0; white-space: pre; }
+.oni-load__bar i { font-style: normal; color: oklch(0.26 0.07 27); }
+.oni-load__bar small { font-size: 12px; letter-spacing: 0.3em; color: var(--ash); min-height: 1.2em; animation: oni-rec 1.2s steps(2) infinite; }
+/* al salir, el texto se corta a saltos, como una señal que se pierde */
+.oni-load[data-phase='leave'] .oni-load__bar { animation: oni-cut 0.45s steps(5) forwards; }
+@keyframes oni-cut {
+  0% { opacity: 1; transform: none; }
+  40% { opacity: 0.7; transform: translateX(6px) skewX(-8deg); }
+  70% { opacity: 0.3; transform: translateX(-10px); }
+  100% { opacity: 0; transform: translateX(0); }
+}
+
+/* ── indicador de scroll: una cuenta roja que cae por su carril; se va en cuanto te mueves */
+.oni-hint {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(16px, 4vh, 44px);
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  margin-right: -0.3em;
+  color: var(--ash);
+  opacity: var(--hint, 1);
+  pointer-events: none;
+}
+.oni-hint i {
+  position: relative;
+  width: 3px;
+  height: 44px;
+  border-radius: 3px;
+  background: oklch(0.25 0.03 27);
+  overflow: hidden;
+}
+.oni-hint i::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--red);
+  animation: oni-drop 1.8s cubic-bezier(0.6, 0, 0.3, 1) infinite;
+}
+@keyframes oni-drop {
+  0% { transform: translateY(-12px); }
+  70%, 100% { transform: translateY(44px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .oni-hint i::after { animation: none; transform: translateY(16px); }
+}
+
+
+
+@media (max-width: 720px) {
+  .oni-osd__tate { display: none; }
+  .oni-osd__bl small { display: none; }
+}
+
+/* ── el aviso de logro: una ventana de ONI//OS en la esquina, por encima de todas las escenas */
+.oni-toast {
+  --p0: #070303;
+  --p2: #6e120c;
+  --p3: #c4221a;
+  --p4: #ff4a36;
+  --hot: #ffd9cf;
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 9000;
+  pointer-events: none;
+  font: 14px/1.25 ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  color: var(--p4);
+  text-shadow: 0 0 3px rgba(255, 74, 54, 0.5);
+}
+.oni-toast__w {
+  width: min(320px, calc(100vw - 40px));
+  padding: 2px;
+  background: var(--p3);
+  clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
+  animation: oni-toast-in 0.32s steps(4) both;
+}
+.oni-toast__in { background: var(--p0); clip-path: inherit; }
+.oni-toast__t { padding: 5px 10px; background: repeating-linear-gradient(0deg, var(--p2) 0 1px, transparent 1px 3px); }
+.oni-toast__t b { font-weight: 400; padding: 0 6px; background: var(--p0); color: var(--hot); }
+.oni-toast__b { display: flex; align-items: center; gap: 12px; padding: 10px 14px 12px; }
+.oni-toast__b canvas { flex: none; width: 32px; height: 32px; image-rendering: pixelated; }
+.oni-toast__b p { margin: 0; display: grid; gap: 2px; }
+.oni-toast__b strong { font-weight: 400; color: var(--hot); }
+.oni-toast__b span { color: var(--p3); }
+/* entra a saltos, como una ventana que se abre en el ordenador; sin movimiento, aparece y ya */
+@keyframes oni-toast-in { from { transform: translateY(calc(100% + 20px)); } }
+@media (prefers-reduced-motion: reduce) { .oni-toast__w { animation: none; } }
+
+/* la salida cuando una escena no arranca: una tecla de ONI//OS abajo, al centro */
+.oni-skip { position: fixed; left: 50%; bottom: 28px; z-index: 95; transform: translateX(-50%); padding: 10px 18px; border: 2px solid #c4221a; background: #070303; color: #ffd9cf; font: 14px/1 ui-monospace, 'Cascadia Mono', Consolas, monospace; cursor: pointer; clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px); }
+.oni-skip:hover, .oni-skip:focus-visible { background: #6e120c; outline: none; }

@@ -8,6 +8,7 @@
 
 # next.js
 /.next/
+/.next-*/
 /out/
 
 # production
@@ -46,3 +47,32 @@ next-env.d.ts
 
 # claudechan (clon propio, se instala con tools/install.sh)
 /workflow/
+
+.vercel
+
+# modelos 3D con licencia Sketchfab Standard: no redistribuir en el repo público
+/public/models/*.zip
+/public/models/iphone-*/
+
+# horneado de luz: Blender portable y la escena exportada (se regeneran con tools/bake_lighting.py)
+/tools/.blender/
+/tools/.bake/
+
+# fuentes de la habitación (zips, extraídos y audio original): solo van los .glb/.m4a optimizados
+/public/models/room/*.zip
+/public/models/room/src/
+/public/models/room/audio/
+# licencia Sketchfab Standard: no redistribuir (la escena funciona sin ellos)
+/public/models/room/steamframe.glb
+/public/models/room/rack.glb
+/public/models/surveilance_room/*.zip
+/public/models/surveilance_room/src/
+/public/models/surveilance_room/crt.glb
+/tools/models/node_modules/
+/public/models/library/*.zip
+/public/models/library/src/
+/public/models/library/bot-para-mixamo.obj
+/public/models/animations/
+/public/models/supper/*.zip
+/public/models/supper/src/
+/public/models/supper/animations/

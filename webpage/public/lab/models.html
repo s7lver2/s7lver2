@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#111;color:#ddd;font:12px monospace;overflow:hidden}#l{position:fixed;inset:0;pointer-events:none}#l div{position:absolute;transform:translate(-50%,0)}</style>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script></head><body><div id="l"></div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+const names = ['desk','chair','bed','window','bookshelf','lamp','steammachine','poster','flipper','walkman','lighter','blahaj','blunt','steamframe'];
+const r = new THREE.WebGLRenderer({antialias:true}); r.setSize(innerWidth,innerHeight); r.setPixelRatio(devicePixelRatio); document.body.appendChild(r.domElement);
+const s = new THREE.Scene(); s.background=new THREE.Color(0x202020); s.environment=new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment()).texture;
+const cam = new THREE.PerspectiveCamera(35,innerWidth/innerHeight,0.01,100); cam.position.set(0,6,14);
+const oc = new OrbitControls(cam,r.domElement); oc.target.set(0,0.5,0);
+s.add(new THREE.GridHelper(20,20,0x555555,0x333333));
+const L = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder); const labels=[]; window.__info={};
+names.forEach((n,i)=>L.load(`/models/room/${n}.glb`,g=>{ const o=g.scene; const b=new THREE.Box3().setFromObject(o); const sz=b.getSize(new THREE.Vector3()); const k=1.6/Math.max(sz.x,sz.y,sz.z); o.scale.setScalar(k); const b2=new THREE.Box3().setFromObject(o); const c=b2.getCenter(new THREE.Vector3());
+  const x=(i%5-2)*3.2, z=(Math.floor(i/5)-1)*3.2; o.position.set(x-c.x,-b2.min.y,z-c.z); s.add(o); s.add(new THREE.AxesHelper(0.6).translateX(x+0.9).translateZ(z+0.9));
+  window.__info[n]={size:sz.toArray().map(v=>+v.toFixed(3))}; const d=document.createElement('div'); d.textContent=n+' '+sz.toArray().map(v=>v.toFixed(2)).join('x'); l.appendChild(d); labels.push([d,new THREE.Vector3(x,1.9,z)]); }));
+(function f(){requestAnimationFrame(f);oc.update();r.render(s,cam);labels.forEach(([d,p])=>{const v=p.clone().project(cam);d.style.left=(v.x+1)/2*innerWidth+'px';d.style.top=(1-v.y)/2*innerHeight+'px';});})();
+</script></body></html>

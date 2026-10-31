@@ -1,0 +1,11 @@
+/* los créditos: la última escena, a pantalla completa */
+.credits { position: fixed; inset: 0; z-index: 93; background: #010304; }
+.credits__gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* los créditos como texto: para lectores de pantalla; sin WebGL, a pantalla completa */
+.credits-list { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); margin: 0; padding: 0; list-style: none; }
+.credits[data-failed] .credits-list { width: auto; height: auto; overflow: visible; clip-path: none; inset: 0; display: grid; place-content: center; gap: clamp(40px, 8vh, 72px); padding: 24px 16px; text-align: center; color: #ffd9cf; }
+.credits-list li { display: grid; gap: 6px; }
+.credits-list span { font: 13px/1.5 ui-monospace, 'Cascadia Mono', Consolas, monospace; color: oklch(0.62 0.012 40); }
+.credits-list li > span:first-child { letter-spacing: 0.3em; text-transform: uppercase; }
+.credits-list b { font: 400 clamp(48px, 9vw, 88px)/1 var(--font-tanker), Impact, sans-serif; letter-spacing: 0.04em; color: #ffd9cf; }

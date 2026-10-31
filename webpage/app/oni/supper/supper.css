@@ -1,0 +1,88 @@
+/* la Última Cena: la última escena, a pantalla completa, con el footer debajo (se baja dentro) */
+.supper { position: fixed; inset: 0; z-index: 94; overflow-y: auto; background: #050202; color: #ffd9cf; overscroll-behavior: contain; }
+.supper__stage { position: relative; height: 100vh; height: 100svh; overflow: hidden; }
+.supper__gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* el recorrido de la rueda: el escenario se queda pegado arriba mientras la cámara se aleja */
+.supper__track { position: relative; height: 420vh; }
+.supper__stage { position: sticky; top: 0; }
+.supper[data-failed] .supper__track { height: auto; }
+
+/*
+ * el contacto, abajo y al centro cuando la cámara ya está lejos: el reto en holograma, como los
+ * estandartes del ritual (rojo de fósforo en líneas de barrido, una copia desplazada que separa el
+ * color y, cada pocos segundos, un corte), y debajo una ventana de ONI//OS con el email, que se copia
+ */
+.supper__contact { position: absolute; left: 50%; bottom: clamp(24px, 7vh, 72px); transform: translateX(-50%); display: grid; justify-items: center; gap: 18px; width: max-content; max-width: calc(100vw - 32px); text-align: center; }
+.supper__contact p { position: relative; margin: 0; color: transparent; background: repeating-linear-gradient(0deg, #ff4a36 0 2px, rgba(255, 74, 54, 0.28) 2px 4px); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 0 5px rgba(255, 40, 24, 0.55)); font: 400 clamp(30px, 5vw, 70px)/1.05 var(--font-tanker), Impact, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; animation: supper-holo 5.5s steps(1) infinite; }
+/* al aceptar el reto: el título nuevo entra con un corte fuerte */
+.supper__contact p[data-dared] { animation: supper-dare 0.6s steps(1) both, supper-holo 5.5s 0.6s steps(1) infinite; }
+.supper__mail.oni-toast { position: static; pointer-events: auto; }
+.supper__mail .oni-toast__w { width: auto; animation: none; }
+.supper__mail .oni-toast__b { display: grid; width: 100%; padding: 12px 22px 14px; border: 0; background: none; font: inherit; font-size: clamp(14px, 1.5vw, 18px); letter-spacing: 0.04em; color: var(--hot); text-shadow: inherit; cursor: copy; }
+.supper__mail .oni-toast__b span { grid-area: 1 / 1; color: inherit; overflow-wrap: anywhere; }
+.supper__mail .oni-toast__b span:first-child { visibility: hidden; }
+.supper__mail .oni-toast__b span + span { white-space: pre; text-align: left; }
+.supper__mail [data-copied] span + span { color: var(--p4); }
+.supper__mail .oni-toast__b:hover, .supper__mail .oni-toast__b:focus-visible { background: var(--p2); outline: none; }
+@keyframes supper-dare {
+  0% { clip-path: inset(0 0 60% 0); transform: translateX(14px); opacity: 0.6; }
+  20% { clip-path: inset(50% 0 10% 0); transform: translateX(-18px); }
+  40% { clip-path: inset(20% 0 40% 0); transform: translateX(8px); opacity: 1; }
+  60% { clip-path: none; transform: translateX(-3px); }
+  80%, 100% { clip-path: none; transform: none; }
+}
+/* la copia que separa el color: el mismo texto, un poco a un lado, apenas visible */
+.supper__contact p::after { content: attr(data-text); position: absolute; inset: 0; background: inherit; -webkit-background-clip: text; background-clip: text; transform: translateX(3px); opacity: 0.35; mix-blend-mode: screen; filter: hue-rotate(160deg); pointer-events: none; }
+@keyframes supper-holo {
+  0%, 84%, 100% { clip-path: none; transform: none; opacity: 1; }
+  85% { clip-path: inset(38% 0 44% 0); transform: translateX(-10px); }
+  86% { clip-path: inset(10% 0 70% 0); transform: translateX(7px); opacity: 0.7; }
+  87% { clip-path: none; transform: none; opacity: 0.5; }
+  88% { opacity: 1; }
+}
+/* hasta que acaba el zoom (solo si hay escena: sin JS ni WebGL, siempre visible) entra a saltos */
+.supper__contact { transition: opacity 0.5s steps(4); }
+.supper__contact[data-wait] { opacity: 0; pointer-events: none; }
+.supper[data-failed] .supper__contact { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .supper__contact p, .supper__contact p[data-dared] { animation: none; } }
+
+/*
+ * el footer: cuatro columnas sobre el mismo negro de la escena (sin corte), y abajo la firma enorme
+ * en las líneas de barrido del holograma, entera a lo ancho y pegada al borde inferior
+ */
+.supper-foot { position: relative; overflow: hidden; padding: clamp(56px, 9vh, 96px) clamp(16px, 5vw, 64px) 0; }
+.supper-foot__grid { display: grid; grid-template-columns: 2fr repeat(2, 1fr); gap: 40px clamp(24px, 4vw, 56px); max-width: 1120px; margin: 0 auto; }
+.supper-foot__brand b { display: block; font: 400 clamp(30px, 3.2vw, 42px)/1 var(--font-tanker), Impact, sans-serif; letter-spacing: 0.06em; color: #ffd9cf; }
+.supper-foot__brand p { margin: 10px 0 0; max-width: 24ch; font: 15px/1.45 system-ui, sans-serif; color: #8a5f58; }
+.supper-foot nav { display: grid; align-content: start; gap: 10px; }
+.supper-foot h2 { margin: 0 0 6px; font: 400 17px/1 var(--font-tanker), Impact, sans-serif; letter-spacing: 0.08em; color: #c4221a; }
+.supper-foot nav a { width: max-content; font: 15px/1.3 system-ui, sans-serif; color: #b08a83; text-decoration: none; transition: color 0.15s; }
+.supper-foot nav a:hover, .supper-foot nav a:focus-visible { color: #ffd9cf; }
+.supper-foot nav a:focus-visible { outline: 2px dotted #ffd9cf; outline-offset: 3px; }
+.supper-foot__meta { display: flex; justify-content: space-between; gap: 16px; max-width: 1120px; margin: clamp(48px, 7vh, 80px) auto 0; font: 12px/1 ui-monospace, Consolas, monospace; color: #6e4a44; }
+.supper-foot__sign { margin: clamp(20px, 3vh, 36px) 0 -0.12em; text-align: center; font: 400 clamp(90px, 25vw, 400px)/0.86 var(--font-tanker), Impact, sans-serif; letter-spacing: 0.04em; color: transparent; background: repeating-linear-gradient(0deg, #ff4a36 0 2px, rgba(255, 74, 54, 0.22) 2px 4px); -webkit-background-clip: text; background-clip: text; opacity: 0.55; user-select: none; }
+@media (max-width: 720px) {
+  .supper-foot__grid { grid-template-columns: 1fr 1fr; }
+  .supper-foot__brand { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) { .supper__contact { transition: none; } }
+
+/* el popup de un cuadro: la misma ventanita del aviso de logro, junto al puntero */
+.supper__tip { position: fixed; right: auto; bottom: auto; transform: translate(16px, 16px); }
+.supper__tip .oni-toast__w { width: max-content; max-width: min(300px, calc(100vw - 32px)); animation: none; }
+.supper__tip .oni-toast__b { padding: 8px 12px 10px; }
+
+/* desarrollo: el panel para cuadrar a cada robot (?supper&edit) */
+.supper-tuner { position: fixed; left: 12px; top: 12px; z-index: 9500; width: 260px; display: grid; gap: 6px; padding: 10px; background: rgba(7, 3, 3, 0.92); color: #ffd9cf; font: 12px/1.3 ui-monospace, Consolas, monospace; }
+.supper-tuner label { display: grid; gap: 2px; }
+.supper-tuner label span { display: flex; justify-content: space-between; }
+.supper-tuner select, .supper-tuner button { font: inherit; background: #2a0605; color: inherit; border: 1px solid #6e120c; padding: 2px 6px; }
+.supper-tuner button[aria-pressed='true'] { background: #c4221a; }
+.supper-tuner__seats { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.supper-tuner__row { display: flex; gap: 6px; align-items: center; }
+.supper-tuner__row label { display: flex; gap: 4px; align-items: center; }
+.supper-tuner code { font-size: 11px; word-break: break-all; color: #ff4a36; }
+/* el escenario se funde en el negro del footer: sin corte entre la escena y lo de abajo */
+.supper__stage::after { content: ''; position: absolute; inset: auto 0 0; height: 22%; background: linear-gradient(to bottom, rgba(5, 2, 2, 0), rgba(5, 2, 2, 0.55) 45%, #050202); pointer-events: none; }
+.supper__contact { z-index: 1; }
