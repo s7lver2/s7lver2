@@ -1,0 +1,78 @@
+/* emisión por defecto (Card) */
+.bc-card {
+  position: relative; width: 100%; height: 100%; overflow: hidden; container-type: size;
+  background: #070303; color: #ffd9cf;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 7% 7% 18%; box-sizing: border-box;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
+.bc-card__ch { position: absolute; top: 6%; left: 7%; color: #c4221a; font-weight: 600; font-size: clamp(11px, 4cqh, 22px); }
+.bc-card__name { margin: 0; font-weight: 400; line-height: 0.95; font-size: clamp(28px, 20cqh, 120px); overflow-wrap: anywhere; }
+.bc-card__tag { margin: 0.8em 0 0; color: #ff4a36; max-width: 34ch; font-size: clamp(12px, 4.6cqh, 24px); line-height: 1.35; }
+.bc-card__run {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 12%;
+  display: flex; align-items: center; white-space: pre; overflow: hidden;
+  background: #2a0605; color: #ff4a36; font-weight: 600; font-size: clamp(11px, 4cqh, 20px);
+}
+.bc-card__run span { flex: none; padding-left: 1.2em; animation: bc-run 18s linear infinite; }
+@keyframes bc-run { to { transform: translateX(-100%); } }
+@media (prefers-reduced-motion: reduce) { .bc-card__run span { animation: none; } }
+
+/* la sala: entra fundiéndose sobre la imagen final del virus */
+.room { position: fixed; inset: 0; z-index: 90; background: #070303; opacity: 0; transition: opacity 1.2s ease; }
+.room[data-ready] { opacity: 1; }
+.room__gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+/* la lista de canales: oculta salvo con el teclado (y es lo que queda si no hay WebGL) */
+.room-nav { position: absolute; left: 16px; bottom: 16px; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; }
+.room-nav:not(:focus-within) { clip-path: inset(50%); width: 1px; height: 1px; overflow: hidden; }
+.room-nav ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; }
+.room-nav button { font: inherit; font-size: 14px; color: #ffd9cf; background: #070303; border: 2px solid #6e120c; padding: 6px 12px; text-align: left; cursor: pointer; }
+.room-nav button:hover, .room-nav button:focus-visible { background: #c4221a; color: #070303; outline: none; }
+.room[data-failed] .room-nav { clip-path: none; width: auto; height: auto; overflow: visible; inset: 0; padding: clamp(24px, 8vh, 80px) 16px; display: grid; place-content: center; }
+.room[data-failed] .room-nav button { font-size: 18px; min-width: min(420px, 100%); }
+@media (prefers-reduced-motion: reduce) { .room { transition-duration: 0.3s; } }
+.room-hud { transition: opacity 1.4s ease; }
+.room-hud[data-off] { opacity: 0; }
+/* mientras la tele enseña su número de canal arriba a la derecha, el REC del rótulo se aparta */
+.room:has(.room-osd) .oni-osd__tr { opacity: 0; }
+
+/* el indicador de scroll: el mismo del inicio (una cuenta roja que cae por su carril) */
+.room-scroll {
+  position: absolute; left: 50%; bottom: clamp(16px, 4vh, 44px); transform: translateX(-50%);
+  display: grid; justify-items: center; gap: 10px; pointer-events: none;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 11px; letter-spacing: 0.3em; margin-right: -0.3em;
+  color: oklch(0.62 0.012 40); opacity: 0; transition: opacity 0.8s ease;
+}
+.room-scroll[data-on] { opacity: 1; }
+.room-scroll i { position: relative; width: 3px; height: 44px; border-radius: 3px; background: oklch(0.25 0.03 27); overflow: hidden; }
+.room-scroll i::after { content: ''; position: absolute; left: 0; top: 0; width: 3px; height: 12px; border-radius: 3px; background: oklch(0.62 0.245 27); animation: oni-drop 1.8s cubic-bezier(0.6, 0, 0.3, 1) infinite; }
+@media (prefers-reduced-motion: reduce) { .room-scroll i::after { animation: none; transform: translateY(16px); } }
+
+/* el texto de la emisión encuadrada, solo para lectores de pantalla (la imagen va en la tele) */
+.room-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* el número de canal, como el de una tele vieja */
+.room-osd {
+  position: absolute; top: max(16px, 5vh); right: max(16px, 4vw); margin: 0; z-index: 2; pointer-events: none;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: clamp(24px, 3.4vw, 46px); font-weight: 600;
+  color: #ffd9cf; letter-spacing: 0.08em; text-shadow: 0.08em 0.08em 0 #6e120c;
+}
+
+/* lo que hace el mando con el teclado, abajo a la izquierda, mientras lo tienes en la mano */
+.room-keys {
+  position: absolute; left: max(16px, 4vw); bottom: max(16px, 5vh); margin: 0; z-index: 2; pointer-events: none;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 12px; color: oklch(0.62 0.012 40);
+  display: flex; flex-wrap: wrap; gap: 0.4em 1.4em; max-width: calc(100% - 32px); opacity: 0; transition: opacity 0.8s ease 0.6s;
+}
+.room-keys b { font-weight: 600; color: #ffd9cf; margin-right: 0.5ch; }
+.room-keys[data-on] { opacity: 1; }
+
+/* el apagado: un botón pequeño abajo a la derecha, solo mientras tienes el mando */
+.room-power {
+  position: absolute; right: max(16px, 4vw); bottom: max(16px, 5vh); z-index: 2;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 12px; line-height: 1;
+  color: #ffd9cf; background: #070303; border: 2px solid #6e120c; padding: 7px 12px; cursor: pointer;
+  opacity: 0; visibility: hidden; transition: opacity 0.8s ease 0.6s, visibility 0s linear 1.4s, background-color 0.15s, color 0.15s;
+}
+.room-power[data-on] { opacity: 1; visibility: visible; transition: opacity 0.8s ease 0.6s, visibility 0s, background-color 0.15s, color 0.15s; }
+.room-power:hover, .room-power:focus-visible { background: #c4221a; color: #070303; outline: none; }

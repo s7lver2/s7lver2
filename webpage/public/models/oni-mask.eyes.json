@@ -1,0 +1,10 @@
+{
+  "note": "Ranuras emisivas de los ojos, en el espacio local de la máscara ya normalizada a tamaño 2 (lado mayor) y girada 180° en Y. La textura de Trellis deja los ojos negros.",
+  "normalizeTo": 2,
+  "rotationY": 3.14159,
+  "eyes": [
+    { "position": [0.232, -0.103, -0.15], "size": [0.21, 0.028], "rotation": [0, -0.68, 0.23] },
+    { "position": [-0.232, -0.103, -0.15], "size": [0.21, 0.028], "rotation": [0, 0.68, -0.23] }
+  ],
+  "color": [6, 0.12, 0.06]
+}

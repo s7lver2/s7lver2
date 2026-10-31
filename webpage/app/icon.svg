@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- el oni: la máscara negra con sus dos cuernos y las ranuras rojas de los ojos -->
+  <rect width="32" height="32" rx="6" fill="#070303"/>
+  <path d="M7 4 L11 12 L21 12 L25 4 L24 13 Q27 17 25 22 L16 29 L7 22 Q5 17 8 13 Z" fill="#e8dcd6"/>
+  <path d="M9.5 16.5 L14 18 L13.5 19.5 L9.5 18 Z M22.5 16.5 L18 18 L18.5 19.5 L22.5 18 Z" fill="#ff2a1a"/>
+  <path d="M13 23.5 L16 25 L19 23.5" stroke="#070303" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+</svg>

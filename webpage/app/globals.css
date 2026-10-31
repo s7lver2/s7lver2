@@ -16,7 +16,8 @@
   }
   
   body {
-    @apply bg-black text-white overflow-x-hidden;
+    @apply bg-black text-white;
+    overflow-x: clip;
   }
   
   * {

@@ -1,0 +1,209 @@
+/* ── EL ORDENADOR: una sola rampa de fósforo rojo detrás del mismo cristal de tubo */
+.pc {
+  --p0: #070303;
+  --p1: #2a0605;
+  --p2: #6e120c;
+  --p3: #c4221a;
+  --p4: #ff4a36;
+  --hot: #ffd9cf;
+  --pc-font: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  overflow: hidden;
+  background: var(--p0);
+  color: var(--p4);
+  font-family: var(--pc-font);
+  font-size: 15px;
+  line-height: 1.25;
+  text-shadow: 0 0 3px rgba(255, 74, 54, 0.5);
+  cursor: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.pc * { box-sizing: border-box; cursor: none; }
+.pc canvas { image-rendering: pixelated; display: block; }
+.pc button { font: inherit; color: inherit; background: none; border: 0; padding: 0; text-shadow: inherit; }
+.pc button:focus-visible { outline: 2px dotted var(--hot); outline-offset: 1px; }
+.pc p { margin: 0; }
+.pc ::selection { background: var(--p4); color: var(--p0); text-shadow: none; }
+
+.pc-screen { position: absolute; inset: 0; animation: pc-flick 7s infinite; }
+.pc-screen[data-jit] { transform: translateX(3px) skewX(-0.6deg); }
+@keyframes pc-flick {
+  0%, 46%, 100% { filter: brightness(1); }
+  47% { filter: brightness(0.92); }
+  48% { filter: brightness(1.05); }
+}
+
+/* el cristal: líneas de barrido, la franja que baja y el viñeteado del tubo */
+.pc-glass {
+  position: absolute;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.28) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse 80% 75% at 50% 50%, transparent 60%, rgba(0, 0, 0, 0.85) 100%);
+}
+.pc-roll {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 16%;
+  z-index: 89;
+  pointer-events: none;
+  background: linear-gradient(transparent, rgba(255, 74, 54, 0.045), transparent);
+  animation: pc-roll 8s linear infinite;
+}
+@keyframes pc-roll { from { top: -20%; } to { top: 110%; } }
+
+/* encendido: una línea que se abre de lado a lado y luego el tubo entero */
+.pc-power { position: absolute; inset: 0; z-index: 95; pointer-events: none; background: #000; animation: pc-open 0.35s 0.5s ease-in forwards; }
+.pc-power::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: var(--hot);
+  box-shadow: 0 0 18px var(--p4);
+  transform: scaleX(0);
+  animation: pc-line 0.5s ease-out forwards;
+}
+@keyframes pc-line { 60%, 100% { transform: scaleX(1); } }
+@keyframes pc-open { to { clip-path: inset(50% 0 50% 0); } }
+
+.pc-cursor { position: absolute; left: 0; top: 0; z-index: 99; width: 20px; height: 26px; pointer-events: none; display: none; }
+
+.pc-post { position: absolute; inset: 0; margin: 0; padding: clamp(24px, 6vh, 56px) clamp(16px, 5vw, 64px); font: inherit; white-space: pre; color: var(--p4); }
+.pc .oni-load { background: var(--p0); }
+
+.pc-caret { display: inline-block; width: 0.6em; height: 1em; margin-left: 1px; background: var(--p4); vertical-align: -0.15em; animation: pc-blink 1s steps(2) infinite; }
+@keyframes pc-blink { 50% { opacity: 0; } }
+.pc-dim { color: var(--p3); }
+.pc-hot { color: var(--hot); }
+
+/* ── LOGIN */
+.pc-login { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: clamp(12px, 3vh, 28px); padding: 16px; }
+.pc-login__tty { width: min(30ch, 100%); display: grid; gap: 4px; font-size: 17px; }
+.pc-login__tty .pc-dim { margin-bottom: 8px; }
+.pc-line { position: relative; display: flex; gap: 1ch; }
+.pc-line > span:first-child { color: var(--p3); }
+.pc-typed { color: var(--hot); white-space: pre; }
+/* el campo de verdad va encima de su línea, invisible: así el móvil saca su teclado */
+.pc-line input, .pc-term input { position: absolute; inset: 0; width: 100%; opacity: 0; font-size: 16px; border: 0; padding: 0; background: none; color: transparent; caret-color: transparent; }
+
+/* ── ESCRITORIO */
+.pc-desk { position: absolute; inset: 0; }
+.pc-wall { position: absolute; inset: 0; width: 100%; height: 100%; font-family: var(--pc-font); }
+
+.pc-bar { position: absolute; inset: 0 0 auto 0; height: 32px; z-index: 5000; display: flex; align-items: center; gap: 4px; padding: 0 16px; background: var(--p0); }
+.pc-bar::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: repeating-linear-gradient(90deg, var(--p3) 0 2px, transparent 2px 4px); }
+.pc-bar > b { font-weight: 700; color: var(--hot); letter-spacing: 0.04em; margin-right: 10px; }
+.pc-menu { position: relative; }
+.pc-menu > button { padding: 2px 8px; color: var(--p3); }
+.pc-menu > button:hover, .pc-menu[data-open] > button { background: var(--p4); color: var(--p0); text-shadow: none; }
+.pc-menu__list { position: absolute; top: calc(100% + 5px); left: 0; min-width: 220px; display: grid; padding: 4px 0; background: var(--p0); border: 2px solid var(--p3); }
+.pc-menu__list button { text-align: left; padding: 2px 12px; white-space: nowrap; }
+.pc-menu__list button:hover { background: var(--p4); color: var(--p0); text-shadow: none; }
+.pc-menu__list [aria-checked='true']::before { content: '> '; }
+.pc-bar__r { margin-left: auto; display: flex; align-items: center; gap: 14px; color: var(--p3); }
+.pc-cpu { width: 48px; height: 14px; }
+.pc-led { width: 8px; height: 8px; background: var(--p1); }
+.pc-led[data-on] { background: var(--hot); box-shadow: 0 0 6px var(--p4); animation: pc-blink 0.12s steps(2) infinite; }
+
+.pc-icons { position: absolute; top: 48px; left: 12px; bottom: 12px; margin: 0; padding: 0; list-style: none; display: grid; grid-auto-flow: column; grid-template-rows: repeat(auto-fill, 86px); grid-auto-columns: 144px; gap: 0 4px; z-index: 2; }
+.pc-ic { width: 144px; display: grid; justify-items: center; gap: 6px; padding: 4px 0; text-align: center; }
+.pc-icon { width: 40px; height: 40px; }
+.pc-ic span { padding: 0 4px; line-height: 1.1; background: rgba(7, 3, 3, 0.8); overflow-wrap: anywhere; }
+.pc-ic[aria-pressed='true'] span { background: var(--p4); color: var(--p0); text-shadow: none; }
+.pc-ic[aria-pressed='true'] .pc-icon { filter: brightness(1.5); }
+
+/* ventanas: esquinas en escalón de píxel y barra de título tramada */
+.pc-win {
+  position: absolute;
+  padding: 2px;
+  background: var(--p3);
+  clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
+}
+.pc-win[data-blur] { background: var(--p2); }
+.pc-win__in { height: 100%; display: flex; flex-direction: column; background: var(--p0); clip-path: inherit; }
+.pc-win__t { flex: none; display: flex; align-items: center; gap: 10px; padding: 6px 10px; touch-action: none; background: repeating-linear-gradient(0deg, var(--p2) 0 1px, transparent 1px 3px); }
+.pc-win[data-blur] .pc-win__t { background: none; }
+.pc-win__t b { font-weight: 400; padding: 0 6px; background: var(--p0); color: var(--hot); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pc-win[data-blur] .pc-win__t b { color: var(--p3); }
+.pc-win__t button { margin-left: auto; padding: 0 7px; background: var(--p0); }
+.pc-win__t button:hover { background: var(--p4); color: var(--p0); text-shadow: none; }
+.pc-win__b { flex: 1; min-height: 0; overflow: auto; padding: 10px 14px 14px; scrollbar-width: thin; scrollbar-color: var(--p2) transparent; user-select: text; }
+
+.pc-doc p { display: grid; grid-template-columns: 2.4ch 1fr; column-gap: 1.2ch; }
+.pc-doc p span:first-child { color: var(--p2); text-align: right; user-select: none; }
+.pc-doc [data-dim] { color: var(--p3); }
+
+.pc-ls { margin: 0; padding: 4px 0; list-style: none; user-select: none; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 10px 4px; }
+.pc-ls .pc-ic { width: 128px; }
+.pc-ls .pc-ic:focus-visible span { background: var(--p4); color: var(--p0); text-shadow: none; }
+
+.pc-term { position: relative; min-height: 100%; font-size: 14px; color: var(--p3); white-space: pre-wrap; word-break: break-all; }
+.pc-term [data-hot] { color: var(--hot); }
+.pc-term form { position: absolute; inset: 0; pointer-events: none; }
+.pc-term input { pointer-events: none; }
+
+/* arrastre de los 90: solo el contorno punteado; al cerrar, el fósforo deja rastro */
+.pc-ghost { position: absolute; z-index: 4000; pointer-events: none; outline: 2px dotted var(--hot); outline-offset: -2px; }
+.pc-trail { position: absolute; z-index: 1; pointer-events: none; border: 2px solid var(--p2); animation: pc-fade 0.6s forwards; }
+@keyframes pc-fade { to { opacity: 0; } }
+
+.pc-saver { position: absolute; inset: 0; z-index: 6000; background: #000; }
+.pc-saver canvas { width: 144px; }
+
+@media (max-width: 700px) {
+  .pc-bar { padding: 0 8px; }
+  .pc-bar__r > :not(:last-child) { display: none; }
+  .pc-icons { grid-auto-columns: 124px; }
+  .pc-ic { width: 124px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pc-screen, .pc-roll, .pc-caret { animation: none; }
+  .pc-power { display: none; }
+}
+
+/* ── ARRANQUE: la máscara tramada y una barra de bloques, como un splash de los 90 */
+.pc-boot { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 18px; }
+.pc-boot__mask { width: min(26vw, 30vh, 200px); height: auto; aspect-ratio: 48 / 35; }
+.pc-boot p { color: var(--p3); }
+.pc-boot__bar { display: flex; gap: 3px; padding: 3px; border: 2px solid var(--p3); }
+.pc-boot__bar i { width: 10px; height: 14px; background: var(--p1); }
+.pc-boot__bar i[data-on] { background: var(--p4); }
+
+/* ── VIRUS */
+.pc-virus { position: absolute; inset: 0; z-index: 7000; pointer-events: none; }
+.pc-virus[data-phase='laugh'], .pc-virus[data-phase='cam'] { pointer-events: auto; background: var(--p0); }
+.pc-virus__bait { position: absolute; margin: 0; padding: 10px 14px; font: inherit; color: var(--hot); white-space: pre; overflow: visible; background: var(--p0); }
+.pc-virus__err { position: absolute; width: min(360px, 84vw); padding: 2px; background: var(--p4); }
+.pc-virus__errt { padding: 3px 8px; color: var(--p0); text-shadow: none; font-weight: 700; }
+.pc-virus__err p { padding: 12px 12px 6px; background: var(--p0); color: var(--hot); }
+.pc-virus__err span { display: block; padding: 4px 12px 10px; background: var(--p0); color: var(--p3); text-align: right; }
+.pc-virus__trail canvas { position: fixed; left: 0; top: 0; width: 20px; height: 26px; }
+.pc-virus__laugh { position: absolute; inset: 0; width: 100%; height: 100%; font-family: var(--pc-font); animation: pc-reopen 0.32s ease-out both; }
+/* el tubo se cierra en una línea y se vuelve a abrir con ella dentro */
+@keyframes pc-reopen { from { transform: scaleY(0.006); filter: brightness(4); } 60% { filter: brightness(1.6); } }
+.pc-virus__noise { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.55; mix-blend-mode: screen; }
+.pc-desk[data-burn] { filter: brightness(2.4) contrast(1.8); }
+.pc-virus__cam { position: absolute; inset: 0; }
+.pc-virus__cam canvas { width: 100%; height: 100%; object-fit: cover; image-rendering: auto; }
+.pc-virus__cam { animation: pc-reopen 0.28s ease-out both; }
+.pc-virus[data-reduced] > * { animation: pc-in 0.6s both; }
+@keyframes pc-in { from { opacity: 0; } }
+.pc-ic[data-shake] { animation: pc-shake 0.3s steps(6); }
+@keyframes pc-shake { 25% { translate: -2px 1px; } 50% { translate: 2px -1px; } 75% { translate: -1px -1px; } }
+.pc-ic[data-blink] { animation: pc-blink 0.5s steps(2) 3; }
+
+/* ── RÓTULO DE CÁMARA (virus y sala) */
+.cctv-hud { position: fixed; inset: 0; z-index: 95; pointer-events: none; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: clamp(13px, 1.5vw, 19px); color: #ffd9cf; letter-spacing: 0.04em; }
+.cctv-hud__cam { position: absolute; top: max(16px, 5vh); left: max(16px, 4vw); }
+.cctv-hud__rec { position: absolute; bottom: max(16px, 5vh); right: max(16px, 4vw); display: flex; align-items: center; gap: 0.5ch; }
+.cctv-hud__rec i { width: 0.6em; height: 0.6em; background: #ff4a36; animation: pc-blink 1s steps(2) infinite; }
+@media (prefers-reduced-motion: reduce) { .cctv-hud__rec i { animation: none; } }
