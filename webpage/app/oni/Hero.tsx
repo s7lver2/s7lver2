@@ -26,6 +26,7 @@ const Library = dynamic(() => import('./library/Library'), { ssr: false });
 const Ritual = dynamic(() => import('./ritual/Ritual'), { ssr: false });
 const Credits = dynamic(() => import('./credits/Credits'), { ssr: false });
 const Supper = dynamic(() => import('./supper/Supper'), { ssr: false });
+const Backrooms = dynamic(() => import('./backrooms/Backrooms'), { ssr: false });
 
 const KATA = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
 
@@ -39,6 +40,14 @@ export default function Hero({ fontFamily }: { fontFamily: string }) {
   const [progress, setProgress] = useState(0);
   const sceneRef = useRef<HeroScene>();
   const [inPc, setInPc] = useState(false);
+  // desarrollo: ?backrooms abre el juego de las backrooms directamente, encima de todo
+  const [inBackrooms, setInBackrooms] = useState(false);
+  useEffect(() => setInBackrooms(process.env.NODE_ENV === 'development' && new URLSearchParams(location.search).has('backrooms')), []);
+  const leaveBackrooms = useCallback(() => {
+    const u = new URL(location.href);
+    u.searchParams.delete('backrooms');
+    location.href = u.href;
+  }, []);
   // el virus termina en la cámara de seguridad: de ahí se sale a la sala
   const [inRoom, setInRoom] = useState(false);
   const exitPc = useCallback(() => setInRoom(true), []);
@@ -272,6 +281,7 @@ export default function Hero({ fontFamily }: { fontFamily: string }) {
       {inLibrary && createPortal(<Library renderer={fromRoom?.renderer} canvas={fromRoom?.canvas} scene={fromRoom?.scene} onDone={leaveLibrary} onSkip={toEnd} />, document.body)}
       {inRitual && createPortal(<Ritual renderer={fromLibrary?.renderer} canvas={fromLibrary?.canvas} ready={fromLibrary?.ritual} onDone={leaveRitual} onSkip={toEnd} />, document.body)}
       {inCredits && createPortal(<Credits renderer={fromRitual?.renderer} canvas={fromRitual?.canvas} ready={fromRitual?.credits} pose={fromRitual?.pose} onShown={creditsShown} onDone={leaveCredits} onSkip={toEnd} />, document.body)}
+      {inBackrooms && createPortal(<Backrooms onQuit={leaveBackrooms} onWin={leaveBackrooms} />, document.body)}
       {inSupper && createPortal(<Supper renderer={fromCredits?.renderer} canvas={fromCredits?.canvas} ready={fromCredits?.supper} onShown={supperShown} />, document.body)}
       <canvas ref={canvas} className="oni-hero__gl" aria-hidden="true" />
       {/* Texto real: visible si WebGL no arranca, y siempre accesible */}

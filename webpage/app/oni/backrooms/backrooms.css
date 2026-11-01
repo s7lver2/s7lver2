@@ -1,0 +1,172 @@
+/* ── LAS BACKROOMS: todo es el OSD de una camcorder (o de un vídeo VHS): letra de bloque blanca con su
+   sombra negra dura abajo a la derecha, en mayúsculas, y la opción marcada con ▶. Sin ventanas ni cajas:
+   el texto va encima de la imagen, como en la cinta. Por encima de todo el ordenador, cursor incluido */
+.br {
+  --br-ink: #f2f1ea;
+  --br-dim: #8d8b80;
+  --br-rec: #ff3a2e;
+  --br-font: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --br-shadow: 2px 2px 0 #000;
+  --br-gut: clamp(40px, 5vw, 64px); /* deja sitio al ▶ de las opciones, que asoma 1,5em a la izquierda */
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  overflow: hidden;
+  background: #000;
+  color: var(--br-ink);
+  font-family: var(--br-font);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-shadow: var(--br-shadow);
+  cursor: var(--br-arrow, default);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+.br * { box-sizing: border-box; }
+/* los cursores de los 90 (cursors.ts): la mano en lo que se pulsa, el reloj mientras carga y ninguno
+   mientras Options se lleva el cursor (va dibujado) */
+.br button { cursor: var(--br-hand, pointer); }
+.br[data-screen="load"], .br[data-screen="load"] * { cursor: var(--br-wait, progress); }
+.br[data-stolen], .br[data-stolen] * { cursor: none; }
+.br button { font: inherit; color: inherit; letter-spacing: inherit; text-transform: inherit; text-shadow: inherit; background: none; border: 0; padding: 0; }
+.br p, .br ul { margin: 0; }
+.br ul { list-style: none; padding: 0; }
+.br-cursor { position: absolute; left: 0; top: 0; z-index: 10; width: 20px; height: 26px; pointer-events: none; display: none; image-rendering: pixelated; }
+
+/* una opción de menú: texto solo; al pasar o con el foco sale el ▶ delante (el hueco ya está guardado,
+   que nada se mueva) y se pone en negativo, como la línea elegida de un menú de vídeo */
+.br .br-opt { position: relative; display: inline-flex; align-items: center; gap: 0.6em; padding: 0.15em 0.4em 0.15em 1.5em; }
+.br-opt::before { content: '▶'; position: absolute; left: 0.2em; opacity: 0; }
+.br-opt:hover::before, .br-opt:focus-visible::before, .br-opt[data-press]::before, .br-opt[aria-selected="true"]::before { opacity: 1; }
+.br .br-opt:hover, .br .br-opt:focus-visible, .br .br-opt[data-press] { background: var(--br-ink); color: #000; text-shadow: none; outline: none; }
+.br .br-opt:disabled { color: var(--br-dim); background: none; cursor: var(--br-arrow, default); }
+.br .br-opt:disabled::before { opacity: 0; }
+
+/* la carga: como el arranque de un juego de disquete, arriba a la izquierda (se ve en la tele; esto,
+   para lectores de pantalla) */
+.br-load { position: absolute; inset: 0; padding: clamp(28px, 8vh, 72px) var(--br-gut); display: flex; flex-direction: column; gap: 14px; font-size: 16px; line-height: 1.4; }
+.br-load__head { font-size: 22px; margin-bottom: 18px !important; }
+.br-load__bar { display: flex; gap: 3px; margin-top: 10px; }
+.br-load__bar i { width: 14px; height: 18px; background: #1d1d1a; }
+.br-load__bar i[data-on] { background: var(--br-ink); }
+.br-load__pct { color: var(--br-dim); white-space: pre; }
+.br-sr { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* el menú: la pantalla de un vídeo sintonizado en el canal 3, con la nieve detrás: el canal arriba a
+   la derecha, el título grande y las tres opciones debajo, a la izquierda */
+.br-menu { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 var(--br-gut); background: repeating-linear-gradient(to bottom, transparent 0 2px, rgba(0, 0, 0, 0.35) 2px 3px); }
+.br-menu__ch { position: absolute; top: clamp(16px, 5vh, 44px); right: var(--br-gut); font-size: clamp(18px, 2.2vw, 28px); }
+.br-menu__title { margin: 0; font-size: clamp(48px, 10vw, 136px); font-weight: 800; line-height: 1; letter-spacing: 0.08em; text-shadow: 4px 4px 0 #000; }
+.br-menu__sub { margin: 0.8em 0 clamp(28px, 6vh, 56px) !important; font-size: clamp(14px, 1.4vw, 18px); color: var(--br-dim); }
+.br-menu ul { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-left: -1.5em; font-size: clamp(20px, 2.4vw, 30px); }
+
+/* la pausa: PAUSE con su ❚❚ arriba a la izquierda, como el vídeo parado, y las dos opciones debajo,
+   sobre el último fotograma algo oscurecido */
+.br-pause { position: absolute; inset: 0; z-index: 5; padding: clamp(16px, 5vh, 44px) var(--br-gut); background: rgba(0, 0, 0, 0.45); font-size: clamp(18px, 2vw, 26px); }
+.br-pause__head { font-size: clamp(26px, 3.4vw, 44px); margin-bottom: clamp(20px, 4vh, 40px) !important; }
+.br-pause ul { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-left: -1.5em; }
+
+.br-gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; visibility: hidden; }
+.br[data-screen="load"] .br-gl, .br[data-screen="play"] .br-gl, .br[data-screen="pause"] .br-gl, .br[data-screen="dead"] .br-gl, .br[data-screen="crash"] .br-gl { visibility: visible; }
+.br-stage { position: absolute; inset: 0; }
+
+/* la misión, siempre: arriba a la izquierda, lo que toca ahora y las cintas en bloques */
+.br-mission { position: absolute; top: clamp(16px, 4vh, 36px); left: var(--br-gut); z-index: 3; pointer-events: none; display: flex; flex-direction: column; gap: 4px; font-size: clamp(13px, 1.3vw, 17px); }
+
+/* los controles táctiles: el joystick donde se apoye el pulgar y los botones como texto del OSD */
+.br-touch { position: absolute; inset: 0; z-index: 4; touch-action: none; }
+.br-touch__stick { position: absolute; display: none; width: 112px; height: 112px; border-radius: 50%; border: 2px dotted rgba(242, 241, 234, 0.45); pointer-events: none; }
+.br-touch__stick div { position: absolute; left: 36px; top: 36px; width: 40px; height: 40px; border-radius: 50%; background: rgba(242, 241, 234, 0.55); }
+.br-touch__btns { position: absolute; right: 16px; bottom: 18px; display: grid; grid-template-columns: repeat(2, auto); gap: 14px 18px; justify-items: end; }
+.br-touch__btns button { font-size: 15px; padding: 8px 4px; }
+.br-touch__btns button:active { background: var(--br-ink); color: #000; text-shadow: none; }
+.br-touch__pause { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); }
+
+/* el visor de la camcorder: el cuadro 4:3 de la cinta (a los lados va negro, ver vhsPass.ts) con texto
+   en las cuatro esquinas */
+.br-osd { position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); height: 100%; aspect-ratio: 4 / 3; max-width: 100%; z-index: 3; pointer-events: none; font-size: clamp(14px, 1.8vw, 22px); line-height: 1.35; }
+.br-osd p { position: absolute; }
+.br-osd__tl { top: clamp(16px, 5vh, 40px); left: clamp(16px, 5%, 44px); }
+.br-osd__tr { top: clamp(16px, 5vh, 40px); right: clamp(16px, 5%, 44px); }
+.br-osd__bl { bottom: clamp(16px, 5vh, 40px); left: clamp(16px, 5%, 44px); }
+.br-osd__br { bottom: clamp(16px, 5vh, 40px); right: clamp(16px, 5%, 44px); text-align: right; }
+.br-osd__dim { opacity: 0.3; }
+.br-osd__rec { color: var(--br-rec); animation: br-rec 1s steps(1) infinite; }
+@keyframes br-rec { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .br-osd__rec { animation: none; } }
+/* en táctil los botones ocupan abajo a la derecha: el zoom y las fotos suben */
+@media (pointer: coarse) { .br-osd__br { bottom: auto; top: clamp(56px, 12vh, 84px); } }
+
+/* el recuadro de enfoque: cuatro esquinas en el centro que se cierran (y se ponen rojas) sobre una entidad */
+.br-osd__focus { position: absolute; left: 50%; top: 50%; width: 30%; height: 30%; transform: translate(-50%, -50%); transition: width 0.25s steps(4), height 0.25s steps(4); filter: drop-shadow(2px 2px 0 #000); }
+.br-osd__focus[data-on] { width: 16%; height: 16%; color: var(--br-rec); }
+.br-osd__focus i { position: absolute; width: 16px; height: 16px; border: 0 solid currentColor; }
+.br-osd__focus i:nth-child(1) { left: 0; top: 0; border-width: 3px 0 0 3px; }
+.br-osd__focus i:nth-child(2) { right: 0; top: 0; border-width: 3px 3px 0 0; }
+.br-osd__focus i:nth-child(3) { left: 0; bottom: 0; border-width: 0 0 3px 3px; }
+.br-osd__focus i:nth-child(4) { right: 0; bottom: 0; border-width: 0 3px 3px 0; }
+
+/* el aviso de recoger: abajo en el centro, una línea más del OSD */
+.br-hint { position: absolute; left: 50%; bottom: clamp(56px, 14vh, 120px); transform: translateX(-50%); z-index: 3; font-size: clamp(14px, 1.4vw, 18px); white-space: nowrap; pointer-events: none; }
+
+/* el inventario: el menú de la camcorder sobre la imagen oscurecida, alineado arriba a la izquierda
+   como la misión; las páginas son dos opciones, y las cosas, filas de icono, nombre y estado */
+.br-inv { position: absolute; inset: 0; z-index: 5; overflow-y: auto; padding: clamp(16px, 4vh, 36px) var(--br-gut); background: rgba(0, 0, 0, 0.62); font-size: clamp(13px, 1.2vw, 16px); }
+.br-inv__tabs { display: flex; flex-wrap: wrap; gap: 0.4em 1.2em; margin: 0 0 clamp(16px, 3vh, 28px) -1.5em; font-size: 1.3em; }
+.br .br-inv__tabs [aria-selected="false"] { color: var(--br-dim); }
+.br .br-inv__exit { margin-left: auto; font-size: 0.8em; }
+/* tres columnas: objetivos y biométricas, bolsillos y almacén, equipo (una debajo de otra si no caben) */
+.br-inv__cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: clamp(20px, 3vw, 44px); align-items: start; }
+.br-inv__cols section { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.br-inv__head { color: var(--br-dim); margin-top: 8px !important; }
+.br-inv__head:first-child { margin-top: 0 !important; }
+.br-inv__goals { display: flex; flex-direction: column; gap: 6px; }
+.br-inv__goals li { display: flex; justify-content: space-between; gap: 1em; }
+.br-inv__goals li[data-done] { color: var(--br-dim); }
+.br-inv__goals li[data-low] { color: var(--br-rec); }
+/* una casilla: sus cuatro esquinas, como el recuadro de enfoque del visor (sin caja) */
+.br-slot {
+  --c: rgba(242, 241, 234, 0.55);
+  position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 64px; padding: 8px;
+  background:
+    linear-gradient(var(--c), var(--c)) left top / 10px 2px no-repeat, linear-gradient(var(--c), var(--c)) left top / 2px 10px no-repeat,
+    linear-gradient(var(--c), var(--c)) right top / 10px 2px no-repeat, linear-gradient(var(--c), var(--c)) right top / 2px 10px no-repeat,
+    linear-gradient(var(--c), var(--c)) left bottom / 10px 2px no-repeat, linear-gradient(var(--c), var(--c)) left bottom / 2px 10px no-repeat,
+    linear-gradient(var(--c), var(--c)) right bottom / 10px 2px no-repeat, linear-gradient(var(--c), var(--c)) right bottom / 2px 10px no-repeat;
+}
+.br-inv__pockets .br-slot { justify-content: flex-start; padding-left: 14px; }
+.br-inv__store { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.br-inv__store .br-slot { aspect-ratio: 1; min-height: 0; }
+.br-inv__store .br-inv__gear span { display: none; }
+.br-inv__equip { display: flex; flex-direction: column; gap: 10px; }
+.br-inv__slot { flex-direction: column; min-height: 104px; padding: 22px 10px 12px; }
+.br-inv__slot .br-inv__label { position: absolute; top: 6px; left: 14px; color: var(--br-dim); font-size: 0.85em; }
+/* con algo cogido, las casillas donde cabe se encienden */
+.br-inv__slot[data-fits] { --c: var(--br-ink); }
+.br-inv__slot[data-fits] .br-inv__label { color: var(--br-ink); }
+.br .br-inv__gear { display: flex; align-items: center; gap: 10px; padding: 4px 6px; cursor: var(--br-hand, grab); touch-action: none; }
+.br .br-inv__gear:hover, .br .br-inv__gear:focus-visible, .br .br-inv__gear[data-held] { background: var(--br-ink); color: #000; text-shadow: none; outline: none; }
+.br-inv__state { color: var(--br-dim); font-size: 0.85em; }
+.br .br-inv__switch { font-size: 0.85em; }
+.br-inv__keys { color: var(--br-dim); font-size: 0.8em; }
+.br-inv__ghost { position: fixed; left: -16px; top: -16px; z-index: 7; pointer-events: none; }
+.br-inv__icon { width: 32px; height: 32px; image-rendering: pixelated; filter: drop-shadow(2px 2px 0 #000); }
+.br-inv__icon[data-dim] { opacity: 0.3; }
+.br-inv__photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; width: 100%; }
+.br-inv__photos img { width: 100%; height: auto; display: block; }
+
+/* el cuelgue falso: primero el fotograma congelado, temblando a saltos; luego el error de la cinta en
+   el azul de un vídeo sin señal (es del mundo del juego, no de ningún navegador) */
+.br[data-screen="crash"] .br-gl { animation: br-stutter 0.9s steps(1) both; }
+@keyframes br-stutter { 0% { transform: translate(0, 0); } 20% { transform: translate(-6px, 2px); } 40% { transform: translate(4px, -3px); } 60% { transform: translate(-2px, 0); } 80% { transform: translate(7px, 1px); } 100% { transform: translate(0, 0); } }
+.br-crash { position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 0 var(--br-gut); background: #0c1838; font-size: clamp(15px, 1.8vw, 20px); opacity: 0; animation: br-crash-in 0s 0.9s forwards; }
+.br-crash__head { font-size: clamp(22px, 3.4vw, 40px); font-weight: 800; margin-bottom: 10px !important; }
+.br-crash__dim { color: #8f9bb8; margin-top: 18px !important; }
+@keyframes br-crash-in { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .br[data-screen="crash"] .br-gl { animation: none; } }
+
+/* la estática del menú: por detrás del texto, muy tenue */
+.br-static { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; opacity: 0.07; pointer-events: none; }
+.br-mission__stamina[data-low] { color: var(--br-rec); }

@@ -78,3 +78,6 @@ next-env.d.ts
 /public/models/supper/animations/
 /public/models/ritual/*.zip
 /public/models/ritual/src/
+/public/models/backrooms/src/
+/public/models/backrooms/animations/
+/tools/models/mixamo/

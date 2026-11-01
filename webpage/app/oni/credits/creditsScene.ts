@@ -148,7 +148,7 @@ export class CreditsScene {
     // la escena para el destino intermedio del compositor, poco a poco (ver compileGently; mientras,
     // el ritual sigue pintando), y luego el compositor entero (bloom, SMAA, el agua): montado al
     // tomar el lienzo, sus programas se compilaban de golpe justo cuando la máscara entraba al agua.
-    // Sus materiales, en paralelo en planos sueltos; luego un fotograma invisible de 64×64 (las
+    // Sus materiales, en planos sueltos; luego un fotograma invisible de 64×64 (las
     // sombras y lo que dependa del destino) en su propio destino
     const r = this.renderer;
     r.shadowMap.enabled = true;
@@ -165,7 +165,8 @@ export class CreditsScene {
     const plane = new THREE.PlaneGeometry(1, 1), quad = new THREE.Scene();
     for (const p of c.passes)
       for (const v of Object.values(p).flat()) if (v instanceof THREE.Material) quad.add(new THREE.Mesh(plane, v));
-    await r.compileAsync(quad, this.camera);
+    // (con compileGently: en Firefox, sin compilación en paralelo, uno a uno y soltando el hilo)
+    await compileGently(r, quad, this.camera);
     plane.dispose();
     if (this.disposed) return;
     const before = r.getRenderTarget(), tm = r.toneMapping, te = r.toneMappingExposure;

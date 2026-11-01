@@ -114,6 +114,12 @@ const ICON: Record<Exclude<AchievementId, 'end'>, () => THREE.BufferGeometry[]> 
     const knob = new THREE.SphereGeometry(0.035, 12, 8).translate(0.38, -0.05, 0.03).rotateY(-0.75).translate(-0.24, 0, 0);
     return [ext(frame, 0.1), door, knob, box(0.7, 0.035, 0.05, 0, 0.66, 0)];
   },
+  // un arma de píxeles y, colgando del cañón por su cordel, el globo del partygoer pinchado (arrugado)
+  idiot: () => {
+    const gun = voxels(['XXXXXXXXXX', 'XXXXXXXXXX', 'XXX.X.....', 'XXX.......', 'XX........'], 0.08).map((g) => g.translate(-0.4, 0.3, 0));
+    const pop = new THREE.SphereGeometry(0.11, 10, 6).scale(1, 0.55, 0.7).rotateZ(0.5).translate(0.43, -0.22, 0);
+    return [...gun, bar([0.36, 0.22], [0.42, -0.12], 0.02), pop];
+  },
   // unas gafas de realidad virtual: el visor, las dos lentes y la cinta por detrás
   vrchat: () => {
     const s = new THREE.Shape();
@@ -223,10 +229,11 @@ export class Frames {
 
   /** Los marcos (el del final, con su oni, cuando llega la máscara). */
   async load() {
-    // [x, y, z, ancho]: el del final delante del cristal; los demás en los pilares, arriba y abajo
+    // [x, y, z, ancho]: el del final delante del cristal; los demás en los pilares, arriba y abajo, y
+    // el noveno (no caben más de ocho en los pilares) centrado encima del final (debajo lo tapa el del centro)
     const spots: [number, number, number, number][] = [[0, 2.25, GLASS + 0.35, 0.56]];
     const order = [1, 2, 0, 3];
-    ACHIEVEMENTS.slice(1).forEach((_, i) => spots.push([PILLARS[order[i % 4]], i < 4 ? 2.62 : 2.0, PILLAR_FRONT + 0.03, 0.34]));
+    ACHIEVEMENTS.slice(1).forEach((_, i) => spots.push(i < 8 ? [PILLARS[order[i % 4]], i < 4 ? 2.62 : 2.0, PILLAR_FRONT + 0.03, 0.34] : [0, 2.98, GLASS + 0.35, 0.3]));
     const face = await makeMask();
     ACHIEVEMENTS.forEach((a, i) => {
       const [x, y, z, w] = spots[i], h = w * 1.25;

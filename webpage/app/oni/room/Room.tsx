@@ -9,6 +9,7 @@ import { PcAudio } from '../pc/pcAudio';
 import Osd from '../Osd';
 import CctvHud from '../pc/CctvHud';
 import type { LibraryScene } from '../library/libraryScene';
+import { holdStill } from '../still';
 
 /** Lo que la sala le pasa a la biblioteca al apagarse: su renderer, su lienzo y la escena ya en marcha. */
 export interface RoomExit { renderer: import('three').WebGLRenderer; canvas: HTMLCanvasElement; scene: LibraryScene }
@@ -62,6 +63,8 @@ function Room({ feeds, live = true, onArrive, onExit }: { feeds: ImageBitmap[]; 
   const liveRef = useRef(live);
   liveRef.current = live;
   useEffect(() => void (live && gate.current!.let()), [live]);
+  // ya toca entrar y aún carga: lo que se ve está quieto (la cámara del virus o el negro)
+  useEffect(() => (live && !ready && !failed ? holdStill() : undefined), [live, ready, failed]);
 
   useEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -105,9 +108,18 @@ function Room({ feeds, live = true, onArrive, onExit }: { feeds: ImageBitmap[]; 
             if (!alive) return;
             scene!.paused = false;
             if (process.env.NODE_ENV === 'development') (window as unknown as { __sala: unknown }).__sala = scene;
-            const intro = scene!.startIntro();
+            // sin compilación en paralelo (Firefox), la biblioteca compila con la cámara aún pegada a la
+            // tele de la CAM 03, una imagen fija; la cámara no se aparta hasta que acaba
+            const lazy = !scene!.renderer.extensions.has('KHR_parallel_shader_compile');
+            let hold: Promise<unknown> | undefined;
+            if (lazy) {
+              lib();
+              const free = holdStill();
+              hold = library.current!.then(free, free);
+            }
+            const intro = scene!.startIntro(hold);
             intro.then(() => alive && !sceneRef.current!.holding && sceneRef.current!.approach < 0.03 && setHint(true));
-            if (!early) intro.then(lib);
+            if (!early && !lazy) intro.then(lib);
             // un fotograma pintado antes de fundirse encima del virus
             requestAnimationFrame(() => requestAnimationFrame(() => {
               setReady(true);

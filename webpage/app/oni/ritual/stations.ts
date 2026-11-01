@@ -45,9 +45,12 @@ export function stationShot(n: number, s: Stage): Shot {
     return { pos: face.clone().addScaledVector(ahead(yaw), 0.9).setY(face.y - 0.1), look: face.clone().setY(face.y - 0.04), fov: 40, breathe: 0.002 };
   }
   if (n >= 5) {
-    // la cenital: el círculo entero y las cinco puntas, también en vertical
+    // la cenital: el círculo entero y las cinco puntas, también en vertical. No justo encima: 0,6 m
+    // hacia la última estatua, de donde llega. Mirando en vertical exacto, el giro de la imagen lo
+    // decidía un desvío de 1 mm y, al llegar, la cámara rotaba de golpe
     const half = (s.radius + 1.2) / Math.min(1, s.aspect);
-    return { pos: s.center.clone().setY(9), look: s.center.clone().add(new THREE.Vector3(0, 0, -0.001)), fov: THREE.MathUtils.radToDeg(2 * Math.atan(half / 9)) };
+    const out = s.statues[3].pos.clone().sub(s.center).setY(0).normalize();
+    return { pos: s.center.clone().addScaledVector(out, 0.6).setY(9), look: s.center.clone(), fov: THREE.MathUtils.radToDeg(2 * Math.atan(half / 9)) };
   }
   // la estatua n: de cintura para arriba, ligeramente desde abajo, con sus dos hologramas; en
   // pantallas estrechas la cámara se aleja (y deja de ir de lado) hasta que caben los dos
@@ -80,14 +83,16 @@ export function shotAt(c: number, s: Stage): Shot {
   // hasta la última estatua no va directa: da varias vueltas alrededor y se para en la siguiente
   if (n + 1 <= 4) da += Math.sign(da || 1) * TURNS[n] * Math.PI * 2;
   const ang = aa + da * k;
+  // subiendo a la cenital, la mirada y el plano llegan antes (en el primer 40 %), suaves en los dos extremos
+  const early = THREE.MathUtils.smoothstep(k, 0, 0.4);
   // subiendo a la cenital se abre más, para ver el grupo en diagonal mientras se separa
   const rad = THREE.MathUtils.lerp(Math.hypot(pa.x, pa.z), Math.hypot(pb.x, pb.z), k) + Math.sin(Math.PI * k) * (n === 4 ? 3.2 : 1.2);
   return {
     pos: new THREE.Vector3(Math.sin(ang) * rad, THREE.MathUtils.lerp(a.pos.y, b.pos.y, k) + Math.sin(Math.PI * k) * 0.5, Math.cos(ang) * rad).add(s.center),
     // en mitad de las vueltas mira al centro del grupo; al llegar, a la estatua. Subiendo a la
     // cenital, mira enseguida al centro y abre el plano: así se ve cómo se separan
-    look: n === 4 ? a.look.clone().lerp(b.look, Math.min(1, k * 2.5)) : a.look.clone().lerp(b.look, k).lerp(s.center.clone().setY(1.4), Math.sin(Math.PI * k)),
-    fov: THREE.MathUtils.lerp(a.fov!, b.fov!, n === 4 ? Math.min(1, k * 2.5) : k),
+    look: n === 4 ? a.look.clone().lerp(b.look, early) : a.look.clone().lerp(b.look, k).lerp(s.center.clone().setY(1.4), Math.sin(Math.PI * k)),
+    fov: THREE.MathUtils.lerp(a.fov!, b.fov!, n === 4 ? early : k),
     breathe: THREE.MathUtils.lerp(a.breathe ?? 0, b.breathe ?? 0, k),
   };
 }

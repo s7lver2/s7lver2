@@ -183,7 +183,7 @@ function CpuMeter({ load }: { load: () => number }) {
   return <canvas ref={ref} className="pc-cpu" width={24} height={7} aria-hidden="true" />;
 }
 
-export default function Desktop({ audio, user, items, busy, onReboot, onVirus }: { audio: PcAudio; user: string; items: DeskNode[]; busy: (ms: number) => void; onReboot: () => void; onVirus: () => void }) {
+export default function Desktop({ audio, user, items, busy, onReboot, onVirus, onApp }: { audio: PcAudio; user: string; items: DeskNode[]; busy: (ms: number) => void; onReboot: () => void; onVirus: () => void; onApp: (app: string) => void }) {
   const root = useRef<HTMLDivElement>(null);
   const [wins, setWins] = useState<Win[]>([]);
   const [wp, setWp] = useState<Wallpaper>('mask');
@@ -303,7 +303,11 @@ export default function Desktop({ audio, user, items, busy, onReboot, onVirus }:
       if (node === 'term') {
         audio.open();
         addWin('term', 'tty0', [], 470, 300);
-      } else if (node.kind === 'app') audio.error(); // las apps aún no hacen nada
+      } else if (node.kind === 'app') {
+        // de momento solo hay juego de las backrooms; las demás apps, el pitido de error
+        if (node.app === 'backrooms') onApp(node.app);
+        else audio.error();
+      }
       else if (node.kind === 'text') {
         audio.open();
         addWin('text', node.name, [node], 420, 280);

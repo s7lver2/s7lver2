@@ -474,7 +474,7 @@ export class SurveillanceScene {
    * La llegada: la cámara empieza tan pegada a la pantalla 0 que la llena como la imagen
    * final del virus, y retrocede 3.5 s hasta el plano general. A los 2 s, la flecha.
    */
-  startIntro(): Promise<void> {
+  startIntro(wait?: Promise<unknown>): Promise<void> {
     const sc = this.screens[0];
     this.setDisplay('feeds');
     this.cctv.uniforms.uAmt.value = this.display === 'feeds' ? 1 : 0;
@@ -507,7 +507,11 @@ export class SurveillanceScene {
       }
       set(0);
       const st = { p: 0 };
-      this.intro = gsap.to(st, { p: 1, duration: 5.5, delay: 1.6, ease: 'power2.inOut', onUpdate: () => set(st.p), onComplete: arrow });
+      // `wait`: pegada a la pantalla hasta que se cumpla (en Firefox, mientras compila la biblioteca)
+      Promise.resolve(wait).then(() => {
+        if (this.disposed) return;
+        this.intro = gsap.to(st, { p: 1, duration: 5.5, delay: 1.6, ease: 'power2.inOut', onUpdate: () => set(st.p), onComplete: arrow });
+      });
     });
   }
 

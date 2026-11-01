@@ -1,5 +1,7 @@
 'use client';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import dynamic from 'next/dynamic';
 import { DEFAULT_DESKTOP, type DesktopC } from '@/app/lib/content-constants';
 import Boot from './Boot';
 import Login from './Login';
@@ -8,13 +10,16 @@ import Virus from './Virus';
 import { PcAudio } from './pcAudio';
 import { ARROW, HOURGLASS, paintGrid } from './pixels';
 
+// el juego de las backrooms: no se descarga hasta que se abre
+const Backrooms = dynamic(() => import('../backrooms/Backrooms'), { ssr: false });
+
 /*
  * Dentro del ordenador. Todo pasa detrás del mismo cristal de tubo (barrido, viñeteado,
  * parpadeo y algún salto de sincronía): se enciende el tubo, el BIOS cuenta la memoria,
  * arranca ONI//OS, el login y el escritorio.
  */
 
-type Phase = 'post' | 'boot' | 'login' | 'desk' | 'virus';
+type Phase = 'post' | 'boot' | 'login' | 'desk' | 'virus' | 'game';
 
 const POST = (mem: number) =>
   ['ONI BIOS v0.7   (c) 1997 s7lver', '', 'CPU  : 486DX2-66', `MEM  : ${mem}K${mem >= 16384 ? ' ok' : ''}`, '', 'detecting ide drives ...', '  primary master : ONI-HDD 540MB', '', 'booting ONI//OS'];
@@ -154,10 +159,26 @@ function Computer({ fontFamily, ctx, cctv, onVirus, onExit }: { fontFamily: stri
     setPhase('post');
     setPower((n) => n + 1);
   }, []);
+  // backrooms.exe: la pantalla se va a negro y se entra en la sala de la tele (Backrooms la pinta)
+  const [off, setOff] = useState(false);
+  const openApp = useCallback(() => {
+    setOff(true);
+    setTimeout(() => setPhase('game'), 600);
+  }, []);
+  // del juego se vuelve al escritorio, con la sesión aún abierta
+  const leaveGame = useCallback(() => {
+    setOff(false);
+    setPhase('desk');
+  }, []);
+  // ganar: la web entera otra vez, desde arriba
+  const win = useCallback(() => {
+    window.scrollTo(0, 0);
+    location.reload();
+  }, []);
 
   return (
     <div className="pc" style={{ ['--font-tanker' as string]: fontFamily }}>
-      <div className="pc-screen" ref={screen}>
+      <div className="pc-screen" ref={screen} style={{ opacity: off ? 0 : 1, transition: 'opacity 0.6s' }}>
         {phase === 'post' && (
           <pre className="pc-post" aria-live="polite">
             {post.join('\n')}
@@ -173,13 +194,15 @@ function Computer({ fontFamily, ctx, cctv, onVirus, onExit }: { fontFamily: stri
             }}
           />
         )}
-        {(phase === 'desk' || phase === 'virus') && <Desktop audio={audio.current} user={user} items={items} busy={busy} onReboot={reboot} onVirus={infect} />}
+        {(phase === 'desk' || phase === 'virus') && <Desktop audio={audio.current} user={user} items={items} busy={busy} onReboot={reboot} onVirus={infect} onApp={openApp} />}
+        {/* el juego fuera de la pantalla del ordenador: su parpadeo, su cristal y su cursor no van encima */}
+        {phase === 'game' && createPortal(<Backrooms onQuit={leaveGame} onWin={win} />, document.body)}
         {phase === 'virus' && <Virus audio={audio.current} cctv={cctv} reduced={reduced} onDone={onExit} />}
       </div>
       <div className="pc-roll" aria-hidden="true" />
       <div className="pc-glass" aria-hidden="true" />
       <div key={power} className="pc-power" aria-hidden="true" />
-      <canvas ref={cur} className="pc-cursor" aria-hidden="true" />
+      <canvas ref={cur} className="pc-cursor" aria-hidden="true" style={phase === 'game' ? { visibility: 'hidden' } : undefined} />
     </div>
   );
 }

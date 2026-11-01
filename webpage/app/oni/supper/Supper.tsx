@@ -7,6 +7,7 @@ import { tanker } from '../fonts';
 import dynamic from 'next/dynamic';
 import Foot from './Foot';
 import ScrollCue, { cue } from '../ScrollCue';
+import { holdStill } from '../still';
 
 // el panel de ajuste, solo en desarrollo: en producción ni se descarga
 const Tuner = process.env.NODE_ENV === 'development' ? dynamic(() => import('./Tuner')) : () => null;
@@ -156,11 +157,14 @@ export default function Supper({ renderer, canvas, ready, onShown }: { renderer?
           powerPreference: 'high-performance',
         }));
       if (made) made.setPixelRatio(Math.min(devicePixelRatio, 1.75));
-      // de los créditos suele llegar ya cargada; si no (o falló), se carga aquí
+      // de los créditos suele llegar ya cargada; si no (o falló), se carga aquí. Mientras, negro
+      // (en Firefox, ahí se compila: ver still.ts)
+      const free = holdStill();
       const got = await ready?.catch(() => undefined);
       if (!alive) return got?.dispose();
       sc = got ?? new SupperScene({ renderer: r, reduced, low });
-      if (!got) await sc.load();
+      if (!got) await sc.load().finally(free);
+      free();
       if (!alive) return;
       const el = contact.current!,
         box = root.current!,

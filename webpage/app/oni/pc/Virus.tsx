@@ -5,6 +5,7 @@ import { ARROW, RAMP, paintGrid } from './pixels';
 import type { PcAudio } from './pcAudio';
 import { CCTV_H, CCTV_W, gradeCctv } from './cctv';
 import CctvHud from './CctvHud';
+import { holdStill } from '../still';
 
 /*
  * passwords.txt era el anzuelo. Diez segundos medidos con el reloj (nunca con el audio):
@@ -66,8 +67,17 @@ export default function Virus({ audio, cctv, reduced, onDone }: { audio: PcAudio
     const t0 = performance.now();
     let raf = 0, nextErr = 0, nErr = 0, nextBait = 0, hdd = 0, ended = false, flashes = 0, nextFlash = 0;
     let cur: Phase = 'bait';
-    // la fase, también en <html data-virus>: la sala que carga detrás no pinta durante la risa
-    const go = (p: Phase) => cur !== p && ((cur = p), (document.documentElement.dataset.virus = p), setPhase(p));
+    // la fase, también en <html data-virus>: la sala que carga detrás no pinta durante la risa. El caos
+    // y la imagen fija de la cámara sujetan la pantalla quieta (en Firefox, la sala compila ahí)
+    let free: (() => void) | undefined;
+    const go = (p: Phase) => {
+      if (cur === p) return;
+      cur = p;
+      document.documentElement.dataset.virus = p;
+      if (p === 'infect' || p === 'cam') free ??= holdStill();
+      else (free?.(), (free = undefined));
+      setPhase(p);
+    };
     const fall: { el: HTMLElement; x: number; y: number; vx: number; vy: number; r: number; vr: number }[] = [];
 
     // el anzuelo: la ventana de passwords.txt se llena de basura que se sale por los bordes
@@ -163,6 +173,7 @@ export default function Virus({ audio, cctv, reduced, onDone }: { audio: PcAudio
     return () => {
       cancelAnimationFrame(raf);
       delete document.documentElement.dataset.virus;
+      free?.();
       clearInterval(hdd);
       audio.stuckBeeps(false);
       audio.detune(0);

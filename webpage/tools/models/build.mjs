@@ -1,6 +1,6 @@
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
-import { prune, dedup, weld, simplify, textureCompress, meshopt, metalRough, getBounds } from '@gltf-transform/functions';
+import { prune, dedup, weld, simplify, textureCompress, meshopt, metalRough, getBounds, resample } from '@gltf-transform/functions';
 import { MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer';
 import sharp from 'sharp';
 import { fileURLToPath } from 'node:url';
@@ -138,9 +138,64 @@ const ritual = {
   stones:  { src: 'stylized_stones_minipack', tex: 512 },
 };
 
-const SETS = { ritual: [ritual, 'ritual/'], supper: [supper, 'supper/'], room: [room, 'room/'], surveillance: [surveillance, 'surveilance_room/'], library: [library, 'library/'] };
+// las piezas de backrooms_vr traen su propia textura de emisiva (se pintan solas, sin luz) y las islas del
+// atlas con dientes negros alrededor: fuera la emisiva y el negro de los huecos se rellena con el color
+// de la isla más cercana (si no, los bordes de las UV cogen negro y el mueble se ve roto)
+const matte = (metal) => async (doc) => {
+  for (const m of doc.getRoot().listMaterials()) {
+    m.setEmissiveTexture(null).setEmissiveFactor([0, 0, 0]);
+    if (metal !== undefined) m.setMetallicFactor(metal);
+  }
+  for (const t of doc.getRoot().listTextures()) {
+    if (!t.listParents().some((p) => p.propertyType === 'Material')) continue;
+    const { data, info } = await sharp(Buffer.from(t.getImage())).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const w = info.width, h = info.height, px = new Uint8Array(data);
+    let hole = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) hole[i] = px[i * 4] + px[i * 4 + 1] + px[i * 4 + 2] < 24 ? 1 : 0;
+    // crece cada isla un píxel por pasada (hasta tapar los dientes y el margen de los mipmaps)
+    for (let it = 0; it < Math.round(w / 64); it++) {
+      const next = hole.slice();
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        if (!hole[i]) continue;
+        let r = 0, g = 0, b = 0, n = 0;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const X = x + dx, Y = y + dy;
+          if (X < 0 || Y < 0 || X >= w || Y >= h) continue;
+          const j = Y * w + X;
+          if (hole[j]) continue;
+          r += px[j * 4]; g += px[j * 4 + 1]; b += px[j * 4 + 2]; n++;
+        }
+        if (n) (px[i * 4] = r / n), (px[i * 4 + 1] = g / n), (px[i * 4 + 2] = b / n), (next[i] = 0);
+      }
+      hole = next;
+    }
+    t.setImage(new Uint8Array(await sharp(Buffer.from(px), { raw: { width: w, height: h, channels: 4 } }).png().toBuffer())).setMimeType('image/png');
+  }
+};
+
+// las backrooms (el easter egg de juegos/backrooms.exe). Los personajes y las piezas salen antes de
+// tools/models/backrooms.py; el resto, de los zips del usuario tal cual
+const backrooms = {
+  hazmat:     { src: 'hazmat', tex: 1024, anim: true },
+  bacteria:   { src: 'bacteria', tex: 512, anim: true },
+  partygoer:  { src: 'partygoer', tex: 1024, anim: true },
+  balloon:    { src: 'balloon', tex: 256 },
+  camcorder:  { src: 'psx_handheld_camcorder__vhs_horror_camera', tex: 512 },
+  vhs:        { src: 'vhs', tex: 512 },
+  gun:        { src: 'gun', tex: 512 },
+  flashlight: { src: 'flashligh', tex: 512, simplify: 0.05, error: 0.01 },
+  elevator:   { src: 'elevator_building', tex: 1024, anim: true },
+  vent:       { src: 'vent', tex: 256, pre: matte(0) },
+  socket:     { src: 'socket', tex: 256, pre: matte(0) },
+  exit:       { src: 'exit', tex: 256 },
+  door:       { src: 'door', tex: 512, pre: matte(0) },
+  armchair:   { src: 'armchair', tex: 512, pre: matte(0) },
+};
+
+const SETS = { backrooms: [backrooms, 'backrooms/'], ritual: [ritual, 'ritual/'], supper: [supper, 'supper/'], room: [room, 'room/'], surveillance: [surveillance, 'surveilance_room/'], library: [library, 'library/'] };
 const [set, ...only] = process.argv.slice(2);
-if (!SETS[set]) { console.error('uso: node build.mjs <room|surveillance|library|supper|ritual> [job...]'); process.exit(1); }
+if (!SETS[set]) { console.error('uso: node build.mjs <room|surveillance|library|supper|ritual|backrooms> [job...]'); process.exit(1); }
 const [jobs, dir] = SETS[set];
 const SRC = MODELS + dir + 'src/', OUT = MODELS + dir;
 
@@ -152,6 +207,7 @@ for (const [name, j] of Object.entries(jobs)) {
   if (j.root) { const keep = new Set(); const r = root.listNodes().find(n => n.getName() === j.root); r.traverse(n => keep.add(n)); for (const n of root.listNodes()) if (n.getMesh() && !keep.has(n)) n.dispose(); }
   if (j.pre) await j.pre(doc);
   const t = [dedup(), prune()];
+  if (j.anim) t.push(resample()); // claves redundantes de Mixamo (cada hueso, cada fotograma) fuera
   if (j.simplify) t.push(weld(), simplify({ simplifier: MeshoptSimplifier, ratio: j.simplify, error: j.error ?? 0.002 }));
   t.push(textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [j.tex, j.tex], quality: 82 }), prune(), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
   await doc.transform(...t);

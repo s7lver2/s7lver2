@@ -10,6 +10,7 @@ import type { PreparedRitual } from '../library/Library';
 import ScrollCue, { cue } from '../ScrollCue';
 import Osd, { useLatch } from '../Osd';
 import type { CreditsScene } from '../credits/creditsScene';
+import { holdStill } from '../still';
 
 /** Lo que el ritual le pasa a los créditos: su renderer, su lienzo y los créditos ya cargados (o cargándose). */
 export interface RitualExit { renderer: THREE.WebGLRenderer; canvas: HTMLCanvasElement; credits?: Promise<CreditsScene>; pose?: ExitPose }
@@ -151,7 +152,9 @@ export default function Ritual({ renderer, canvas, ready, onDone, onSkip }: { re
     const start = async () => {
       const r = renderer ?? (made = new THREE.WebGLRenderer({ canvas: cv, antialias: false, powerPreference: 'high-performance' }));
       if (made) made.setPixelRatio(Math.min(devicePixelRatio, 1.75));
-      // de la biblioteca suele llegar ya cargado; si no (o falló), se carga aquí
+      // de la biblioteca suele llegar ya cargado; si no (o falló), se carga aquí. Mientras, lo que se
+      // ve está quieto (en Firefox, ahí se compila: ver still.ts)
+      const free = holdStill();
       const got = await ready?.catch(() => undefined);
       const ss = got?.socials ?? (await loadSocials());
       if (!alive) return got?.scene.dispose();
@@ -160,7 +163,8 @@ export default function Ritual({ renderer, canvas, ready, onDone, onSkip }: { re
       // desarrollo: &from=statues|top|finale salta hasta ese momento (antes de cargar)
       const from = dev?.get('from') as RitualScene['skip'] | null;
       if (from) rit.skip = from;
-      if (!got) await rit.load();
+      if (!got) await rit.load().finally(free);
+      free();
       if (!alive) return;
       rit.takeOver(cv);
       scene.current = rit;

@@ -4,7 +4,7 @@
  * web da uno con `unlock(id)`; el aviso y la pared de la cena se enteran con `onUnlock`.
  */
 
-export type AchievementId = 'end' | 'backrooms' | 'vrchat' | 'lucy' | 'silver' | 'minecraft' | 'nether' | 'gemini' | 'whatsapp';
+export type AchievementId = 'end' | 'backrooms' | 'idiot' | 'vrchat' | 'lucy' | 'silver' | 'minecraft' | 'nether' | 'gemini' | 'whatsapp';
 export interface Achievement {
   id: AchievementId;
   name: string;
@@ -15,6 +15,7 @@ export interface Achievement {
 export const ACHIEVEMENTS: Achievement[] = [
   { id: 'end', name: 'The Last Supper', desc: 'You made it to the end.' },
   { id: 'backrooms', name: 'Noclip', desc: 'Got out of the Backrooms.' },
+  { id: 'idiot', name: 'Good job idiot, now what?', desc: 'Killed something in the Backrooms.' },
   { id: 'vrchat', name: 'Trust Rank', desc: 'Took the tour of VRChat.' },
   { id: 'lucy', name: 'L U C Y', desc: 'Found Silver.' },
   { id: 'silver', name: 'S I L V E R', desc: 'Found Lucy.' },

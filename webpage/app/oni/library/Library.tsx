@@ -8,6 +8,7 @@ import { loadPapers, type Paper } from './papers';
 import { shelfmark } from './sheets';
 import ScrollMeter from './ScrollMeter';
 import Osd, { useLatch } from '../Osd';
+import { holdStill } from '../still';
 
 /*
  * La biblioteca a pantalla completa. Llega de la sala con su escena ya cargada y el renderer y el
@@ -188,7 +189,7 @@ export default function Library({ renderer, canvas, scene, onDone, onSkip }: { r
       return later;
     }
     let alive = true, lib = scene, made: THREE.WebGLRenderer | undefined, stop: (() => void) | undefined, handed = false;
-    let next: Promise<PreparedRitual> | undefined;
+    let next: Promise<PreparedRitual> | undefined, freeStop: (() => void) | undefined;
     const dev0 = process.env.NODE_ENV === 'development' ? new URLSearchParams(location.search) : null;
     // desarrollo: &reduced fuerza el camino sin movimiento
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches || !!dev0?.has('reduced');
@@ -201,7 +202,8 @@ export default function Library({ renderer, canvas, scene, onDone, onSkip }: { r
         if (!alive) return;
         setPapers(ps);
         lib = new LibraryScene({ renderer: made, papers: ps, reduced });
-        await lib.load();
+        // (sin sala, cargando: la pantalla está quieta; ver still.ts)
+        await lib.load().finally(holdStill());
       }
       if (!alive) return;
       lib.onView = setView;
@@ -234,6 +236,8 @@ export default function Library({ renderer, canvas, scene, onDone, onSkip }: { r
       await lib.inside();
       if (!alive) return;
       setStopped(true);
+      // con el tiempo parado la imagen está quieta: el ritual compila aquí (en Firefox, ver still.ts)
+      freeStop = holdStill();
       // mientras el tiempo está parado, el ritual se carga y se compila en el mismo renderer: al
       // salir de aquí ya está listo y no hay negro ni tirón
       const r = (renderer ?? made)!;
@@ -254,6 +258,7 @@ export default function Library({ renderer, canvas, scene, onDone, onSkip }: { r
         // el rayo y la carta, con el ritual ya cargado: si aún carga, el tiempo sigue parado hasta que
         // acabe (cargando a la vez que la carta caía, iba a tirones)
         await next?.catch(() => {});
+        freeStop?.();
         if (!alive) return;
         setStopped(false);
         l.resume().then(() => {
@@ -275,6 +280,7 @@ export default function Library({ renderer, canvas, scene, onDone, onSkip }: { r
     life.current = {
       kill: () => {
         alive = false;
+        freeStop?.();
         stop?.();
         lib?.dispose();
         if (handed) return;

@@ -8,6 +8,7 @@ import { watchPresence, type Presence } from './presence';
 import { tanker } from '../fonts';
 import ScrollCue, { cue } from '../ScrollCue';
 import type { SupperScene } from '../supper/supperScene';
+import { holdStill } from '../still';
 
 // lo que hay que hacer scroll para todo el recorrido (px de rueda), y el tope por evento
 const PX_TOTAL = 2400, PER_EVENT = 120;
@@ -103,11 +104,14 @@ export default function Credits({ renderer, canvas, ready, pose, onShown, onDone
       if (dev?.has('nogl')) throw new Error('nogl');
       const r = renderer ?? (made = new THREE.WebGLRenderer({ canvas: cv, antialias: false, powerPreference: 'high-performance' }));
       if (made) made.setPixelRatio(Math.min(devicePixelRatio, 1.75));
-      // del ritual suele llegar ya cargada; si no (o falló), se carga aquí
+      // del ritual suele llegar ya cargada; si no (o falló), se carga aquí. Mientras, el último
+      // fotograma del ritual se queda quieto en pantalla (en Firefox, ahí se compila: ver still.ts)
+      const free = holdStill();
       const got = await ready?.catch(() => undefined);
       if (!alive) return got?.dispose();
       sc = got ?? new CreditsScene({ renderer: r, reduced });
-      if (!got) await sc.load();
+      if (!got) await sc.load().finally(free);
+      free();
       if (!alive) return;
       // del ritual es el mismo plano, sin corte ni cambio de ángulo; con el atajo, entra con unas bandas
       if (pose) sc.enter(pose);
